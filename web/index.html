@@ -688,7 +688,12 @@ function ldEnsure(id){if(GEO[id])return Promise.resolve();
         D:new THREE.Vector3(a[7],-a[8],-a[9]).normalize(),U:new THREE.Vector3(a[10],-a[11],-a[12]).normalize(),L:a[13]*.05}});
     const mk2=arr=>{const q=new THREE.BufferGeometry(),a=arr[0].concat(arr[1]);q.setAttribute('position',new THREE.Float32BufferAttribute(a,3));q.addGroup(0,arr[0].length/3,0);q.addGroup(arr[0].length/3,arr[1].length/3,1);q.translate(off.x,off.y,off.z);q.computeVertexNormals();q.computeBoundingBox();return q};
     GEO[id]={geo:g,w:Math.max(1,Math.round(x1-x0)),d:Math.max(1,Math.round(z1-z0)),h,conns:[],studs:[],snaps};
-    if(rodOnly){GEO[id].body=mk2(bodyArr);GEO[id].rod=mk2(rodOnly)} // a complete cylinder: its rod can slide out
+    if(rodOnly){GEO[id].body=mk2(bodyArr);GEO[id].rod=mk2(rodOnly); // a complete cylinder: its rod can slide out
+      // how far the rod really travels = length of the open (Extended) version minus the closed one
+      const other=/-f1$/.test(num)?num.replace(/-f1$/,'-f2'):/-f2$/.test(num)?num.replace(/-f2$/,'-f1'):null;
+      if(other){try{await ldGet(other+'.dat');const p2=[[],[]];ldFlat(ldNorm(other+'.dat'),new THREE.Matrix4().makeScale(.05,-.05,-.05),'16',p2,0);
+        const a=p2[0].concat(p2[1]);if(a.length){const b2=new THREE.Box3().setFromBufferAttribute(new THREE.Float32BufferAttribute(a,3)),s1=new THREE.Vector3(x1-x0,y1-y0,z1-z0),s2=b2.getSize(new THREE.Vector3());
+          const len=v=>Math.max(v.x,v.y,v.z),dl=Math.abs(len(s2)-len(s1));if(dl>.05)GEO[id].stroke=dl}}catch(e){}}}
     if(!PMAP[id])ldReg(id)})();
   return ldBuilt[id]}
 
@@ -837,7 +842,7 @@ function buildMech(){const {W,joints}=buildJoints(),K=new Map(S.bricks.map(b=>[b
     const bc=gi.body.boundingBox.getCenter(new V3()),rc=gi.rod.boundingBox.getCenter(new V3()),sz=gi.geo.boundingBox.getSize(new V3());
     const aL=sz.x>=sz.y&&sz.x>=sz.z?new V3(1,0,0):sz.y>=sz.z?new V3(0,1,0):new V3(0,0,1);aL.multiplyScalar(Math.sign(rc.clone().sub(bc).dot(aL))||1);
     const rs=gi.rod.boundingBox.getSize(new V3()),rodLen=Math.abs(rs.dot(aL));m.updateMatrixWorld();
-    c.slide={m:rm,uL:aL,uW:aL.clone().transformDirection(m.matrixWorld)};c.stroke=Math.max(.5,rodLen*.8)}
+    c.slide={m:rm,uL:aL,uW:aL.clone().transformDirection(m.matrixWorld)};c.stroke=gi.stroke||Math.max(.4,rodLen*.55)}
   return {moving,cranks,cyls,jam,K}}
 function sang(u,v,A){return Math.atan2(new V3().crossVectors(u,v).dot(A),u.dot(v))}
 function scaleAbout(P,u,k){const S=new M4().set(1+(k-1)*u.x*u.x,(k-1)*u.x*u.y,(k-1)*u.x*u.z,0,(k-1)*u.y*u.x,1+(k-1)*u.y*u.y,(k-1)*u.y*u.z,0,(k-1)*u.z*u.x,(k-1)*u.z*u.y,1+(k-1)*u.z*u.z,0,0,0,0,1);
