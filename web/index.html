@@ -537,7 +537,8 @@ function showSel(s){sel=s;clearHL();$('#tiltA').hidden=$('#tiltB').hidden=true;g
 function hideSel(){sel=null;clearHL();ghost.visible=false;$('#rotBtn').hidden=S.mode!=='build';$('#confirm').hidden=true}
 const ray=new THREE.Raycaster(),ndc=new THREE.Vector2();
 function pick(e){const r=renderer.domElement.getBoundingClientRect();ndc.set(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1);ray.setFromCamera(ndc,camera);
-  const hits=ray.intersectObjects([base,...meshes.values()],false);if(!hits.length)return null;const h=hits[0];
+  const rods=[];for(const m of meshes.values()){const r=m.getObjectByName('rod');if(r)rods.push(r)}
+  const hits=ray.intersectObjects([base,...meshes.values(),...rods],false);if(!hits.length)return null;const h=hits[0];if(h.object.name==='rod')h.object=h.object.parent; // a cylinder's rod belongs to the cylinder
   if(h.object.userData.base)return {cell:{x:Math.floor(h.point.x),z:Math.floor(h.point.z)},bid:null,point:h.point};
   const b=S.bricks.find(q=>q.id===h.object.userData.bid);const top=(b.y+info(b.p).h)*PH;
   const n=h.face.normal.clone().transformDirection(h.object.matrixWorld);let x,z;
