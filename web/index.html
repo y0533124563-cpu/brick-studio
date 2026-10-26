@@ -113,6 +113,34 @@ textarea{min-height:70px;resize:vertical;font-size:12px;direction:ltr;text-align
 .li .sw{width:18px;height:18px;border-radius:5px;border:1px solid var(--line);flex:none}
 .num{font-variant-numeric:tabular-nums;font-weight:700}
 .note{font-size:12.5px;color:var(--muted);line-height:1.5}
+/* projects home screen */
+.home{position:fixed;inset:0;z-index:30;background:var(--bg);display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.home-top{display:flex;align-items:center;gap:10px;background:var(--surface);border-bottom:1px solid var(--line);padding-block:10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.acct{display:flex;align-items:center;gap:8px;min-width:0;margin-inline-start:auto}
+.acct img{width:32px;height:32px;border-radius:50%;flex:none;background:var(--surface-2)}
+.acct span{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:40vw}
+.acct .note{font-weight:400;font-size:13px}
+.home-body{flex:1;overflow:auto;padding-block:18px 24px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.home-body h2{font-family:var(--f-display);font-weight:400;font-size:24px;margin:0 0 14px}
+.proj-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;max-width:1100px}
+.proj{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;min-width:0}
+.proj .open{border:0;padding:0;background:var(--scene);display:block}
+.proj .open img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover}
+.proj .meta{padding:8px 10px 10px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.proj .meta b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.proj .meta small{color:var(--muted);font-variant-numeric:tabular-nums}
+.proj .acts{display:flex;gap:6px;margin-top:6px}
+.mini{border:1px solid var(--line);background:transparent;border-radius:8px;padding:3px 9px;font-size:12.5px;font-weight:600;color:var(--muted)}
+.mini.warn{background:var(--danger);border-color:var(--danger);color:#fff}
+.proj input{width:100%;border:1px solid var(--line);background:var(--surface-2);border-radius:8px;padding:5px 8px;font:inherit;color:var(--ink)}
+.home-foot{background:var(--surface);border-top:1px solid var(--line);padding-block:12px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.btn.big{width:100%;max-width:520px;display:flex;align-items:center;justify-content:center;gap:8px;margin:0 auto;padding:14px;font-size:17px;border-radius:14px}
+.signin{max-width:420px;display:flex;flex-direction:column;gap:14px;padding-block:20px}
+.signin p{margin:0;line-height:1.5;color:var(--muted)}
+.gbtn{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+.home-empty{color:var(--muted);line-height:1.5;grid-column:1/-1}
+.brand{cursor:pointer;border:0;background:transparent;color:inherit;font:inherit;font-family:var(--f-display);font-size:19px;padding:0;min-width:0}
+.brand span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:38vw}
 @media (prefers-reduced-motion: reduce){*{transition:none!important}}
 @media (min-width:900px){.parts .part{width:88px}.part img{width:70px;height:70px}}
 </style>
@@ -121,16 +149,17 @@ textarea{min-height:70px;resize:vertical;font-size:12px;direction:ltr;text-align
 <body>
 <div id="app" dir="rtl">
   <header class="bar">
-    <div class="brand">
+    <button class="brand" id="homeBtn" title="הפרויקטים שלי">
       <svg class="brand-mark" viewBox="0 0 26 26" aria-hidden="true"><rect x="2" y="9" width="22" height="13" rx="2.5" fill="#F2B705"/><rect x="5" y="5" width="6" height="5" rx="1.5" fill="#F2B705"/><rect x="15" y="5" width="6" height="5" rx="1.5" fill="#F2B705"/><rect x="2" y="17" width="22" height="5" rx="2.5" fill="#000" opacity=".12"/></svg>
-      סטודיו לבנים
-    </div>
+      <span id="projName">סטודיו לבנים</span>
+    </button>
     <span class="pill" id="count">0 חלקים</span>
     <div class="spacer"></div>
     <button class="ib" id="undo" title="ביטול" aria-label="ביטול"><svg class="i" viewBox="0 0 24 24"><path d="M15 9h1.5a4.5 4.5 0 0 1 0 9H10"/><path d="M15 9H5"/><path d="M9 5L5 9l4 4"/></svg></button>
     <button class="ib" id="redo" title="חזרה" aria-label="חזרה"><svg class="i" viewBox="0 0 24 24"><path d="M9 9H7.5a4.5 4.5 0 0 0 0 9H14"/><path d="M9 9h10"/><path d="M15 5l4 4-4 4"/></svg></button>
     <button class="ib" id="bomBtn" title="רשימת חלקים" aria-label="רשימת חלקים"><svg class="i" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/></svg></button>
-    <button class="ib" id="saveBtn" title="הדגמים שלי" aria-label="הדגמים שלי"><svg class="i" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></button>
+    <button class="ib" id="shareBtn" title="שיתוף" aria-label="שיתוף"><svg class="i" viewBox="0 0 24 24"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4"/></svg></button>
+    <button class="ib" id="saveBtn" title="הפרויקטים שלי" aria-label="הפרויקטים שלי"><svg class="i" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></button>
   </header>
 
   <main id="stage">
@@ -171,8 +200,23 @@ textarea{min-height:70px;resize:vertical;font-size:12px;direction:ltr;text-align
   </section>
 </div>
 
+<section class="home" id="home" dir="rtl">
+  <header class="home-top">
+    <div class="brand" style="cursor:default">
+      <svg class="brand-mark" viewBox="0 0 26 26" aria-hidden="true"><rect x="2" y="9" width="22" height="13" rx="2.5" fill="#F2B705"/><rect x="5" y="5" width="6" height="5" rx="1.5" fill="#F2B705"/><rect x="15" y="5" width="6" height="5" rx="1.5" fill="#F2B705"/><rect x="2" y="17" width="22" height="5" rx="2.5" fill="#000" opacity=".12"/></svg>
+      <span>סטודיו לבנים</span>
+    </div>
+    <div class="acct" id="acct"></div>
+  </header>
+  <div class="home-body">
+    <h2>הפרויקטים שלי</h2>
+    <div class="proj-grid" id="projGrid"><div class="home-empty">טוען…</div></div>
+  </div>
+  <div class="home-foot"><button class="btn big" id="newProj"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>פרויקט חדש</button></div>
+</section>
 <div class="scrim" id="scrim" hidden><div class="panel" id="panel" role="dialog" aria-modal="true"></div></div>
 
+<script src="config.js"></script>
 <script src="lib/three.min.js"></script>
 <script src="lib/OrbitControls.js"></script>
 <script src="lib/BufferGeometryUtils.js"></script>
@@ -338,7 +382,7 @@ function sync(){const keep=new Set();
 const snap=()=>JSON.stringify(S.bricks);
 function restore(json){S.bricks=JSON.parse(json);S.nextId=S.bricks.reduce((a,b)=>Math.max(a,b.id),0)+1;refresh()}
 function commit(prev){S.undo.push(prev);if(S.undo.length>300)S.undo.shift();S.redo=[];refresh()}
-function refresh(){rebuildHM();sync();$('#count').textContent=S.bricks.length+' חלקים';$('#undo').disabled=!S.undo.length;$('#redo').disabled=!S.redo.length;
+function refresh(){rebuildHM();sync();scheduleSave();$('#count').textContent=S.bricks.length+' חלקים';$('#undo').disabled=!S.undo.length;$('#redo').disabled=!S.redo.length;
   try{localStorage.setItem('bs:current',snap())}catch(e){} if(sel){if(sel.kind!=='grid'&&sel.bid&&!brickById(sel.bid))hideSel();else showSel(sel)}}
 const brickById=id=>S.bricks.find(q=>q.id===id);
 
@@ -609,20 +653,13 @@ function encode(){return btoa(unescape(encodeURIComponent(JSON.stringify(S.brick
 function decode(t){const a=JSON.parse(decodeURIComponent(escape(atob(t.trim()))));return a.filter(r=>(PMAP[r[0]]||/^ld:/.test(r[0]))&&COLORS[r[1]]).map((r,i)=>r[2]==='f'?{id:i+1,p:r[0],c:r[1],f:1,px:r[3],py:r[4],pz:r[5],q:r.slice(6,10)}:{id:i+1,p:r[0],c:r[1],x:r[2],y:r[3],z:r[4],r:r[5]||0})}
 function loadBricks(arr,msg){const prev=snap();S.bricks=arr;S.nextId=arr.reduce((a,b)=>Math.max(a,b.id),0)+1;commit(prev);hideSel();toast(msg)}
 
-function openSave(){const ms=readModels(),names=Object.keys(ms).sort((a,b)=>ms[b].t-ms[a].t);
-  panel.innerHTML=`<h2>הדגמים שלי ${closeBtn}</h2>
-  <div class="field"><input id="mName" placeholder="שם הדגם, למשל: בית עם גג כחול" maxlength="40"><button class="btn" id="mSave">שמור</button></div>
-  ${names.length?`<div class="list">${names.map(n=>`<div class="li"><div class="grow"><div>${esc(n)}</div><small>${ms[n].b.length} חלקים · ${new Date(ms[n].t).toLocaleDateString('he-IL')}</small></div><button class="btn ghost" data-open="${esc(n)}">פתח</button><button class="btn ghost" data-del="${esc(n)}">מחק</button></div>`).join('')}</div>`:'<p class="note">עדיין לא שמרת דגמים. תן שם לדגם ולחץ "שמור".</p>'}
-  <h3>שיתוף עם חברים</h3>
+function openSave(){
+  panel.innerHTML=`<h2>שיתוף ${closeBtn}</h2>
   <p class="note">"העתק קוד" שומר את כל הדגם כטקסט. שלח אותו למישהו, והוא ידביק אותו כאן כדי לפתוח את הדגם אצלו.</p>
   <div class="field"><button class="btn ghost" id="mCopy">העתק קוד דגם</button><button class="btn ghost" id="mNew">משטח ריק</button></div>
   <textarea id="mCode" placeholder="הדבק כאן קוד דגם"></textarea>
-  <div class="field"><button class="btn" id="mLoad">טען קוד</button></div>
-  <p class="note">הדגמים נשמרים בדפדפן במכשיר הזה בלבד.</p>`;
+  <div class="field"><button class="btn" id="mLoad">טען קוד לפרויקט הזה</button></div>`;
   scrim.hidden=false;
-  $('#mSave').onclick=()=>{const n=$('#mName').value.trim();if(!n){$('#mName').focus();toast('כתוב שם לדגם');return}const m=readModels();m[n]={t:Date.now(),b:S.bricks};if(writeModels(m)){toast('נשמר: '+n);openSave()}else toast('השמירה נכשלה, הדפדפן חוסם אחסון')};
-  panel.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>{const m=readModels()[b.dataset.open];if(m){loadBricks(m.b,'נפתח: '+b.dataset.open);closePanel()}});
-  panel.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{if(b.dataset.sure){const m=readModels();delete m[b.dataset.del];writeModels(m);openSave()}else{b.dataset.sure=1;b.textContent='בטוח?';b.className='btn warn'}});
   $('#mCopy').onclick=()=>{const code=encode(),ta=$('#mCode');ta.value=code;
     const fallback=()=>{ta.focus();ta.select();toast('הקוד מסומן, העתק אותו ידנית')};
     try{navigator.clipboard.writeText(code).then(()=>toast('הקוד הועתק'),fallback)}catch(e){fallback()}};
@@ -636,7 +673,7 @@ function openBom(){const g={};S.bricks.forEach(b=>{const k=b.p+'|'+b.c;g[k]=(g[k
   scrim.hidden=false;const bc=$('#bCopy');if(bc)bc.onclick=()=>{const txt=rows.map(([k,n])=>{const [p,c]=k.split('|');return `${n} × ${PMAP[p].name} (${COLORS[c].n})`}).join('\n');const ta=$('#bTxt');ta.value=txt;
     const fb=()=>{ta.hidden=false;ta.focus();ta.select();toast('הרשימה מסומנת, העתק אותה ידנית')};try{navigator.clipboard.writeText(txt).then(()=>toast('הרשימה הועתקה'),fb)}catch(e){fb()}}}
 panel.addEventListener('click',e=>{if(e.target.closest('[data-close]'))closePanel()});
-$('#saveBtn').onclick=openSave;$('#bomBtn').onclick=openBom;
+$('#shareBtn').onclick=openSave;$('#saveBtn').onclick=$('#homeBtn').onclick=()=>goHome();$('#bomBtn').onclick=openBom;
 
 /* ---------- sample model ---------- */
 function sample(){S.bricks=[];HM=new Map();const add=(p,c,x,z,r=0)=>{const f=fp(p,r);let y=0;for(let i=0;i<f.w;i++)for(let j=0;j<f.d;j++)y=Math.max(y,HM.get((x+i)+','+(z+j))||0);
@@ -649,7 +686,7 @@ function sample(){S.bricks=[];HM=new Map();const add=(p,c,x,z,r=0)=>{const f=fp(
   add('cone1',5,7,-4);add('r2b',12,4,-5);add('t2x4',2,-8,-7)}
 
 /* ---------- start ---------- */
-let saved=null;try{saved=localStorage.getItem('bs:current')}catch(e){}
+
 async function ldSample(){const ids=['ld:3958','ld:3001','ld:3010','ld:3005','ld:3039','ld:3062b','ld:3700','ld:3004'];
   const got=await Promise.allSettled(ids.map(ldEnsure));if(got.every(g=>g.status==='rejected')){sample();refresh();return}
   if(S.bricks.length)return; // the user already started building
@@ -659,8 +696,84 @@ async function ldSample(){const ids=['ld:3958','ld:3001','ld:3010','ld:3005','ld
   for(let L=0;L<3;L++){const c=L===1?6:0;add('ld:3001',c,-2,-2);add('ld:3001',c,-2,1);add('ld:3004',c,-2,-1,1);add('ld:3004',c,1,-1,1)}
   add('ld:3039',13,-2,-2);add('ld:3039',13,0,-2);add('ld:3039',13,-2,0,2);add('ld:3039',13,0,0,2);
   add('ld:3062b',10,5,3);add('ld:3062b',10,5,3);add('ld:3700',8,-7,5);add('ld:3005',5,6,-4);add('ld:3010',1,4,-6);refresh()}
+/* ---------- projects + Google account ----------
+   Signed in: projects live in the user's Firebase account (users/{uid}/projects).
+   Without Firebase settings (or in the preview) they are kept on this device. */
+const FB=window.FIREBASE_CONFIG||null;let fbAuth=null,fbDb=null,USER=null,fbReady=false;
+const local={read(){try{return JSON.parse(localStorage.getItem('bs:projects')||'{}')}catch(e){return {}}},write(o){try{localStorage.setItem('bs:projects',JSON.stringify(o));return true}catch(e){return false}}};
+const cloud=()=>fbDb.collection('users').doc(USER.uid).collection('projects');
+const newId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+async function listProjects(){if(USER){const q=await cloud().orderBy('updated','desc').get();return q.docs.map(d=>({id:d.id,...d.data()}))}
+  return Object.values(local.read()).sort((a,b)=>b.updated-a.updated)}
+async function putProject(id,rec){if(USER)await cloud().doc(id).set(rec);else{const o=local.read();o[id]={id,...rec};if(!local.write(o))throw new Error('storage full')}}
+async function patchProject(id,fields){if(USER)await cloud().doc(id).update(fields);else{const o=local.read();if(o[id]){Object.assign(o[id],fields);local.write(o)}}}
+async function removeProject(id){if(USER)await cloud().doc(id).delete();else{const o=local.read();delete o[id];local.write(o)}}
+function snapThumb(){try{const gv=ghost.visible,hv=hl.visible;ghost.visible=false;hl.visible=false;renderer.render(scene,camera);
+  const src=renderer.domElement,c=document.createElement('canvas');c.width=240;c.height=180;const sw=src.width,sh=src.height;let w=sw,h=sw*.75;if(h>sh){h=sh;w=sh/.75}
+  c.getContext('2d').drawImage(src,(sw-w)/2,(sh-h)/2,w,h,0,0,240,180);ghost.visible=gv;hl.visible=hv;return c.toDataURL('image/jpeg',.72)}catch(e){return ''}}
+let saveT=null;
+function scheduleSave(){if(!S.proj||snap()===S.proj.saved)return;clearTimeout(saveT);saveT=setTimeout(saveNow,1200)}
+async function saveNow(){clearTimeout(saveT);if(!S.proj)return;const data=snap(),p=S.proj;
+  try{await putProject(p.id,{name:p.name,updated:Date.now(),count:S.bricks.length,thumb:snapThumb(),data});p.saved=data}
+  catch(e){toast(USER?'השמירה נכשלה. בדוק את החיבור לאינטרנט':'השמירה נכשלה, הזיכרון במכשיר מלא')}}
+function openProject(p){S.proj={id:p.id,name:p.name,saved:p.data||'[]'};S.bricks=JSON.parse(p.data||'[]');S.nextId=S.bricks.reduce((a,b)=>Math.max(a,b.id),0)+1;
+  S.undo=[];S.redo=[];hideSel();refresh();$('#projName').textContent=p.name;$('#home').hidden=true;setTimeout(resize,0)}
+async function newProject(){const list=await listProjects().catch(()=>[]);const p={id:newId(),name:'פרויקט '+(list.length+1),data:'[]'};
+  openProject(p);await saveNow();toast('פרויקט חדש נוצר. אפשר לשנות לו שם במסך הפרויקטים')}
+async function goHome(){if(S.proj&&snap()!==S.proj.saved)await saveNow();$('#home').hidden=false;renderHome()}
+async function signIn(){if(!fbAuth){toast('ההתחברות עם Google עוד לא הוגדרה');return}
+  if(/; wv\)/.test(navigator.userAgent)){toast('באפליקציה ההתחברות עוד לא זמינה. התחבר באתר בדפדפן');return}
+  const pr=new firebase.auth.GoogleAuthProvider();
+  try{await fbAuth.signInWithPopup(pr)}catch(e){if(/popup-blocked|operation-not-supported/.test(e.code||''))await fbAuth.signInWithRedirect(pr);
+    else if(!/popup-closed|cancelled-popup/.test(e.code||''))toast('ההתחברות נכשלה ('+(e.code||'שגיאה')+')')}}
+async function uploadLocal(){const key='bs:up:'+USER.uid;try{if(localStorage.getItem(key))return}catch(e){return}
+  const o=local.read(),ids=Object.keys(o);for(const id of ids){const {id:_,...rec}=o[id];await cloud().doc(id).set(rec,{merge:true})}
+  try{localStorage.setItem(key,'1')}catch(e){}if(ids.length)toast(ids.length+' פרויקטים מהמכשיר הועלו לחשבון שלך')}
+function card(p){const c=document.createElement('div');c.className='proj';
+  c.innerHTML=`<button class="open" aria-label="פתח ${esc(p.name)}"><img alt="" src="${p.thumb||BLANK}"></button>
+    <div class="meta"><b>${esc(p.name)}</b><small>${p.count||0} חלקים · ${new Date(p.updated||Date.now()).toLocaleDateString('he-IL')}</small>
+    <div class="acts"><button class="mini" data-a="ren">שנה שם</button><button class="mini" data-a="del">מחק</button></div></div>`;
+  c.querySelector('.open').onclick=()=>openProject(p);
+  c.querySelector('[data-a="ren"]').onclick=()=>{const b=c.querySelector('b'),inp=document.createElement('input');inp.value=p.name;inp.maxLength=40;b.replaceWith(inp);inp.focus();inp.select();
+    const done=async()=>{const n=inp.value.trim()||p.name;p.name=n;if(S.proj&&S.proj.id===p.id){S.proj.name=n;$('#projName').textContent=n}
+      try{await patchProject(p.id,{name:n})}catch(e){toast('לא הצלחתי לשנות את השם')}renderHome()};
+    inp.onkeydown=e=>{if(e.key==='Enter')inp.blur()};inp.onblur=done};
+  const del=c.querySelector('[data-a="del"]');del.onclick=async()=>{if(!del.dataset.sure){del.dataset.sure=1;del.textContent='בטוח? מחק';del.classList.add('warn');return}
+    try{await removeProject(p.id);if(S.proj&&S.proj.id===p.id)S.proj=null;toast('הפרויקט נמחק')}catch(e){toast('לא הצלחתי למחוק')}renderHome()};
+  return c}
+let homeGen=0;
+async function renderHome(){const gen=++homeGen,acct=$('#acct'),grid=$('#projGrid'),nb=$('#newProj');
+  if(FB&&!fbReady){acct.innerHTML='';grid.innerHTML='<div class="home-empty">טוען…</div>';nb.hidden=true;return}
+  if(fbAuth&&!USER){acct.innerHTML='';nb.hidden=true;
+    grid.innerHTML=`<div class="signin home-empty"><p>התחבר עם חשבון Google כדי לראות את הפרויקטים שלך, בכל מכשיר.</p>
+      <button class="btn big gbtn" id="gIn"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="#4285F4" d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.7 3-4.3 3-7.3z"/><path fill="#34A853" d="M12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.5c-.9.6-2 1-3.4 1-2.6 0-4.8-1.8-5.6-4.1H3.1v2.6A10 10 0 0 0 12 22z"/><path fill="#FBBC05" d="M6.4 14c-.2-.6-.3-1.3-.3-2s.1-1.4.3-2V7.4H3.1A10 10 0 0 0 2 12c0 1.6.4 3.1 1.1 4.6L6.4 14z"/><path fill="#EA4335" d="M12 5.9c1.5 0 2.8.5 3.8 1.5l2.9-2.9A10 10 0 0 0 3.1 7.4L6.4 10c.8-2.4 3-4.1 5.6-4.1z"/></svg>התחברות עם Google</button></div>`;
+    $('#gIn').onclick=signIn;return}
+  nb.hidden=false;
+  acct.innerHTML=USER?`${USER.photoURL?`<img src="${esc(USER.photoURL)}" alt="" referrerpolicy="no-referrer">`:''}<span>${esc(USER.displayName||USER.email||'')}</span><button class="mini" id="gOut">התנתק</button>`
+    :'<span class="note">נשמר במכשיר הזה</span>';
+  const go=$('#gOut');if(go)go.onclick=async()=>{await fbAuth.signOut();S.proj=null};
+  grid.innerHTML='<div class="home-empty">טוען פרויקטים…</div>';let list;
+  try{list=await listProjects()}catch(e){if(gen===homeGen)grid.innerHTML='<div class="home-empty">לא הצלחתי לטעון את הפרויקטים. בדוק את החיבור לאינטרנט ונסה שוב.</div>';return}
+  if(gen!==homeGen)return;grid.innerHTML='';
+  if(!list.length){grid.innerHTML='<div class="home-empty">עוד אין לך פרויקטים. לחץ על "פרויקט חדש" למטה כדי להתחיל.</div>';return}
+  list.forEach(p=>grid.appendChild(card(p)))}
+$('#newProj').onclick=newProject;
+function loadScript(src){return new Promise((res,rej)=>{const el=document.createElement('script');el.src=src;el.onload=res;el.onerror=rej;document.head.appendChild(el)})}
+async function initFB(){if(!FB){fbReady=true;return}
+  try{for(const x of ['firebase-app-compat.js','firebase-auth-compat.js','firebase-firestore-compat.js'])await loadScript('lib/'+x);
+    firebase.initializeApp(FB);fbAuth=firebase.auth();fbDb=firebase.firestore();fbAuth.getRedirectResult().catch(()=>{});
+    fbAuth.onAuthStateChanged(async u=>{USER=u;fbReady=true;if(u){try{await uploadLocal()}catch(e){}}if(!$('#home').hidden)renderHome();else if(!u){$('#home').hidden=false;renderHome()}})}
+  catch(e){fbAuth=null;fbReady=true;renderHome()}}
+function migrate(){try{if(localStorage.getItem('bs:migrated'))return false;localStorage.setItem('bs:migrated','1')}catch(e){return false}
+  const o=local.read();let n=0;const cur=(()=>{try{return localStorage.getItem('bs:current')}catch(e){return null}})();
+  if(cur&&cur!=='[]'){o[newId()]={name:'הדגם שלי',updated:Date.now(),count:JSON.parse(cur).length,thumb:'',data:cur};n++}
+  try{const ms=JSON.parse(localStorage.getItem('bs:models')||'{}');for(const k in ms){o[newId()]={name:k,updated:ms[k].t,count:ms[k].b.length,thumb:'',data:JSON.stringify(ms[k].b)};n++}}catch(e){}
+  local.write(o);return n>0||Object.keys(o).length>0}
 ldReg('ld:3001');ldEnsure('ld:3001').catch(()=>{});
-if(saved&&saved!=='[]'){try{restore(saved)}catch(e){ldSample()}}else{refresh();ldSample()}
+const hadAny=migrate();
+if(!hadAny&&!Object.keys(local.read()).length&&!FB){ // first visit: a sample project to look at
+  openProject({id:newId(),name:'בית לדוגמה',data:'[]'});$('#home').hidden=false;ldSample().then(()=>saveNow()).then(()=>renderHome())}
+renderHome();initFB();
 $('#q').placeholder='חיפוש חלק: שם או מספר, למשל brick 2 x 4, 3001, גלגל';renderParts();updateCur();
 })();
 </script>

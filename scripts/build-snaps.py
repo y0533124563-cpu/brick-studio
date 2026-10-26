@@ -146,9 +146,19 @@ def resolve(name):
             for M in snap_matrices(p):
                 for s in child:
                     snaps.append(dict(s, M=mul(M, s["M"])))
+    # 3) scan: stud and axle-hole primitives that have no shadow info still connect
+    if not find(SHF, key):
+        base = key.split("/")[-1]
+        if STUD_RE.match(base) and not base.startswith(("stud3", "stud4")):
+            snaps.append(dict(id="scan", g="M", caps="one", slide=False, center=False, secs=[("R", 6.0, 4.0)], M=I)); SCANNED.add(key)
+        elif AXHOLE_RE.search(base):
+            snaps.append(dict(id="scan", g="F", caps="none", slide=True, center=False, secs=[("A", 6.0, 1.0)], M=mk((0, 1, 0), (1, 0, 0, 0, 1, 0, 0, 0, 1)))); SCANNED.add(key)
     busy.discard(key)
     memo[key] = snaps
     return snaps
+STUD_RE = re.compile(r"^stud[0-9]*[a-z]?(-logo[0-9]*)?\.dat$")
+AXHOLE_RE = re.compile(r"^(axlehol|axl[0-9]hol)[0-9a-z]*\.dat$")
+SCANNED = set()
 
 def r(v, n):
     return round(v, n) + 0.0
@@ -205,6 +215,7 @@ def bbox(name, depth=0):
     bbmemo[key] = (lo, hi) if lo[0] < 1e8 else None
     return bbmemo[key]
 
+SKIPGRID = ("sticker", "minifig", "animal", "string", "hose", "flex", "chain", "znap", "duplo")
 BRICKLIKE = ("brick", "plate", "tile", "slope", "wedge", "panel", "window", "door", "arch", "cylinder", "cone",
              "dish", "bracket", "baseplate", "hinge", "support", "fence", "bar", "box", "container", "technic brick")
 def has_bottom(recs, ymax):
@@ -244,7 +255,7 @@ for num in allrecs:
             pb, bb = bbox(num + ".dat"), bbox(m.group(1) + ".dat")
             if pb and bb and all(abs(pb[k][i] - bb[k][i]) < 2 for k in (0, 1) for i in (0, 1, 2)):
                 allrecs[num] = recs = list(allrecs[m.group(1)]); copied += 1
-    if cats[num].startswith(BRICKLIKE):  # bricks need their bottom sockets
+    if cats[num].startswith(BRICKLIKE) or (not recs and not cats[num].startswith(SKIPGRID)):  # bricks need their bottom sockets
         b = bbox(num + ".dat")
         if b and not has_bottom(recs, b[1][1]):
             g = bottom_grid(num)
@@ -257,5 +268,9 @@ for num, recs in allrecs.items():
     with open(os.path.join(OUT, num.lower() + ".json"), "w") as f:
         json.dump(recs[:6000], f, separators=(",", ":"))
     done += 1
+from collections import Counter
+left = Counter(cats[n].split(" ")[0] for n, v in allrecs.items() if not v)
+print("::notice title=Still without connections::" + ", ".join(f"{c} {k}" for c, k in left.most_common(12)))
+print(f"::notice title=Scan::{len(SCANNED)} extra stud / axle-hole shapes recognised")
 print(f"::notice title=Connections::{done} of {len(catalogue)} parts have connection data "
       f"({copied} copied from their plain version, {grid} got bottom sockets from the geometry scan)")
