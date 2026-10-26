@@ -243,7 +243,7 @@ function mkArch(n,hp,ry){const H=hp*PH,rx=n/2-1,s=new THREE.Shape();
   const l=[C(g)];studs(n,1,H).forEach(x=>l.push(C(x)));return {list:l,w:n,d:1,h:hp}}
 
 /* ---------- part library ---------- */
-const CATS=[['ld','כל החלקים'],['brick','לבנים'],['plate','פלטות'],['tile','אריחים'],['slope','משופעים'],['round','עגולים'],['technic','טכני'],['special','מיוחדים']];
+const CATS=[['brick','לבנים'],['plate','פלטות'],['tile','אריחים'],['slope','משופעים'],['round','עגולים'],['technic','טכני'],['special','מיוחדים']];
 const PARTS=[];const P=(id,cat,name,make)=>PARTS.push({id,cat,name,make});
 [[1,1],[1,2],[1,3],[1,4],[1,6],[1,8],[1,10],[1,12],[1,16],[2,2],[2,3],[2,4],[2,6],[2,8],[2,10],[2,12],[2,16],[4,4],[4,6],[4,10],[4,12]].forEach(([a,b])=>P(`b${a}x${b}`,'brick',`לבנה ${a}×${b}`,()=>mkBrick(b,a,3)));
 [[1,1,2],[1,2,2],[1,1,3],[1,2,3],[1,4,3],[1,1,5],[1,2,5],[1,6,5],[2,2,3],[2,4,3]].forEach(([a,b,c])=>P(`bt${a}x${b}x${c}`,'brick',`לבנה גבוהה ${a}×${b}×${c}`,()=>mkBrick(b,a,c*3)));
@@ -322,7 +322,7 @@ new ResizeObserver(resize).observe(stage);resize();
 (function loop(){controls.update();renderer.render(scene,camera);requestAnimationFrame(loop)})();
 
 /* ---------- state ---------- */
-const S={bricks:[],mode:'build',part:'b2x4',color:0,rot:0,undo:[],redo:[],nextId:1,cat:'ld',q:''};
+const S={bricks:[],mode:'build',part:'ld:3001',color:0,rot:0,undo:[],redo:[],nextId:1,cat:'all',q:''};
 const meshes=new Map();let HM=new Map();
 const fp=(id,r)=>{const g=info(id);return (r%2)?{w:g.d,d:g.w}:{w:g.w,d:g.d}};
 function rebuildHM(){HM=new Map();for(const b of S.bricks){if(!PMAP[b.p]&&/^ld:/.test(b.p))ldReg(b.p);if(b.f||!ready(b.p))continue;const f=fp(b.p,b.r),t=b.y+info(b.p).h;for(let i=0;i<f.w;i++)for(let j=0;j<f.d;j++){const k=(b.x+i)+','+(b.z+j);if((HM.get(k)||0)<t)HM.set(k,t)}}}
@@ -415,7 +415,7 @@ cv.addEventListener('pointerdown',e=>{pointers++;usingTouch=e.pointerType!=='mou
 cv.addEventListener('pointerup',e=>{pointers=Math.max(0,pointers-1);if(!down)return;const moved=Math.hypot(e.clientX-down.x,e.clientY-down.y),dt=performance.now()-down.t;down=null;if(moved<9&&dt<450)tap(e)});
 cv.addEventListener('pointercancel',()=>{pointers=0;down=null});
 function tap(e){const h=pick(e);$('#hint').hidden=true;
-  if(S.mode==='build'){if(h)tapBuild(h);return}
+  if(S.mode==='build'){if(!ready(S.part)){toast('החלק עוד נטען, נסה שוב בעוד רגע');return}if(h)tapBuild(h);return}
   if(!h||!h.bid)return;const prev=snap();
   if(S.mode==='erase'){const b=S.bricks.find(q=>q.id===h.bid);S.bricks=S.bricks.filter(q=>q.id!==h.bid);commit(prev);toast('נמחק: '+PMAP[b.p].name)}
   else if(S.mode==='paint'){const b=S.bricks.find(q=>q.id===h.bid);if(b.c===S.color)return;b.c=S.color;commit(prev);toast('נצבע ב'+COLORS[S.color].n)}}
@@ -439,9 +439,19 @@ document.addEventListener('keydown',e=>{if(e.target.matches('input,textarea'))re
   if((e.ctrlKey||e.metaKey)&&k==='z'){e.preventDefault();(e.shiftKey?$('#redo'):$('#undo')).click()}else if(k==='r'||k==='ק'){$('#rotBtn').click()}else if(k==='escape')hideSel();else if(k==='enter'&&sel){e.preventDefault();place()}});
 $('#handle').onclick=()=>{const s=$('#sheet');s.classList.toggle('closed');$('#handle').setAttribute('aria-expanded',!s.classList.contains('closed'))};
 
-const tabs=$('#tabs');CATS.forEach(([id,n])=>{const b=document.createElement('button');b.className='tab';b.textContent=n;b.dataset.cat=id;b.onclick=()=>{S.cat=id;S.q='';$('#q').value='';renderParts()};tabs.appendChild(b)});
+const tabs=$('#tabs');
+/* the full LDraw library is the only catalogue; the old built-in parts are used only if it cannot load (e.g. offline preview) */
+let LDFAIL=false;
+const LCATS=[['all','הכל'],['Brick','לבנים'],['Plate','פלטות'],['Tile','אריחים'],['Slope','משופעים'],['Technic','טכני'],['Minifig','דמויות'],['wheels','גלגלים'],
+  ['windoor','חלונות ודלתות'],['Arch','קשתות'],['round','עגולים'],['Plant','צמחים'],['other','אחר']];
+const CATW={Brick:['brick'],Plate:['plate','baseplate'],Tile:['tile'],Slope:['slope','wedge'],Technic:['technic'],Minifig:['minifig'],wheels:['wheel','tyre','tire'],
+  windoor:['window','door','glass','windscreen'],Arch:['arch'],round:['cylinder','cone','dish','dome','round'],Plant:['plant']};
+function inCat(e,c){if(c==='all')return true;const k=e.c.toLowerCase();if(c==='other')return !Object.values(CATW).some(ws=>ws.some(w=>k.startsWith(w)));return CATW[c].some(w=>k.startsWith(w))}
+function buildTabs(){tabs.innerHTML='';(LDFAIL?CATS:LCATS).forEach(([id,n])=>{const b=document.createElement('button');b.className='tab';b.textContent=n;b.dataset.cat=id;
+  b.onclick=()=>{S.cat=id;S.q='';$('#q').value='';renderParts()};tabs.appendChild(b)})}
+buildTabs();
 const THUMBS={};
-function renderParts(){tabs.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-pressed',(S.cat==='ld'||!S.q)&&t.dataset.cat===S.cat));if(S.cat==='ld'){renderLD();return}
+function renderParts(){tabs.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-pressed',(!LDFAIL||!S.q)&&t.dataset.cat===S.cat));if(!LDFAIL){renderLD();return}
   const q=S.q.trim().replace(/x/gi,'×'),list=q?PARTS.filter(p=>p.name.includes(q)):PARTS.filter(p=>p.cat===S.cat);const el=$('#parts');el.innerHTML='';
   if(!list.length){el.innerHTML='<div class="empty">לא נמצא חלק בשם הזה. נסה מילה אחרת, למשל "לבנה" או "ציר".</div>';return}
   list.forEach(p=>{const b=document.createElement('button');b.className='part';b.setAttribute('aria-pressed',p.id===S.part);b.innerHTML=`<img alt="" data-pid="${p.id}" src="${THUMBS[p.id]||'data:image/gif;base64,R0lGODlhAQABAAAAACw='}"><span>${p.name}</span>`;
@@ -483,9 +493,9 @@ function ldIndex(){if(!LDXp)LDXp=fetch(LD_BASE+'index.json').then(r=>{if(!r.ok)t
 const QUICK=['brick','plate','tile','slope','technic beam','axle','pin','gear','wheel','tyre','window','door','minifig','arch','panel','plant'];
 function renderLD(){const el=$('#parts'),gen=++ldGen;el.innerHTML='<div class="empty">טוען את רשימת כל החלקים…</div>';
   ldIndex().then(X=>{if(gen!==ldGen)return;const q=ldKey(S.q);el.innerHTML='';
-    if(!q){el.innerHTML=`<div class="empty"><b>${X.length.toLocaleString('he-IL')} חלקים</b> בספרייה המלאה. כתוב בחיפוש שם או מספר חלק, או בחר. חיבורים: LDCad Shadow Library (CC BY-SA 4.0).</div>`;
+    if(!q&&S.cat==='all'){el.innerHTML=`<div class="empty"><b>${X.length.toLocaleString('he-IL')} חלקים</b> בספרייה המלאה. כתוב בחיפוש שם או מספר חלק, או בחר. חיבורים: LDCad Shadow Library (CC BY-SA 4.0).</div>`;
       QUICK.forEach(w=>{const b=document.createElement('button');b.className='tab';b.textContent=w;b.onclick=()=>{$('#q').value=w;S.q=w;renderParts()};el.appendChild(b)});return}
-    const toks=q.split(' ');let res=X.filter(e=>toks.every(t=>e.k.includes(t)));
+    const toks=q.split(' ');let res=X.filter(e=>inCat(e,S.cat)&&toks.every(t=>e.k.includes(t)));
     res.sort((a,b)=>(b.n===q)-(a.n===q)||a.d.length-b.d.length);const total=res.length;res=res.slice(0,80);
     if(!res.length){el.innerHTML='<div class="empty">לא נמצא. נסה באנגלית, למשל "brick 2 x 4", או מספר חלק כמו 3001.</div>';return}
     res.forEach(e=>{const id='ld:'+e.n;if(!PMAP[id]||PMAP[id].ph)PMAP[id]={id,cat:'ld',name:ldLabel(e)};
@@ -493,7 +503,8 @@ function renderLD(){const el=$('#parts'),gen=++ldGen;el.innerHTML='<div class="e
       b.innerHTML=`<img alt="" data-pid="${id}" src="${THUMBS[id]||BLANK}"><span>${esc(e.d)}</span><small>${esc(e.n)}</small>`;b.onclick=()=>selectPart(id);el.appendChild(b)});
     if(total>80){const m=document.createElement('div');m.className='empty';m.textContent=`ועוד ${total-80} חלקים. כתוב חיפוש מדויק יותר.`;el.appendChild(m)}
     (async()=>{for(const e of res.slice(0,30)){if(gen!==ldGen)return;const id='ld:'+e.n;if(THUMBS[id])continue;try{await ldEnsure(id);setThumb(id)}catch(_){}}})()
-  },()=>{if(gen!==ldGen)return;el.innerHTML='<div class="empty">הספרייה המלאה עובדת באתר ובאפליקציה: y0533124563-cpu.github.io/brick-studio. כאן אפשר להשתמש בחלקים שבשאר הלשוניות.</div>'})}
+  },()=>{if(gen!==ldGen||LDFAIL)return;LDFAIL=true;S.cat='brick';buildTabs();if(!ready(S.part))S.part='b2x4';updateCur();renderParts();setTimeout(makeThumbs,60);
+    toast('הספרייה המלאה לא זמינה כאן. פתח את האתר: y0533124563-cpu.github.io/brick-studio')})}
 
 const ldFiles={},ldParsed={},ldBuilt={},_v=new THREE.Vector3();
 const ldNorm=n=>n.toLowerCase().replace(/\\/g,'/').trim();
@@ -630,8 +641,18 @@ function sample(){S.bricks=[];HM=new Map();const add=(p,c,x,z,r=0)=>{const f=fp(
 
 /* ---------- start ---------- */
 let saved=null;try{saved=localStorage.getItem('bs:current')}catch(e){}
-if(saved&&saved!=='[]'){try{restore(saved)}catch(e){sample();refresh()}}else{sample();refresh()}
-$('#q').placeholder='חיפוש חלק: שם או מספר, למשל brick 2 x 4, 3001, גלגל';renderParts();updateCur();setTimeout(makeThumbs,60);
+async function ldSample(){const ids=['ld:3958','ld:3001','ld:3010','ld:3005','ld:3039','ld:3062b','ld:3700','ld:3004'];
+  const got=await Promise.allSettled(ids.map(ldEnsure));if(got.every(g=>g.status==='rejected')){sample();refresh();return}
+  if(S.bricks.length)return; // the user already started building
+  S.bricks=[];HM=new Map();const add=(p,c,x,z,r=0)=>{if(!ready(p))return;const f=fp(p,r);let y=0;for(let i=0;i<f.w;i++)for(let j=0;j<f.d;j++)y=Math.max(y,HM.get((x+i)+','+(z+j))||0);
+    S.bricks.push({id:S.nextId++,p,c,x,y,z,r});for(let i=0;i<f.w;i++)for(let j=0;j<f.d;j++)HM.set((x+i)+','+(z+j),y+info(p).h)};
+  add('ld:3958',4,-3,-3);
+  for(let L=0;L<3;L++){const c=L===1?6:0;add('ld:3001',c,-2,-2);add('ld:3001',c,-2,1);add('ld:3004',c,-2,-1,1);add('ld:3004',c,1,-1,1)}
+  add('ld:3039',13,-2,-2);add('ld:3039',13,0,-2);add('ld:3039',13,-2,0,2);add('ld:3039',13,0,0,2);
+  add('ld:3062b',10,5,3);add('ld:3062b',10,5,3);add('ld:3700',8,-7,5);add('ld:3005',5,6,-4);add('ld:3010',1,4,-6);refresh()}
+ldReg('ld:3001');ldEnsure('ld:3001').catch(()=>{});
+if(saved&&saved!=='[]'){try{restore(saved)}catch(e){ldSample()}}else{refresh();ldSample()}
+$('#q').placeholder='חיפוש חלק: שם או מספר, למשל brick 2 x 4, 3001, גלגל';renderParts();updateCur();
 })();
 </script>
 

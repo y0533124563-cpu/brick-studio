@@ -173,14 +173,89 @@ def record(s):
     return [s["g"], s["caps"], 1 if s["slide"] else 0, secs,
             r(S[0], 2), r(S[1], 2), r(S[2], 2), r(D[0], 4), r(D[1], 4), r(D[2], 4), r(U[0], 4), r(U[1], 4), r(U[2], 4), r(L*ys, 2)]
 
+# ---------- bounding boxes (LDraw units), for the geometry scan ----------
+bbmemo = {}
+def bbox(name, depth=0):
+    key = name.lower().replace("\\", "/").strip()
+    if key in bbmemo:
+        return bbmemo[key]
+    bbmemo[key] = None
+    lo, hi = [1e9]*3, [-1e9]*3
+    def take(p):
+        for i in range(3):
+            lo[i] = min(lo[i], p[i]); hi[i] = max(hi[i], p[i])
+    for line in read(find(LDF, key)):
+        t = line.split()
+        try:
+            if len(t) >= 15 and t[0] == "1" and depth < 30:
+                v = [float(x) for x in t[2:14]]
+                M = (v[3], v[4], v[5], v[0], v[6], v[7], v[8], v[1], v[9], v[10], v[11], v[2])
+                b = bbox(" ".join(t[14:]), depth+1)
+                if b:
+                    for cx in (b[0][0], b[1][0]):
+                        for cy in (b[0][1], b[1][1]):
+                            for cz in (b[0][2], b[1][2]):
+                                take(apply(M, (cx, cy, cz)))
+            elif t and t[0] in ("3", "4"):
+                c = [float(x) for x in t[2:]]
+                for k in range(0, len(c) - 2, 3):
+                    take(c[k:k+3])
+        except ValueError:
+            pass
+    bbmemo[key] = (lo, hi) if lo[0] < 1e8 else None
+    return bbmemo[key]
+
+BRICKLIKE = ("brick", "plate", "tile", "slope", "wedge", "panel", "window", "door", "arch", "cylinder", "cone",
+             "dish", "bracket", "baseplate", "hinge", "support", "fence", "bar", "box", "container", "technic brick")
+def has_bottom(recs, ymax):
+    return any(r[0] == "F" and r[8] < -0.9 and abs(r[5] - ymax) < 2.5 for r in recs)
+def bottom_grid(num):
+    b = bbox(num + ".dat")
+    if not b:
+        return []
+    (x0, y0, z0), (x1, y1, z1) = b
+    w, d = x1 - x0, z1 - z0
+    nx, nz = round(w / 20), round(d / 20)
+    if not (1 <= nx <= 48 and 1 <= nz <= 48 and abs(nx*20 - w) < 3 and abs(nz*20 - d) < 3):
+        return []
+    L = round(min(24.0, y1 - y0), 2)
+    if L < 3:
+        return []
+    out = []
+    for i in range(nx):
+        for j in range(nz):
+            out.append(["F", "one", 0, ["R", 6.0, L], r(x0 + 10 + 20*i, 2), r(y1, 2), r(z0 + 10 + 20*j, 2),
+                        0.0, -1.0, 0.0, 1.0, 0.0, 0.0, L])
+    return out
+
 with open(os.path.join(LD, "index.json"), encoding="utf-8") as f:
     catalogue = json.load(f)
+allrecs, cats = {}, {}
+for num, _, cat in catalogue:
+    allrecs[num] = [x for x in (record(s) for s in resolve(num + ".dat")) if x]
+    cats[num] = cat.lower()
+copied = grid = 0
+PATTERN = re.compile(r"^(\d+[a-z]?)(?:p|d|pat|pr|c)[0-9a-z]+$")
+for num in allrecs:
+    recs = allrecs[num]
+    if not recs:  # printed / stickered versions connect like their plain part
+        m = PATTERN.match(num)
+        if m and allrecs.get(m.group(1)):
+            pb, bb = bbox(num + ".dat"), bbox(m.group(1) + ".dat")
+            if pb and bb and all(abs(pb[k][i] - bb[k][i]) < 2 for k in (0, 1) for i in (0, 1, 2)):
+                allrecs[num] = recs = list(allrecs[m.group(1)]); copied += 1
+    if cats[num].startswith(BRICKLIKE):  # bricks need their bottom sockets
+        b = bbox(num + ".dat")
+        if b and not has_bottom(recs, b[1][1]):
+            g = bottom_grid(num)
+            if g:
+                allrecs[num] = recs + g; grid += 1
 done = 0
-for num, _, _ in catalogue:
-    recs = [x for x in (record(s) for s in resolve(num + ".dat")) if x]
+for num, recs in allrecs.items():
     if not recs:
         continue
     with open(os.path.join(OUT, num.lower() + ".json"), "w") as f:
         json.dump(recs[:6000], f, separators=(",", ":"))
     done += 1
-print(f"Connection data written for {done} of {len(catalogue)} parts")
+print(f"::notice title=Connections::{done} of {len(catalogue)} parts have connection data "
+      f"({copied} copied from their plain version, {grid} got bottom sockets from the geometry scan)")
