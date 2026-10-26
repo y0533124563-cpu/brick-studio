@@ -1,0 +1,33 @@
+name: Deploy payment server
+
+on:
+  push:
+    branches: [main]
+    paths: [functions/**, firestore.rules, firebase.json, .github/workflows/deploy-firebase.yml]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+      LS: ${{ secrets.LS_WEBHOOK_SECRET }}
+    steps:
+      - name: Check settings
+        run: |
+          if [ -z "$SA" ] || [ -z "$LS" ]; then echo "::notice title=Payment server::Not deployed yet - the GitHub secrets FIREBASE_SERVICE_ACCOUNT and LS_WEBHOOK_SECRET are needed"; fi
+      - uses: actions/checkout@v4
+        if: env.SA != '' && env.LS != ''
+      - uses: actions/setup-node@v4
+        if: env.SA != '' && env.LS != ''
+        with:
+          node-version: '20'
+      - name: Deploy
+        if: env.SA != '' && env.LS != ''
+        run: |
+          printf '%s' "$SA" > "$RUNNER_TEMP/sa.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json"
+          printf 'LS_WEBHOOK_SECRET=%s\n' "$LS" > functions/.env
+          (cd functions && npm install --omit=dev --no-audit --no-fund)
+          npx --yes firebase-tools@13.11.2 deploy --only functions,firestore:rules --project brick-studio-6064a --non-interactive --force
+          echo "::notice title=Payment server::Deployed. Webhook address: https://europe-west1-brick-studio-6064a.cloudfunctions.net/lemonWebhook"

@@ -7,3 +7,5 @@ local.properties
 ldraw-complete.zip
 web/ldraw/
 shadow/
+functions/.env
+functions/node_modules/

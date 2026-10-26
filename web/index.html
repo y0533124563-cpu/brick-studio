@@ -145,6 +145,7 @@ textarea{min-height:70px;resize:vertical;font-size:12px;direction:ltr;text-align
 .ib.play{color:var(--accent-ink);background:var(--accent)}
 .ib.play:hover{background:var(--accent);filter:brightness(1.05)}
 .pro-list{margin:0;padding-inline-start:20px;display:flex;flex-direction:column;gap:6px;line-height:1.45}
+.panel a.btn{text-decoration:none;text-align:center}
 .pro-badge{font-size:12px;font-weight:700;background:var(--accent);color:var(--accent-ink);border-radius:999px;padding:2px 9px;vertical-align:middle}
 @media (prefers-reduced-motion: reduce){*{transition:none!important}}
 @media (min-width:900px){.parts .part{width:88px}.part img{width:70px;height:70px}}
@@ -652,7 +653,13 @@ function engaged(s,x){ // which target connections line up once the part sits th
    Motors turn the axle in their output; gears pass the turn on by their tooth ratio;
    an engine piston on a connecting rod follows the crankshaft. */
 const OWNER='y0533124563@gmail.com',M4=THREE.Matrix4;
-function isPro(){if(USER&&USER.email===OWNER)return true;try{return localStorage.getItem('bs:pro')==='1'}catch(e){return false}}
+/* Pro status comes only from the server record users/{uid}.pro, which users cannot write (see firestore.rules) */
+const CHECKOUT='https://brickstudio.lemonsqueezy.com/checkout/buy/44b61215-c77a-47a0-b77c-dcdb3c95fbd0';
+let PRO=null,proUnsub=null;
+function watchPro(){if(proUnsub){proUnsub();proUnsub=null}PRO=null;if(!USER||!fbDb)return;
+  proUnsub=fbDb.collection('users').doc(USER.uid).onSnapshot(d=>{const was=PRO&&PRO.active;PRO=(d.exists&&d.data().pro)||null;
+    if(PRO&&PRO.active&&!was){toast('המנוי לפרו פעיל. תודה!');if(!scrim.hidden&&panel.querySelector('#buyPro'))openPro()}},()=>{})}
+function isPro(){return !!(USER&&(USER.email===OWNER||(PRO&&PRO.active)))}
 function kindOf(b){const id=b.p,k={};let d='';if(/^ld:/.test(id)){const e=LDXM&&LDXM.get(id.slice(3));d=e?e.d:''}
   if(/^Electric\b.*\bMotor\b/i.test(d)&&!/Rudder|Holder|Pulley|Bush|Axle Hub|Drive Hub|Mount|Connecting Rod|Wheel/i.test(d))k.motor=true;
   let m=d.match(/Gear (\d+) Tooth/i);if(m&&!/Worm|Rack/i.test(d))k.gear={t:+m[1],bevel:/Bevel|Crown/i.test(d)};
@@ -718,11 +725,18 @@ function stepSim(dt){for(const g of SIM.moving){g.theta+=g.omega*dt;place3(g.ids
     place3(c.rod.ids,new M4().makeTranslation(P.x,P.y,P.z).multiply(new M4().makeRotationAxis(A,phi)).multiply(new M4().makeTranslation(-c.P0.x,-c.P0.y,-c.P0.z)))}}
 function stopSim(){if(!SIM)return;for(const [id] of SIM.rest){const m=meshes.get(id);if(!m)continue;m.matrixAutoUpdate=true;m.updateMatrix();m.matrixWorldNeedsUpdate=true}
   SIM=null;$('#playBtn').innerHTML='<svg class="i" viewBox="0 0 24 24"><path d="M7 5l12 7-12 7z"/></svg>';$('#playBtn').title='הפעל מנגנון (פרו)'}
-function openPro(){panel.innerHTML=`<h2><span>סטודיו לבנים <span class="pro-badge">פרו</span></span> ${closeBtn}</h2>
-  <p class="note" style="font-size:15px;color:var(--ink)">עם פרו הדגמים שלך זזים באמת.</p>
-  <ul class="pro-list"><li>מנועים מסתובבים ומסובבים את הציר שמחובר אליהם</li><li>גלגלי שיניים מעבירים את התנועה לפי מספר השיניים</li><li>בוכנות של מנוע טכניק עולות ויורדות עם גל הארכובה</li></ul>
-  <button class="btn big" id="buyPro">שדרג לפרו</button>
-  <p class="note">התשלום עוד לא פעיל. הוא יתווסף בשלב הבא.</p>`;scrim.hidden=false;$('#buyPro').onclick=()=>toast('התשלום יהיה זמין בקרוב')}
+function openPro(){const head=`<h2><span>סטודיו לבנים <span class="pro-badge">פרו</span></span> ${closeBtn}</h2>`;
+  const list=`<ul class="pro-list"><li>מנועים מסתובבים ומסובבים את הציר שמחובר אליהם</li><li>גלגלי שיניים מעבירים את התנועה לפי מספר השיניים</li><li>בוכנות של מנוע טכניק עולות ויורדות עם גל הארכובה</li></ul>`;
+  if(isPro()){const p=PRO||{};panel.innerHTML=head+`<p class="note" style="font-size:15px;color:var(--ink)">המנוי שלך לפרו פעיל.</p>${list}
+    ${p.endsAt?`<p class="note">המנוי בוטל ויישאר פעיל עד ${new Date(p.endsAt).toLocaleDateString('he-IL')}.</p>`:p.renewsAt?`<p class="note">החידוש הבא: ${new Date(p.renewsAt).toLocaleDateString('he-IL')}.</p>`:''}
+    ${p.portal?`<a class="btn ghost big" href="${esc(p.portal)}" target="_blank" rel="noopener">ניהול המנוי (ביטול, אמצעי תשלום, קבלות)</a>`:''}`;scrim.hidden=false;return}
+  if(!USER){panel.innerHTML=head+`<p class="note" style="font-size:15px;color:var(--ink)">עם פרו הדגמים שלך זזים באמת.</p>${list}
+    <p class="note">כדי לשדרג, התחבר קודם עם חשבון Google במסך הפרויקטים. המנוי נשמר בחשבון שלך.</p><button class="btn big" id="toHome">למסך הפרויקטים</button>`;
+    scrim.hidden=false;$('#toHome').onclick=()=>{closePanel();goHome()};return}
+  const url=CHECKOUT+'?'+new URLSearchParams({'checkout[custom][user_id]':USER.uid,'checkout[email]':USER.email||'','checkout[name]':USER.displayName||''}).toString();
+  panel.innerHTML=head+`<p class="note" style="font-size:15px;color:var(--ink)">עם פרו הדגמים שלך זזים באמת. <b>10$ לחודש</b>, אפשר לבטל בכל רגע.</p>${list}
+    <a class="btn big" id="buyPro" href="${esc(url)}" target="_blank" rel="noopener">שדרג לפרו</a>
+    <p class="note">התשלום מתבצע בעמוד המאובטח של Lemon Squeezy. פרטי האשראי לא עוברים דרכנו. אחרי התשלום חזור לכאן, והפרו ייפתח לבד תוך כמה שניות.</p>`;scrim.hidden=false}
 $('#playBtn').onclick=()=>SIM?stopSim():startSim();
 
 /* ---------- panels ---------- */
@@ -846,7 +860,7 @@ function loadScript(src){return new Promise((res,rej)=>{const el=document.create
 async function initFB(){if(!FB){fbReady=true;return}
   try{for(const x of ['firebase-app-compat.js','firebase-auth-compat.js','firebase-firestore-compat.js'])await loadScript('lib/'+x);
     firebase.initializeApp(FB);fbAuth=firebase.auth();fbDb=firebase.firestore();fbAuth.getRedirectResult().catch(()=>{});
-    fbAuth.onAuthStateChanged(async u=>{USER=u;fbReady=true;if(u){try{await uploadLocal()}catch(e){}}if(!$('#home').hidden)renderHome();else if(!u){$('#home').hidden=false;renderHome()}})}
+    fbAuth.onAuthStateChanged(async u=>{USER=u;fbReady=true;watchPro();if(u){try{await uploadLocal()}catch(e){}}if(!$('#home').hidden)renderHome();else if(!u){$('#home').hidden=false;renderHome()}})}
   catch(e){fbAuth=null;fbReady=true;renderHome()}}
 function migrate(){try{if(localStorage.getItem('bs:migrated'))return false;localStorage.setItem('bs:migrated','1')}catch(e){return false}
   const o=local.read();let n=0;const cur=(()=>{try{return localStorage.getItem('bs:current')}catch(e){return null}})();
