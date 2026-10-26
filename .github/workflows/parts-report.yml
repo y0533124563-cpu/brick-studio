@@ -1,0 +1,21 @@
+name: Parts report
+
+on:
+  push:
+    branches: [main]
+    paths: [scripts/parts-report.py, .github/workflows/parts-report.yml]
+  workflow_dispatch:
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: ldraw-complete.zip
+          key: ldraw-complete-v1
+      - name: Download library if needed
+        run: test -f ldraw-complete.zip || curl -fsSL -A brick-studio-build -o ldraw-complete.zip https://library.ldraw.org/library/updates/complete.zip
+      - name: Search
+        run: python3 scripts/parts-report.py ldraw-complete.zip motor piston cylinder pneumatic "power functions" "powered up" engine crankshaft
