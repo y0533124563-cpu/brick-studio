@@ -322,7 +322,7 @@ new ResizeObserver(resize).observe(stage);resize();
 (function loop(){controls.update();renderer.render(scene,camera);requestAnimationFrame(loop)})();
 
 /* ---------- state ---------- */
-const S={bricks:[],mode:'build',part:'b2x4',color:0,rot:0,undo:[],redo:[],nextId:1,cat:'brick',q:''};
+const S={bricks:[],mode:'build',part:'b2x4',color:0,rot:0,undo:[],redo:[],nextId:1,cat:'ld',q:''};
 const meshes=new Map();let HM=new Map();
 const fp=(id,r)=>{const g=info(id);return (r%2)?{w:g.d,d:g.w}:{w:g.w,d:g.d}};
 function rebuildHM(){HM=new Map();for(const b of S.bricks){if(!PMAP[b.p]&&/^ld:/.test(b.p))ldReg(b.p);if(b.f||!ready(b.p))continue;const f=fp(b.p,b.r),t=b.y+info(b.p).h;for(let i=0;i<f.w;i++)for(let j=0;j<f.d;j++){const k=(b.x+i)+','+(b.z+j);if((HM.get(k)||0)<t)HM.set(k,t)}}}
@@ -483,7 +483,7 @@ function ldIndex(){if(!LDXp)LDXp=fetch(LD_BASE+'index.json').then(r=>{if(!r.ok)t
 const QUICK=['brick','plate','tile','slope','technic beam','axle','pin','gear','wheel','tyre','window','door','minifig','arch','panel','plant'];
 function renderLD(){const el=$('#parts'),gen=++ldGen;el.innerHTML='<div class="empty">טוען את רשימת כל החלקים…</div>';
   ldIndex().then(X=>{if(gen!==ldGen)return;const q=ldKey(S.q);el.innerHTML='';
-    if(!q){el.innerHTML=`<div class="empty">${X.length.toLocaleString('he-IL')} חלקים מספריית LDraw. כתוב בחיפוש שם או מספר חלק, או בחר. חיבורים: LDCad Shadow Library (CC BY-SA 4.0).</div>`;
+    if(!q){el.innerHTML=`<div class="empty"><b>${X.length.toLocaleString('he-IL')} חלקים</b> בספרייה המלאה. כתוב בחיפוש שם או מספר חלק, או בחר. חיבורים: LDCad Shadow Library (CC BY-SA 4.0).</div>`;
       QUICK.forEach(w=>{const b=document.createElement('button');b.className='tab';b.textContent=w;b.onclick=()=>{$('#q').value=w;S.q=w;renderParts()};el.appendChild(b)});return}
     const toks=q.split(' ');let res=X.filter(e=>toks.every(t=>e.k.includes(t)));
     res.sort((a,b)=>(b.n===q)-(a.n===q)||a.d.length-b.d.length);const total=res.length;res=res.slice(0,80);
@@ -631,7 +631,7 @@ function sample(){S.bricks=[];HM=new Map();const add=(p,c,x,z,r=0)=>{const f=fp(
 /* ---------- start ---------- */
 let saved=null;try{saved=localStorage.getItem('bs:current')}catch(e){}
 if(saved&&saved!=='[]'){try{restore(saved)}catch(e){sample();refresh()}}else{sample();refresh()}
-$('#q').placeholder=`חיפוש בין ${PARTS.length} חלקים, למשל: 2×4, גלגל, חלון`;renderParts();updateCur();setTimeout(makeThumbs,60);
+$('#q').placeholder='חיפוש חלק: שם או מספר, למשל brick 2 x 4, 3001, גלגל';renderParts();updateCur();setTimeout(makeThumbs,60);
 })();
 </script>
 

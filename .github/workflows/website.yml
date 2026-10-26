@@ -36,7 +36,8 @@ jobs:
       - name: Build connection points for every part
         run: python3 scripts/build-snaps.py web/ldraw shadow
       - name: Library size
-        run: du -sh web/ldraw && find web/ldraw -type f | wc -l
+        run: |
+          echo "::notice title=Library::$(du -sh web/ldraw | cut -f1) total, $(find web/ldraw/parts -maxdepth 1 -name '*.dat' | wc -l) part files, $(python3 -c "import json;print(len(json.load(open('web/ldraw/index.json'))))") in catalogue, $(ls web/ldraw/snap | wc -l) with connection data"
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
