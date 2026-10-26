@@ -141,6 +141,11 @@ textarea{min-height:70px;resize:vertical;font-size:12px;direction:ltr;text-align
 .home-empty{color:var(--muted);line-height:1.5;grid-column:1/-1}
 .brand{cursor:pointer;border:0;background:transparent;color:inherit;font:inherit;font-family:var(--f-display);font-size:19px;padding:0;min-width:0}
 .brand span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:38vw}
+@media (max-width:480px){#saveBtn{display:none}}
+.ib.play{color:var(--accent-ink);background:var(--accent)}
+.ib.play:hover{background:var(--accent);filter:brightness(1.05)}
+.pro-list{margin:0;padding-inline-start:20px;display:flex;flex-direction:column;gap:6px;line-height:1.45}
+.pro-badge{font-size:12px;font-weight:700;background:var(--accent);color:var(--accent-ink);border-radius:999px;padding:2px 9px;vertical-align:middle}
 @media (prefers-reduced-motion: reduce){*{transition:none!important}}
 @media (min-width:900px){.parts .part{width:88px}.part img{width:70px;height:70px}}
 </style>
@@ -157,6 +162,7 @@ textarea{min-height:70px;resize:vertical;font-size:12px;direction:ltr;text-align
     <div class="spacer"></div>
     <button class="ib" id="undo" title="ביטול" aria-label="ביטול"><svg class="i" viewBox="0 0 24 24"><path d="M15 9h1.5a4.5 4.5 0 0 1 0 9H10"/><path d="M15 9H5"/><path d="M9 5L5 9l4 4"/></svg></button>
     <button class="ib" id="redo" title="חזרה" aria-label="חזרה"><svg class="i" viewBox="0 0 24 24"><path d="M9 9H7.5a4.5 4.5 0 0 0 0 9H14"/><path d="M9 9h10"/><path d="M15 5l4 4-4 4"/></svg></button>
+    <button class="ib play" id="playBtn" title="הפעל מנגנון (פרו)" aria-label="הפעל מנגנון"><svg class="i" viewBox="0 0 24 24"><path d="M7 5l12 7-12 7z"/></svg></button>
     <button class="ib" id="bomBtn" title="רשימת חלקים" aria-label="רשימת חלקים"><svg class="i" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/></svg></button>
     <button class="ib" id="shareBtn" title="שיתוף" aria-label="שיתוף"><svg class="i" viewBox="0 0 24 24"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4"/></svg></button>
     <button class="ib" id="saveBtn" title="הפרויקטים שלי" aria-label="הפרויקטים שלי"><svg class="i" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></button>
@@ -363,7 +369,8 @@ new MutationObserver(applyTheme).observe(document.documentElement,{attributes:tr
 
 function resize(){const r=stage.getBoundingClientRect();renderer.setSize(r.width,r.height,false);camera.aspect=r.width/Math.max(1,r.height);camera.updateProjectionMatrix()}
 new ResizeObserver(resize).observe(stage);resize();
-(function loop(){controls.update();renderer.render(scene,camera);requestAnimationFrame(loop)})();
+let lastT=performance.now(),SIM=null;
+(function loop(t){controls.update();if(SIM){stepSim(Math.min(.05,((t||lastT)-lastT)/1000))}lastT=t||performance.now();renderer.render(scene,camera);requestAnimationFrame(loop)})();
 
 /* ---------- state ---------- */
 const S={bricks:[],mode:'build',part:'ld:3001',color:0,rot:0,undo:[],redo:[],nextId:1,cat:'all',q:''};
@@ -382,7 +389,7 @@ function sync(){const keep=new Set();
 const snap=()=>JSON.stringify(S.bricks);
 function restore(json){S.bricks=JSON.parse(json);S.nextId=S.bricks.reduce((a,b)=>Math.max(a,b.id),0)+1;refresh()}
 function commit(prev){S.undo.push(prev);if(S.undo.length>300)S.undo.shift();S.redo=[];refresh()}
-function refresh(){rebuildHM();sync();scheduleSave();$('#count').textContent=S.bricks.length+' חלקים';$('#undo').disabled=!S.undo.length;$('#redo').disabled=!S.redo.length;
+function refresh(){if(SIM)stopSim();rebuildHM();sync();scheduleSave();$('#count').textContent=S.bricks.length+' חלקים';$('#undo').disabled=!S.undo.length;$('#redo').disabled=!S.redo.length;
   try{localStorage.setItem('bs:current',snap())}catch(e){} if(sel){if(sel.kind!=='grid'&&sel.bid&&!brickById(sel.bid))hideSel();else showSel(sel)}}
 const brickById=id=>S.bricks.find(q=>q.id===id);
 
@@ -467,7 +474,7 @@ const cv=renderer.domElement;
 cv.addEventListener('pointerdown',e=>{pointers++;usingTouch=e.pointerType!=='mouse';down=pointers===1?{x:e.clientX,y:e.clientY,t:performance.now()}:null});
 cv.addEventListener('pointerup',e=>{pointers=Math.max(0,pointers-1);if(!down)return;const moved=Math.hypot(e.clientX-down.x,e.clientY-down.y),dt=performance.now()-down.t;down=null;if(moved<9&&dt<450)tap(e)});
 cv.addEventListener('pointercancel',()=>{pointers=0;down=null});
-function tap(e){const h=pick(e);$('#hint').hidden=true;
+function tap(e){if(SIM){stopSim();return}const h=pick(e);$('#hint').hidden=true;
   if(S.mode==='build'){if(!ready(S.part)){toast('החלק עוד נטען, נסה שוב בעוד רגע');return}if(h)tapBuild(h);return}
   if(!h||!h.bid)return;const prev=snap();
   if(S.mode==='erase'){const b=S.bricks.find(q=>q.id===h.bid);S.bricks=S.bricks.filter(q=>q.id!==h.bid);commit(prev);toast('נמחק: '+PMAP[b.p].name)}
@@ -475,7 +482,7 @@ function tap(e){const h=pick(e);$('#hint').hidden=true;
 
 /* ---------- UI ---------- */
 let tt;function toast(t){const el=$('#toast');el.textContent=t;el.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>el.classList.remove('show'),1500)}
-document.querySelectorAll('.mode').forEach(b=>b.onclick=()=>{S.mode=b.dataset.mode;document.querySelectorAll('.mode').forEach(x=>x.setAttribute('aria-pressed',x===b));
+document.querySelectorAll('.mode').forEach(b=>b.onclick=()=>{if(SIM)stopSim();S.mode=b.dataset.mode;document.querySelectorAll('.mode').forEach(x=>x.setAttribute('aria-pressed',x===b));
   if(S.mode!=='build')hideSel();$('#rotBtn').hidden=S.mode!=='build';toast({build:'מצב בנייה',paint:'גע בחלק כדי לצבוע אותו',erase:'גע בחלק כדי למחוק אותו'}[S.mode])});
 $('#rotBtn').onclick=$('#rotSel').onclick=()=>{
   if(sel&&sel.kind==='snap'){sel.rot=(sel.rot+1)%4;showSel(sel);toast('סיבוב '+sel.rot*90+'°');return}
@@ -531,7 +538,7 @@ function makeThumbs(){let i=0;(function step(){for(let k=0;k<6&&i<PARTS.length;k
 /* ---------- LDraw full library (works on the website and in the app) ---------- */
 const LD_BASE=location.protocol==='file:'?'https://y0533124563-cpu.github.io/brick-studio/ldraw/':'ldraw/';
 const ready=id=>!!GEO[id]||!/^ld:/.test(id);
-let LDX=null,LDXp=null,ldGen=0;
+let LDX=null,LDXM=null,LDXp=null,ldGen=0;
 const HE=[['גלגל שיניים','gear'],['שיניים','gear'],['לבנים','brick'],['לבנה','brick'],['פלטה','plate'],['אריח','tile'],['משופע','slope'],['ציר','axle'],['גלגל','wheel'],['צמיג','tyre'],
   ['קורה','beam'],['פין','pin'],['חלון','window'],['דלת','door'],['דמות','minifig'],['קשת','arch'],['גדר','fence'],['עגול','round'],['טכני','technic'],['מנוע','motor'],['חרוט','cone'],
   ['כיפה','dome'],['קיר','panel'],['מדרגות','stairs'],['צמח','plant'],['פרח','flower'],['מכונית','car'],['מטוס','plane'],['סירה','boat'],['ציר','axle']];
@@ -540,7 +547,7 @@ function ldKey(t){t=' '+String(t).toLowerCase().replace(/×/g,' x ')+' ';for(con
 const ldLabel=e=>e.d+' · '+e.n;
 function ldReg(id){const n=id.slice(3),e=LDX&&LDX.find(x=>x.n===n);PMAP[id]={id,cat:'ld',name:e?ldLabel(e):'חלק '+n,ph:!e};if(!e)ldIndex().then(()=>updateCur(),()=>{})}
 function ldIndex(){if(!LDXp)LDXp=fetch(LD_BASE+'index.json').then(r=>{if(!r.ok)throw new Error('no index');return r.json()}).then(arr=>{
-    LDX=arr.map(([n,d,c])=>({n,d,c,k:ldKey(n+' '+d+' '+c)}));
+    LDX=arr.map(([n,d,c])=>({n,d,c,k:ldKey(n+' '+d+' '+c)}));LDXM=new Map(LDX.map(e=>[e.n,e]));
     for(const id in PMAP)if(PMAP[id].ph){const e=LDX.find(x=>x.n===id.slice(3));if(e)PMAP[id]={id,cat:'ld',name:ldLabel(e)}}return LDX})
   .catch(e=>{LDXp=null;throw e});return LDXp}
 const QUICK=['brick','plate','tile','slope','technic beam','axle','pin','gear','wheel','tyre','window','door','minifig','arch','panel','plant'];
@@ -640,6 +647,83 @@ function engaged(s,x){ // which target connections line up once the part sits th
   for(const t of s.T)if(t===s.t||held.some(h=>compat(h,t)&&Math.abs(h.D.dot(t.D))>.95&&(h.S.distanceTo(t.S)<.08||h.slide&&t.slide&&segDist(h.S,t)<.08)))out.push(t);
   return out}
 
+
+/* ---------- Pro: moving mechanisms ----------
+   Motors turn the axle in their output; gears pass the turn on by their tooth ratio;
+   an engine piston on a connecting rod follows the crankshaft. */
+const OWNER='y0533124563@gmail.com',M4=THREE.Matrix4;
+function isPro(){if(USER&&USER.email===OWNER)return true;try{return localStorage.getItem('bs:pro')==='1'}catch(e){return false}}
+function kindOf(b){const id=b.p,k={};let d='';if(/^ld:/.test(id)){const e=LDXM&&LDXM.get(id.slice(3));d=e?e.d:''}
+  if(/^Electric\b.*\bMotor\b/i.test(d)&&!/Rudder|Holder|Pulley|Bush|Axle Hub|Drive Hub|Mount|Connecting Rod|Wheel/i.test(d))k.motor=true;
+  let m=d.match(/Gear (\d+) Tooth/i);if(m&&!/Worm|Rack/i.test(d))k.gear={t:+m[1],bevel:/Bevel|Crown/i.test(d)};
+  m=id.match(/^g(\d+)$/);if(m)k.gear={t:+m[1],bevel:false};
+  if(/Engine Piston/i.test(d))k.piston=true;if(/Connecting Rod/i.test(d))k.rod=true;return k}
+const isA=x=>x.secs.some(q=>shp(q[0])==='A');
+function buildJoints(){const W=new Map();for(const b of S.bricks)if(ready(b.p)&&meshes.get(b.id))W.set(b.id,wSnaps(b));
+  const H=new Map(),cell=(x,y,z)=>x+','+y+','+z,joints=[];
+  for(const [id,list] of W)list.forEach((x,i)=>{if(x.g!=='F')return;const c=x.S.clone().addScaledVector(x.D,x.L/2),k=cell(Math.round(c.x*2),Math.round(c.y*2),Math.round(c.z*2));
+    if(!H.has(k))H.set(k,[]);H.get(k).push({id,x,i,c})});
+  for(const [id,list] of W)for(const m of list){if(m.g!=='M')continue;const seen=new Set();
+    for(let t=0;t<=m.L+.26;t+=.25){const p=m.S.clone().addScaledVector(m.D,Math.min(t,m.L)),bx=Math.round(p.x*2),by=Math.round(p.y*2),bz=Math.round(p.z*2);
+      for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++)for(let dz=-1;dz<=1;dz++){const L=H.get(cell(bx+dx,by+dy,bz+dz));if(!L)continue;
+        for(const f of L){const sk=f.id+':'+f.i;if(f.id===id||seen.has(sk))continue;if(Math.abs(m.D.dot(f.x.D))<.98||!compat(m,f.x))continue;
+          const v=f.c.clone().sub(m.S),al=v.dot(m.D),perp=v.addScaledVector(m.D,-al).length();
+          if(perp>.08||al<-f.x.L/2-.05||al>m.L+f.x.L/2+.05)continue;seen.add(sk);
+          joints.push({a:id,b:f.id,m,f:f.x,c:f.c,rigid:f.x.caps==='one'||(isA(m)&&isA(f.x)),axle:isA(m)&&isA(f.x)})}}}}
+  return {W,joints}}
+function startSim(){if(!isPro()){openPro();return}
+  if(!LDXM){toast('טוען את רשימת החלקים, נסה שוב בעוד רגע');ldIndex().catch(()=>{});return}
+  const {W,joints}=buildJoints(),K=new Map(S.bricks.map(b=>[b.id,kindOf(b)])),byId=new Map(S.bricks.map(b=>[b.id,b]));
+  const P=new Map();const find=x=>{while(P.get(x)!==x){P.set(x,P.get(P.get(x)));x=P.get(x)}return x};for(const id of W.keys())P.set(id,id);
+  const drivers=[];
+  for(const j of joints){const ma=K.get(j.a).motor,mb=K.get(j.b).motor;
+    if(j.axle&&(ma!==mb)){const other=ma?j.b:j.a;drivers.push({id:other,P:j.c.clone(),D:j.f.D.clone()});continue}
+    if(j.rigid)P.set(find(j.a),find(j.b))}
+  const groups=new Map();for(const id of W.keys()){const r=find(id);if(!groups.has(r))groups.set(r,{ids:[],omega:0,P:null,D:null,theta:0,ground:false});const g=groups.get(r);g.ids.push(id);if(!byId.get(id).f)g.ground=true}
+  if(!drivers.length){toast(S.bricks.some(b=>K.get(b.id).motor)?'המנוע לא מחובר לציר. הכנס ציר לחור של המנוע':'אין מנוע בדגם. חפש motor והוסף מנוע');return}
+  const moving=[];let jam=false;const SPEED=Math.PI*2*.6;
+  const setG=(g,omega,Pp,D)=>{if(g.D)return;if(g.ground){jam=true;return}g.omega=omega;g.P=Pp;g.D=D.clone().normalize();moving.push(g)};
+  for(const d of drivers)setG(groups.get(find(d.id)),SPEED,d.P,d.D);
+  const gearInfo=id=>{const k=K.get(id).gear;if(!k)return null;const hole=(W.get(id)||[]).find(x=>x.g==='F'&&isA(x));const m=meshes.get(id);if(!hole||!m)return null;
+    m.updateMatrixWorld();const bc=new V3();info(byId.get(id).p).geo.boundingBox.getCenter(bc);bc.applyMatrix4(m.matrixWorld);
+    const D=hole.D.clone().normalize(),c=hole.S.clone().addScaledVector(D,bc.clone().sub(hole.S).dot(D));return {t:k.t,bevel:k.bevel,D,c,id}};
+  const gears=[...W.keys()].map(gearInfo).filter(Boolean);
+  for(let q=0;q<moving.length;q++){const g=moving[q];
+    for(const a of gears){if(find(a.id)!==find(g.ids[0]))continue;
+      for(const b of gears){const gb=groups.get(find(b.id));if(gb===g||gb.D)continue;const v=b.c.clone().sub(a.c),par=Math.abs(a.D.dot(b.D));
+        if(!a.bevel&&!b.bevel&&par>.98){const al=Math.abs(v.dot(a.D)),rad=v.clone().addScaledVector(a.D,-v.dot(a.D)).length();
+          if(al<.35&&Math.abs(rad-(a.t+b.t)/16)<.18)setG(gb,-g.omega*(a.t/b.t)*Math.sign(g.D.dot(a.D))*Math.sign(a.D.dot(b.D)||1),b.c,b.D)}
+        else if(a.bevel&&b.bevel&&par<.1&&v.length()<(a.t+b.t)/16+.4){const apex=a.c.clone().addScaledVector(a.D,v.dot(a.D)),wa=g.omega*Math.sign(g.D.dot(a.D));
+          const sa=Math.sign(a.D.dot(apex.clone().sub(a.c))||1),db=apex.clone().sub(b.c).normalize();setG(gb,-wa*sa*(a.t/b.t),b.c,db)}}}}
+  // pistons: piston + connecting rod following a turning crankshaft
+  const cranks=[];
+  for(const j of joints){if(j.rigid)continue;const [rod,crank]=K.get(j.a).rod?[j.a,j.b]:K.get(j.b).rod?[j.b,j.a]:[null,null];if(!rod)continue;
+    const cg=groups.get(find(crank));if(!cg||!cg.D||groups.get(find(rod)).D)continue;
+    const pj=joints.find(k=>!k.rigid&&k!==j&&(k.a===rod||k.b===rod)&&K.get(k.a===rod?k.b:k.a).piston);if(!pj)continue;
+    const piston=pj.a===rod?pj.b:pj.a,P0=j.c.clone(),Q0=pj.c.clone(),L=Q0.distanceTo(P0),A=cg.D,dv=Q0.clone().sub(P0);dv.addScaledVector(A,-dv.dot(A)).normalize();
+    cranks.push({cg,rod:groups.get(find(rod)),piston:groups.get(find(piston)),P0,Q0,L,d:dv})}
+  if(jam){toast('המנגנון תקוע: חלק שמסתובב מחובר לחלק שעומד על המשטח');return}
+  const movers=new Set();for(const g of moving)g.ids.forEach(i=>movers.add(i));for(const c of cranks){c.rod.ids.forEach(i=>movers.add(i));c.piston.ids.forEach(i=>movers.add(i))}
+  const rest=new Map();for(const id of movers){const m=meshes.get(id);m.updateMatrix();rest.set(id,m.matrix.clone());m.matrixAutoUpdate=false}
+  hideSel();SIM={moving,cranks,rest};$('#playBtn').innerHTML='<svg class="i" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="1.5"/></svg>';$('#playBtn').title='עצור';
+  toast(cranks.length?'המנגנון פועל, כולל בוכנות. לחץ על המסך או על הכפתור כדי לעצור':'המנגנון פועל. לחץ על המסך או על הכפתור כדי לעצור')}
+const _T=new M4(),_R=new M4(),_B=new M4();
+function rotAbout(Pp,D,th){return new M4().makeTranslation(Pp.x,Pp.y,Pp.z).multiply(_R.makeRotationAxis(D,th)).multiply(_B.makeTranslation(-Pp.x,-Pp.y,-Pp.z))}
+function place3(ids,M){for(const id of ids){const m=meshes.get(id);if(!m)continue;m.matrix.multiplyMatrices(M,SIM.rest.get(id));m.matrixWorldNeedsUpdate=true}}
+function stepSim(dt){for(const g of SIM.moving){g.theta+=g.omega*dt;place3(g.ids,rotAbout(g.P,g.D,g.theta))}
+  for(const c of SIM.cranks){const P=c.P0.clone().applyMatrix4(rotAbout(c.cg.P,c.cg.D,c.cg.theta)),w=c.Q0.clone().sub(P),wd=w.dot(c.d),disc=wd*wd-w.lengthSq()+c.L*c.L;if(disc<0)continue;
+    const sOff=-wd+Math.sqrt(disc),Q=c.Q0.clone().addScaledVector(c.d,sOff);place3(c.piston.ids,new M4().makeTranslation(c.d.x*sOff,c.d.y*sOff,c.d.z*sOff));
+    const A=c.cg.D,u=c.Q0.clone().sub(c.P0),v=Q.clone().sub(P);u.addScaledVector(A,-u.dot(A));v.addScaledVector(A,-v.dot(A));
+    const phi=Math.atan2(new V3().crossVectors(u,v).dot(A),u.dot(v));
+    place3(c.rod.ids,new M4().makeTranslation(P.x,P.y,P.z).multiply(new M4().makeRotationAxis(A,phi)).multiply(new M4().makeTranslation(-c.P0.x,-c.P0.y,-c.P0.z)))}}
+function stopSim(){if(!SIM)return;for(const [id] of SIM.rest){const m=meshes.get(id);if(!m)continue;m.matrixAutoUpdate=true;m.updateMatrix();m.matrixWorldNeedsUpdate=true}
+  SIM=null;$('#playBtn').innerHTML='<svg class="i" viewBox="0 0 24 24"><path d="M7 5l12 7-12 7z"/></svg>';$('#playBtn').title='הפעל מנגנון (פרו)'}
+function openPro(){panel.innerHTML=`<h2><span>סטודיו לבנים <span class="pro-badge">פרו</span></span> ${closeBtn}</h2>
+  <p class="note" style="font-size:15px;color:var(--ink)">עם פרו הדגמים שלך זזים באמת.</p>
+  <ul class="pro-list"><li>מנועים מסתובבים ומסובבים את הציר שמחובר אליהם</li><li>גלגלי שיניים מעבירים את התנועה לפי מספר השיניים</li><li>בוכנות של מנוע טכניק עולות ויורדות עם גל הארכובה</li></ul>
+  <button class="btn big" id="buyPro">שדרג לפרו</button>
+  <p class="note">התשלום עוד לא פעיל. הוא יתווסף בשלב הבא.</p>`;scrim.hidden=false;$('#buyPro').onclick=()=>toast('התשלום יהיה זמין בקרוב')}
+$('#playBtn').onclick=()=>SIM?stopSim():startSim();
 
 /* ---------- panels ---------- */
 const scrim=$('#scrim'),panel=$('#panel');
