@@ -422,7 +422,8 @@ const darkMat=new THREE.MeshStandardMaterial({color:DARK,roughness:.6,side:THREE
 const MATS={};function mat(ci){if(!MATS[ci]){const c=COLORS[ci]||COLORS[0];MATS[ci]=new THREE.MeshStandardMaterial({side:THREE.DoubleSide,color:c.h,roughness:c.rough||(c.glass?.08:.33),metalness:c.metal||0,transparent:!!c.glass,opacity:c.glass?(c.alpha||.5):1})}return MATS[ci]}
 /* dark outlines like printed building instructions */
 const outlineMat=new THREE.LineBasicMaterial({color:0x1b2027,transparent:true,opacity:.32});const EDGES={};
-function edgesFor(pid){if(!EDGES[pid])EDGES[pid]=new THREE.EdgesGeometry(info(pid).geo,35);return EDGES[pid]}
+function edgesFor(pid){if(!EDGES[pid])EDGES[pid]=new THREE.EdgesGeometry(info(pid).body||info(pid).geo,35);return EDGES[pid]}
+const ROD_EDGES={};function rodEdges(pid){if(!ROD_EDGES[pid])ROD_EDGES[pid]=new THREE.EdgesGeometry(info(pid).rod,35);return ROD_EDGES[pid]}
 const paneMat=new THREE.MeshStandardMaterial({color:'#BFE6F0',transparent:true,opacity:.45,roughness:.05});
 const hlMat=new THREE.MeshBasicMaterial({color:0xF2F4F6,transparent:true,opacity:.55,depthTest:false,depthWrite:false});
 const hlRing=new THREE.MeshBasicMaterial({color:0xFFFFFF,transparent:true,opacity:.9,depthTest:false,depthWrite:false});
@@ -468,7 +469,7 @@ function posMesh(m,b){if(b.f){m.position.set(b.px,b.py,b.pz);m.quaternion.set(b.
 function sync(){const keep=new Set();
   for(const b of S.bricks){if(!ready(b.p)){keep.add(b.id);ldEnsure(b.p).then(refresh,()=>{});continue}const key=(b.f?[b.p,b.c,'f',b.px,b.py,b.pz,...b.q]:[b.p,b.c,b.x,b.y,b.z,b.r]).join('|');keep.add(b.id);let m=meshes.get(b.id);
     if(m&&m.userData.key!==key){scene.remove(m);m=null}
-    if(!m){m=new THREE.Mesh(info(b.p).geo,[mat(b.c),darkMat,paneMat]);m.castShadow=!(COLORS[b.c]||{}).glass;{const e=new THREE.LineSegments(edgesFor(b.p),outlineMat);e.name='edge';m.add(e)}m.receiveShadow=true;m.userData={bid:b.id,key};posMesh(m,b);scene.add(m);meshes.set(b.id,m)}}
+    if(!m){const gi=info(b.p);m=new THREE.Mesh(gi.body||gi.geo,[mat(b.c),darkMat,paneMat]);if(gi.rod){const r=new THREE.Mesh(gi.rod,m.material);r.name='rod';r.castShadow=true;r.add(new THREE.LineSegments(rodEdges(b.p),outlineMat));m.add(r)}m.castShadow=!(COLORS[b.c]||{}).glass;{const e=new THREE.LineSegments(edgesFor(b.p),outlineMat);e.name='edge';m.add(e)}m.receiveShadow=true;m.userData={bid:b.id,key};posMesh(m,b);scene.add(m);meshes.set(b.id,m)}}
   for(const [id,m] of meshes)if(!keep.has(id)){scene.remove(m);meshes.delete(id)}}
 const snap=()=>JSON.stringify(S.bricks);
 function restore(json){S.bricks=JSON.parse(json);S.nextId=S.bricks.reduce((a,b)=>Math.max(a,b.id),0)+1;refresh()}
@@ -653,7 +654,8 @@ function renderLD(){const el=$('#parts'),gen=++ldGen;el.innerHTML='<div class="e
   },()=>{if(gen!==ldGen||LDFAIL)return;LDFAIL=true;S.cat='brick';buildTabs();if(!ready(S.part))S.part='b2x4';updateCur();renderParts();setTimeout(makeThumbs,60);
     toast('הספרייה המלאה לא זמינה כאן. פתח את האתר: y0533124563-cpu.github.io/brick-studio')})}
 
-const ldFiles={},ldParsed={},ldBuilt={},_v=new THREE.Vector3();
+const ldFiles={},ldParsed={},ldBuilt={},ldDesc={},_v=new THREE.Vector3();
+const ROD_RE=/(Piston Rod|Piston Head and Rod|Piston Assembly|Actuator.*Piston)/i,WHOLE_RE=/(Pneumatic Cylinder|Linear Actuator).*\((Retracted|Contracted|Extended)\)/i;
 const ldNorm=n=>n.toLowerCase().replace(/\\/g,'/').trim();
 function ldParse(txt){const out=[];for(const raw of txt.split(/\r?\n/)){const t=raw.trim().split(/\s+/),k=t[0];
     if(k==='1'&&t.length>=15)out.push({k:1,c:t[1],m:t.slice(2,14).map(Number),f:t.slice(14).join(' ')});
@@ -661,16 +663,19 @@ function ldParse(txt){const out=[];for(const raw of txt.split(/\r?\n/)){const t=
     else if(k==='4'&&t.length>=14)out.push({k:4,c:t[1],v:t.slice(2,14).map(Number)})}return out}
 async function ldText(name){const tries=name.startsWith('s/')?['parts/'+name]:/^(48|8)\//.test(name)?['p/'+name]:['p/'+name,'parts/'+name];
   for(const t of tries){try{const r=await fetch(LD_BASE+t);if(r.ok)return await r.text()}catch(e){}}return null}
-function ldGet(name){name=ldNorm(name);if(!ldFiles[name])ldFiles[name]=ldText(name).then(txt=>{const lines=txt?ldParse(txt):[];ldParsed[name]=lines;
+function ldGet(name){name=ldNorm(name);if(!ldFiles[name])ldFiles[name]=ldText(name).then(txt=>{const lines=txt?ldParse(txt):[];ldParsed[name]=lines;ldDesc[name]=(txt||'').split(/\r?\n/,1)[0].replace(/^\s*0\s*/,'');
     return Promise.all(lines.filter(l=>l.k===1).map(l=>ldGet(l.f)))});return ldFiles[name]}
-function ldFlat(name,M,col,pos,depth){const lines=ldParsed[name];if(!lines||depth>40)return;
+function ldFlat(name,M,col,pos,depth,rodPos){const lines=ldParsed[name];if(!lines||depth>40)return;
   for(const l of lines){const c=l.c==='16'?col:l.c;
-    if(l.k===1){const m=l.m;ldFlat(ldNorm(l.f),M.clone().multiply(new THREE.Matrix4().set(m[3],m[4],m[5],m[0],m[6],m[7],m[8],m[1],m[9],m[10],m[11],m[2],0,0,0,1)),c,pos,depth+1)}
+    if(l.k===1){const m=l.m,sub=ldNorm(l.f),tgt=rodPos&&ROD_RE.test(ldDesc[sub]||'')?rodPos:pos;ldFlat(sub,M.clone().multiply(new THREE.Matrix4().set(m[3],m[4],m[5],m[0],m[6],m[7],m[8],m[1],m[9],m[10],m[11],m[2],0,0,0,1)),c,tgt,depth+1,tgt===pos?rodPos:null)}
     else{const v=l.v,g=pos[c==='16'?0:1],P=[];for(let j=0;j<v.length;j+=3){_v.set(v[j],v[j+1],v[j+2]).applyMatrix4(M);P.push(_v.x,_v.y,_v.z)}
       g.push(P[0],P[1],P[2],P[3],P[4],P[5],P[6],P[7],P[8]);if(v.length===12)g.push(P[0],P[1],P[2],P[6],P[7],P[8],P[9],P[10],P[11])}}}
 function ldEnsure(id){if(GEO[id])return Promise.resolve();
   if(!ldBuilt[id])ldBuilt[id]=(async()=>{const num=id.slice(3);await ldGet(num+'.dat');const file=ldNorm(num+'.dat'),pos=[[],[]];
-    ldFlat(file,new THREE.Matrix4().makeScale(.05,-.05,-.05),'16',pos,0); // 20 LDraw units = 1 stud; LDraw's Y points down
+    const split=WHOLE_RE.test(ldDesc[file]||''),rodPos=split?[[],[]]:null;
+    ldFlat(file,new THREE.Matrix4().makeScale(.05,-.05,-.05),'16',pos,0,rodPos); // 20 LDraw units = 1 stud; LDraw's Y points down
+    let rodOnly=null;if(rodPos&&(rodPos[0].length||rodPos[1].length)&&(pos[0].length||pos[1].length)){rodOnly=rodPos;}else if(rodPos){pos[0].push(...rodPos[0]);pos[1].push(...rodPos[1])}
+    const bodyArr=rodOnly?[pos[0].slice(),pos[1].slice()]:null;if(rodOnly){pos[0].push(...rodOnly[0]);pos[1].push(...rodOnly[1])}
     if(!pos[0].length&&!pos[1].length){delete ldBuilt[id];throw new Error('empty part')}
     const g=new THREE.BufferGeometry(),all=pos[0].concat(pos[1]);g.setAttribute('position',new THREE.Float32BufferAttribute(all,3));
     g.addGroup(0,pos[0].length/3,0);g.addGroup(pos[0].length/3,pos[1].length/3,1);g.computeBoundingBox();
@@ -681,7 +686,10 @@ function ldEnsure(id){if(GEO[id])return Promise.resolve();
     const snaps=sn.map(a=>{const secs=[];for(let i=0;i<a[3].length;i+=3)secs.push([a[3][i],a[3][i+1]]);
       return {g:a[0],caps:a[1],slide:!!a[2],secs,S:new THREE.Vector3(a[4]*.05,-a[5]*.05,-a[6]*.05).add(off),
         D:new THREE.Vector3(a[7],-a[8],-a[9]).normalize(),U:new THREE.Vector3(a[10],-a[11],-a[12]).normalize(),L:a[13]*.05}});
-    GEO[id]={geo:g,w:Math.max(1,Math.round(x1-x0)),d:Math.max(1,Math.round(z1-z0)),h,conns:[],studs:[],snaps};if(!PMAP[id])ldReg(id)})();
+    const mk2=arr=>{const q=new THREE.BufferGeometry(),a=arr[0].concat(arr[1]);q.setAttribute('position',new THREE.Float32BufferAttribute(a,3));q.addGroup(0,arr[0].length/3,0);q.addGroup(arr[0].length/3,arr[1].length/3,1);q.translate(off.x,off.y,off.z);q.computeVertexNormals();q.computeBoundingBox();return q};
+    GEO[id]={geo:g,w:Math.max(1,Math.round(x1-x0)),d:Math.max(1,Math.round(z1-z0)),h,conns:[],studs:[],snaps};
+    if(rodOnly){GEO[id].body=mk2(bodyArr);GEO[id].rod=mk2(rodOnly)} // a complete cylinder: its rod can slide out
+    if(!PMAP[id])ldReg(id)})();
   return ldBuilt[id]}
 
 /* ---------- real connections: every stud, anti-stud, hole, axle and pin is a "snap" cylinder ----------
@@ -825,6 +833,11 @@ function buildMech(){const {W,joints}=buildJoints(),K=new Map(S.bricks.map(b=>[b
     const pa=ends.map(partner);let bi=pa[0]&&(pa[0].ground||!pa[1])?0:pa[1]&&(pa[1].ground||!pa[0])?1:(ends[0].y<=ends[1].y?0:1);
     const P=ends[bi],u=ends[1-bi].clone().sub(P).normalize(),carry=pa[1-bi]&&!pa[1-bi].ground&&!pa[1-bi].D&&!pa[1-bi].ids.includes(c.id)?pa[1-bi]:null;
     c.stretch={P,u,L0:c.len,carry}}
+  for(const c of cyls){if(!c.whole)continue;const m=meshes.get(c.id),gi=info(byId.get(c.id).p),rm=m&&m.getObjectByName('rod');if(!rm||!gi.rod)continue;
+    const bc=gi.body.boundingBox.getCenter(new V3()),rc=gi.rod.boundingBox.getCenter(new V3()),sz=gi.geo.boundingBox.getSize(new V3());
+    const aL=sz.x>=sz.y&&sz.x>=sz.z?new V3(1,0,0):sz.y>=sz.z?new V3(0,1,0):new V3(0,0,1);aL.multiplyScalar(Math.sign(rc.clone().sub(bc).dot(aL))||1);
+    const rs=gi.rod.boundingBox.getSize(new V3()),rodLen=Math.abs(rs.dot(aL));m.updateMatrixWorld();
+    c.slide={m:rm,uL:aL,uW:aL.clone().transformDirection(m.matrixWorld)};c.stroke=Math.max(.5,rodLen*.8)}
   return {moving,cranks,cyls,jam,K}}
 function sang(u,v,A){return Math.atan2(new V3().crossVectors(u,v).dot(A),u.dot(v))}
 function scaleAbout(P,u,k){const S=new M4().set(1+(k-1)*u.x*u.x,(k-1)*u.x*u.y,(k-1)*u.x*u.z,0,(k-1)*u.y*u.x,1+(k-1)*u.y*u.y,(k-1)*u.y*u.z,0,(k-1)*u.z*u.x,(k-1)*u.z*u.y,1+(k-1)*u.z*u.z,0,0,0,0,1);
@@ -859,14 +872,19 @@ function stepSim(dt){readPad();const sp=new Map();const v=id=>{if(!sp.has(id))sp
     const phi=Math.atan2(new V3().crossVectors(u,w2).dot(A),u.dot(w2));
     place3(c.rod.ids,new M4().makeTranslation(P.x,P.y,P.z).multiply(new M4().makeRotationAxis(A,phi)).multiply(new M4().makeTranslation(-c.P0.x,-c.P0.y,-c.P0.z)))}
   for(const c of SIM.cyls){const want=Math.max(c.lo??0,Math.min(c.hi??1,c.ext+v(c.id)*dt*.8));
+    if(c.stretch&&c.slide){c.ext=want;const k=c.stretch,d=want*c.stroke,far=c.slide.uW.dot(k.u)>0;c.slide.m.position.copy(c.slide.uL).multiplyScalar(d);
+      if(!far){const o=k.u.clone().multiplyScalar(d);place3([c.id],new M4().makeTranslation(o.x,o.y,o.z))} // rod is the fixed end: the body moves away
+      if(k.carry){const o=k.u.clone().multiplyScalar(d);place3(k.carry.ids,new M4().makeTranslation(o.x,o.y,o.z))}continue}
     if(c.stretch){c.ext=want;const k=c.stretch,L=k.L0+want*c.stroke;place3([c.id],scaleAbout(k.P,k.u,L/k.L0));if(k.carry){const o=k.u.clone().multiplyScalar(L-k.L0);place3(k.carry.ids,new M4().makeTranslation(o.x,o.y,o.z))}continue}
     if(!c.crane){if(c.whole)continue;c.ext=want;const o=c.A.clone().multiplyScalar(c.ext*c.stroke);place3(c.rod.ids,new M4().makeTranslation(o.x,o.y,o.z));continue}
     const k=c.crane,L=k.L0+want*c.stroke,cs=(k.r*k.r+k.d*k.d-L*L)/(2*k.r*k.d);if(Math.abs(cs)>.999||L<.3)continue; // the boom has reached its limit
     c.ext=want;const th=Math.sign(k.phi0||1)*Math.acos(cs)-k.phi0,Mb=rotAbout(k.O,k.A,th),R=k.R0.clone().applyMatrix4(Mb);
     const psi=sang(k.R0.clone().sub(k.B),R.clone().sub(k.B),k.A),Mc=rotAbout(k.B,k.A,psi);place3(k.boom.ids,Mb);
-    if(c.whole){place3(k.body.ids,Mc.clone().multiply(scaleAbout(k.B,k.u0,L/k.L0)))}
+    if(c.whole&&c.slide){const d=L-k.L0;c.slide.m.position.copy(c.slide.uL).multiplyScalar(d);
+      if(c.slide.uW.dot(k.u0)>0)place3(k.body.ids,Mc);else{const dir=R.clone().sub(k.B).normalize().multiplyScalar(d);place3(k.body.ids,new M4().makeTranslation(dir.x,dir.y,dir.z).multiply(Mc))}}
+    else if(c.whole){place3(k.body.ids,Mc.clone().multiply(scaleAbout(k.B,k.u0,L/k.L0)))}
     else{const dir=R.clone().sub(k.B).normalize().multiplyScalar(L-k.L0);place3(k.body.ids,Mc);place3(c.rod.ids,new M4().makeTranslation(dir.x,dir.y,dir.z).multiply(Mc))}}}
-function stopSim(){if(!SIM)return;for(const [id] of SIM.rest){const m=meshes.get(id);if(!m)continue;m.matrixAutoUpdate=true;m.updateMatrix();m.matrixWorldNeedsUpdate=true}SIM=null}
+function stopSim(){if(!SIM)return;for(const c of SIM.cyls||[])if(c.slide)c.slide.m.position.set(0,0,0);for(const [id] of SIM.rest){const m=meshes.get(id);if(!m)continue;m.matrixAutoUpdate=true;m.updateMatrix();m.matrixWorldNeedsUpdate=true}SIM=null}
 
 /* ---------- simulation screen with a remote control ---------- */
 function enterSim(){if(!isPro()){openPro();return}if(!LDXM){toast('טוען את רשימת החלקים, נסה שוב בעוד רגע');ldIndex().catch(()=>{});return}
@@ -1003,7 +1021,7 @@ async function loadLDColors(){try{const r=await fetch(LD_BASE+'ldconfig.ldr');if
     const rest=m[4],al=rest.match(/ALPHA\s+(\d+)/),c={n:m[1].replace(/_/g,' '),h:'#'+m[3],code};if(al&&+al[1]<255){c.glass=true;c.alpha=Math.max(.25,+al[1]/255)}
     if(/CHROME|METAL/.test(rest)){c.metal=.85;c.rough=.25}else if(/PEARLESCENT/.test(rest)){c.metal=.45;c.rough=.3}if(/RUBBER/.test(rest))c.rough=.9;
     COLORS['L'+code]=c;list.push('L'+code)}
-  LDCOL=list;for(const k in MATS)if(k[0]==='L')delete MATS[k];for(const b of S.bricks)if(String(b.c)[0]==='L'){const m=meshes.get(b.id);if(m)m.material=[mat(b.c),darkMat,paneMat]}
+  LDCOL=list;for(const k in MATS)if(k[0]==='L')delete MATS[k];for(const b of S.bricks)if(String(b.c)[0]==='L'){const m=meshes.get(b.id);if(m){m.material=[mat(b.c),darkMat,paneMat];const r=m.getObjectByName('rod');if(r)r.material=m.material}}
   $('#moreCol').hidden=!list.length}catch(e){}}
 function openColors(){const groups=[['רגילים',LDCOL.filter(k=>!COLORS[k].glass&&!COLORS[k].metal)],['שקופים',LDCOL.filter(k=>COLORS[k].glass)],['מתכתיים ופנינה',LDCOL.filter(k=>COLORS[k].metal)]];
   panel.innerHTML=`<h2>כל הצבעים ${closeBtn}</h2><p class="note">${LDCOL.length} הצבעים הרשמיים של ספריית LDraw.</p>`+groups.filter(g=>g[1].length).map(([n,ks])=>`<h3>${n}</h3><div class="allcol">${ks.map(k=>`<button data-col="${k}" title="${esc(COLORS[k].n)}" aria-label="${esc(COLORS[k].n)}" aria-pressed="${S.color===k}" style="background:${COLORS[k].h}"></button>`).join('')}</div>`).join('');
