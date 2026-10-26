@@ -172,12 +172,19 @@ textarea{min-height:70px;resize:vertical;font-size:12px;direction:ltr;text-align
 .simchip{font-weight:700;padding:0 8px;color:var(--accent-ink);background:var(--accent);border-radius:9px;height:38px;display:inline-flex;align-items:center}
 .remote{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(10px + env(safe-area-inset-bottom,0px));width:min(560px,calc(100% - 16px));z-index:7;display:flex;flex-direction:column-reverse;gap:8px;pointer-events:none}
 .remote>*{pointer-events:auto}
-.gp{position:relative;padding-top:30px;direction:ltr;user-select:none;-webkit-user-select:none}
-.gp-body{position:relative;aspect-ratio:2.15/1;background:linear-gradient(180deg,var(--surface),var(--surface-2));border:1px solid var(--line);border-radius:44% 44% 30% 30%/58% 58% 42% 42%;box-shadow:0 10px 28px rgba(0,0,0,.22)}
-.gb{position:absolute;border:1px solid var(--line);background:var(--surface-2);font-size:11px;font-weight:700;color:var(--muted);touch-action:none}
-.trig{top:0;width:22%;height:30px;border-radius:12px 12px 4px 4px}.trig.l{left:9%}.trig.r{right:9%}
-.bump{top:16px;width:26%;height:22px;border-radius:10px;z-index:-1;padding-top:0}.bump.l{left:4%}.bump.r{right:4%}
-.bump{top:20px;height:18px;font-size:10px;z-index:1}
+.remote.top{flex-direction:column}
+.gp{position:relative;padding-top:40px;direction:ltr;user-select:none;-webkit-user-select:none}
+.gp-body{position:relative;z-index:2;aspect-ratio:2.15/1;background:linear-gradient(180deg,var(--surface),var(--surface-2));border:1px solid var(--line);border-radius:44% 44% 30% 30%/58% 58% 42% 42%;box-shadow:0 10px 28px rgba(0,0,0,.22)}
+.gb{position:absolute;border:1px solid var(--line);font-size:10px;font-weight:700;letter-spacing:.02em;color:var(--muted);touch-action:none;padding:0;display:flex;align-items:flex-start;justify-content:center}
+.trig{top:0;width:15%;height:40px;padding-top:5px;background:linear-gradient(180deg,var(--surface-2),var(--bg));border-radius:16px 16px 8px 8px/22px 22px 8px 8px;z-index:0}
+.trig.l{left:15%;transform:rotate(-6deg)}.trig.r{right:15%;transform:rotate(6deg)}
+.bump{top:24px;width:24%;height:30px;padding-top:4px;background:linear-gradient(180deg,var(--surface),var(--surface-2));border-radius:40px 40px 6px 6px/26px 26px 6px 6px;z-index:1;box-shadow:0 -2px 6px rgba(0,0,0,.08)}
+.bump.l{left:7%;transform:rotate(-8deg);transform-origin:right bottom}.bump.r{right:7%;transform:rotate(8deg);transform-origin:left bottom}
+.gb.down{color:var(--accent-ink)}
+.grip{position:absolute;left:50%;top:5%;transform:translateX(-50%);width:54px;height:22px;border-radius:11px;display:flex;align-items:center;justify-content:center;gap:3px;cursor:grab;touch-action:none;z-index:3}
+.grip i{display:block;width:4px;height:4px;border-radius:50%;background:var(--muted);opacity:.7}
+.remote.dragging .grip{cursor:grabbing}.remote.moved{transform:none}
+
 .stick{position:absolute;width:22%;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,var(--bg) 0 55%,var(--line) 56% 60%,var(--bg) 61%);border:2px solid var(--line);touch-action:none}
 .stick.ls{left:9%;top:12%}.stick.rs{left:56%;top:50%}
 .stick .knob{position:absolute;left:20%;top:20%;width:60%;height:60%;margin:0;border-radius:50%;background:var(--ink);box-shadow:0 4px 10px rgba(0,0,0,.35),inset 0 -4px 0 rgba(255,255,255,.12);transition:transform .06s}
@@ -711,10 +718,10 @@ function bSnaps(id){const g=info(id),out=[],H=g.h*PH,V=THREE.Vector3,up=new V(0,
     else if(c.t==='pin')add('M','R',c.len,P.clone().addScaledVector(D,-c.len/2),D,'none',false)}
   return out}
 function snapsFor(id){const g=info(id);if(!g.snaps)g.snaps=/^ld:/.test(id)?[]:bSnaps(id);return g.snaps}
-const shp=x=>x==='A'?'A':x==='S'?'S':'R';
+const shp=x=>x==='A'?'A':x==='S'?'S':x==='H'?'H':x==='B'?'B':'R';
 function compat(a,b){if(a.g===b.g)return false;const m=a.g==='M'?a:b,f=a.g==='M'?b:a;
   for(const [ms,mr] of m.secs)for(const [fs,fr] of f.secs){if(Math.abs(mr-fr)>.35)continue;const M=shp(ms),F=shp(fs);
-    if(M==='A'&&(F==='A'||F==='R'))return true;if(M==='R'&&(F==='R'||F==='S'))return true;if(M==='S'&&F==='S')return true}
+    if(M==='H'&&F==='H')return true;if(M==='B'&&F==='B')return true;if(M==='A'&&(F==='A'||F==='R'))return true;if(M==='R'&&(F==='R'||F==='S'))return true;if(M==='S'&&F==='S')return true}
   return false}
 function wSnaps(b){const m=meshes.get(b.id);if(!m)return[];m.updateMatrixWorld();const W=m.matrixWorld;
   return snapsFor(b.p).map(x=>({...x,S:x.S.clone().applyMatrix4(W),D:x.D.clone().transformDirection(W),U:x.U.clone().transformDirection(W)}))}
@@ -897,7 +904,7 @@ function enterSim(){if(!isPro()){openPro();return}if(!LDXM){toast('טוען את
   const T=targetsList(),ids=new Set(T.map(t=>t.id));for(const k in S.ctrl)if(!ids.has(S.ctrl[k].id))delete S.ctrl[k];
   {const old={jy:'lsy',jx:'lsx',b1:'dpy',b2:'rsy',s1:'rsx'};for(const k in old)if(S.ctrl[k]){S.ctrl[old[k]]=S.ctrl[k];delete S.ctrl[k]}}
   if(!Object.keys(S.ctrl).length){const order=['lsy','rsx','rsy','lsx','dpy','dpx'];T.forEach((t,i)=>{if(order[i])S.ctrl[order[i]]={id:t.id,inv:false}})}
-  const M=startSim();SIMUI.on=true;SIMUI.edit=false;SIMUI.sel=null;$('#app').classList.add('simming');$('#simbar').hidden=false;$('#remote').hidden=false;renderRemote();setTimeout(resize,0);
+  const M=startSim();SIMUI.on=true;SIMUI.edit=false;SIMUI.sel=null;$('#app').classList.add('simming');$('#simbar').hidden=false;$('#remote').hidden=false;renderRemote();setTimeout(()=>{resize();placeRemote()},0);
   if(!T.length)toast('אין בדגם מנועים או צילינדרים. אפשר לצאת, להוסיף אותם ולחזור');
   else if(M.jam.size)toast('חלק מהמנועים תקועים: חלק שמסתובב מחובר לחלק שעומד על המשטח');
   else if(!M.moving.length&&!M.cyls.length)toast('המנוע לא מחובר לציר. הכנס ציר לחור של המנוע');}
@@ -911,7 +918,7 @@ function renderRemote(){const r=$('#remote'),E=SIMUI.edit;$('#editBtn').textCont
   r.innerHTML=`<div class="gp">
     <button class="gb trig l${has('lt')}${on('lt')}" data-hold="lt" data-v="1">הדק</button><button class="gb trig r${has('rt')}${on('rt')}" data-hold="rt" data-v="1">הדק</button>
     <button class="gb bump l${has('lb')}${on('lb')}" data-hold="lb" data-v="1">כתף</button><button class="gb bump r${has('rb')}${on('rb')}" data-hold="rb" data-v="1">כתף</button>
-    <div class="gp-body">
+    <div class="gp-body"><div class="grip" id="grip" title="גרור כדי להזיז את השלט"><i></i><i></i><i></i><i></i><i></i><i></i></div>
       <div class="stick ls${has('lsx')||has('lsy')}${on('lsx','lsy')}" data-stick="ls"><div class="knob"></div></div>
       <div class="dpad${has('dpx')||has('dpy')}${on('dpx','dpy')}" data-dp="1">
         <button class="dp u" data-hold="dpy" data-v="1" aria-label="למעלה"></button><button class="dp d" data-hold="dpy" data-v="-1" aria-label="למטה"></button>
@@ -921,7 +928,7 @@ function renderRemote(){const r=$('#remote'),E=SIMUI.edit;$('#editBtn').textCont
       <span class="gp-hint">${E?'גע בכפתור כדי לחבר אותו':(padName?'שלט אמיתי מחובר':'')}</span>
     </div></div>
     ${E&&SIMUI.sel?assignBox():''}`;
-  wireRemote()}
+  wireRemote();placeRemote()}
 function assignBox(){const k=SIMUI.sel,m=S.ctrl[k],T=targetsList(),name=OUTS.find(o=>o[0]===k)[1],axis=k.match(/^(ls|rs|dp)([xy])$/);
   return `<div class="abox"><div class="abox-head"><b>${esc(name)}</b>${axis?`<span class="axsw"><button data-ax="${axis[1]}y" class="${axis[2]==='y'?'on':''}">↕</button><button data-ax="${axis[1]}x" class="${axis[2]==='x'?'on':''}">↔</button></span>`:''}<button class="mini" data-close-a>סגור</button></div>
     <span class="rnote">חבר אל (או גע במנוע/צילינדר בדגם):</span>
@@ -944,6 +951,19 @@ function wireRemote(){const r=$('#remote'),E=SIMUI.edit;
       IN[p+'x']=Math.abs(x)<.12?0:x;IN[p+'y']=Math.abs(y)<.12?0:-y;knob.style.transform=`translate(${x*R*.55}px,${y*R*.55}px)`};
     st.addEventListener('pointerdown',e=>{e.preventDefault();id=e.pointerId;st.setPointerCapture(id);mv(e)});st.addEventListener('pointermove',e=>{if(e.pointerId===id)mv(e)});
     const end=()=>{id=null;IN[p+'x']=0;IN[p+'y']=0;knob.style.transform=''};st.addEventListener('pointerup',end);st.addEventListener('pointercancel',end)})}
+/* drag the controller by its grip (or the empty part of its body) anywhere on the screen; the place is remembered */
+function placeRemote(){const r=$('#remote');let p=null;try{p=JSON.parse(localStorage.getItem('bs:remotePos')||'null')}catch(e){}
+  if(!p){r.classList.remove('moved','top');r.style.left=r.style.top=r.style.bottom='';return}
+  const st=stage.getBoundingClientRect(),w=r.offsetWidth,h=r.querySelector('.gp').offsetHeight,x=Math.max(0,Math.min(st.width-w,p.x*st.width)),y=Math.max(0,Math.min(st.height-h,p.y*st.height));
+  r.classList.add('moved');r.style.left=x+'px';r.style.top=y+'px';r.style.bottom='auto';r.classList.toggle('top',y<st.height/2)}
+function wireDrag(){const r=$('#remote');let d=null;
+  r.addEventListener('pointerdown',e=>{const onGrip=e.target.closest('#grip'),onBody=e.target.classList&&e.target.classList.contains('gp-body');if(!onGrip&&!onBody)return;
+    e.preventDefault();const rc=r.getBoundingClientRect(),st=stage.getBoundingClientRect();d={id:e.pointerId,dx:e.clientX-rc.left,dy:e.clientY-rc.top,st};r.setPointerCapture(e.pointerId);r.classList.add('dragging')});
+  r.addEventListener('pointermove',e=>{if(!d||e.pointerId!==d.id)return;const x=e.clientX-d.st.left-d.dx,y=e.clientY-d.st.top-d.dy;
+    try{localStorage.setItem('bs:remotePos',JSON.stringify({x:x/d.st.width,y:y/d.st.height}))}catch(err){}placeRemote()});
+  const end=e=>{if(d&&e.pointerId===d.id){d=null;r.classList.remove('dragging')}};r.addEventListener('pointerup',end);r.addEventListener('pointercancel',end);
+  r.addEventListener('dblclick',e=>{if(e.target.closest('#grip')){try{localStorage.removeItem('bs:remotePos')}catch(err){}placeRemote()}})}
+wireDrag();window.addEventListener('resize',()=>{if(SIMUI.on)placeRemote()});
 window.addEventListener('gamepadconnected',()=>{if(SIMUI.on){readPad();renderRemote()}});
 $('#editBtn').onclick=()=>{SIMUI.edit=!SIMUI.edit;SIMUI.sel=null;for(const k in IN)IN[k]=0;clearSimHL();renderRemote()};
 $('#exitSim').onclick=exitSim;

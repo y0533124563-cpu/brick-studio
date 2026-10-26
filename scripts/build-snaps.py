@@ -141,6 +141,31 @@ def resolve(name):
                 snaps.append(dict(id=p.get("id", "").lower(), g=p.get("gender", "M").upper()[:1], caps=p.get("caps", "one").lower(),
                                   slide=p.get("slide", "false").lower() == "true", center=p.get("center", "false").lower() == "true",
                                   secs=secs, M=M))
+        elif "SNAP_CLP" in line:  # a clip that grabs a bar
+            try:
+                rad = float(p.get("radius", "4")); ln = float(p.get("length", "8"))
+            except ValueError:
+                continue
+            for M in snap_matrices(p):
+                snaps.append(dict(id=p.get("id", "").lower(), g="F", caps="none", slide=p.get("slide", "true").lower() == "true",
+                                  center=p.get("center", "true").lower() == "true", secs=[("R", rad, ln)], M=M)); SCANNED.add("clip")
+        elif "SNAP_FGR" in line:  # click-hinge fingers: two halves with opposite finger order mesh
+            try:
+                seq = [float(x) for x in p.get("seq", "8").split()]; rad = float(p.get("radius", "6"))
+            except ValueError:
+                continue
+            g = "M" if p.get("genderofs", "M").upper().startswith("M") else "F"
+            for M in snap_matrices(p):
+                snaps.append(dict(id=p.get("id", "").lower(), g=g, caps="none", slide=False, center=p.get("center", "false").lower() == "true",
+                                  secs=[("H", rad, sum(seq) or 8)], M=M)); SCANNED.add("hinge")
+        elif "SNAP_SPH" in line:  # ball joint
+            try:
+                rad = float(p.get("radius", "4"))
+            except ValueError:
+                continue
+            for M in snap_matrices(p):
+                snaps.append(dict(id=p.get("id", "").lower(), g=p.get("gender", "M").upper()[:1], caps="one", slide=False, center=True,
+                                  secs=[("B", rad, 1.0)], M=M)); SCANNED.add("ball")
         elif "SNAP_INCL" in line and p.get("ref"):
             child = resolve(p["ref"])
             for M in snap_matrices(p):
@@ -269,8 +294,10 @@ for num, recs in allrecs.items():
         json.dump(recs[:6000], f, separators=(",", ":"))
     done += 1
 from collections import Counter
-left = Counter(cats[n].split(" ")[0] for n, v in allrecs.items() if not v)
+left = Counter(cats[n].split(" ")[0] for n, v in allrecs.items() if not v and not cats[n].startswith("sticker"))
+stickers = sum(1 for n, v in allrecs.items() if not v and cats[n].startswith("sticker"))
+print(f"::notice title=Stickers::{stickers} stickers have no connections (they stick on a surface)")
 print("::notice title=Still without connections::" + ", ".join(f"{c} {k}" for c, k in left.most_common(12)))
-print(f"::notice title=Scan::{len(SCANNED)} extra stud / axle-hole shapes recognised")
+print(f"::notice title=Scan::{len(SCANNED)} extra connection shapes recognised (clips, hinges, ball joints, studs, axle holes)")
 print(f"::notice title=Connections::{done} of {len(catalogue)} parts have connection data "
       f"({copied} copied from their plain version, {grid} got bottom sockets from the geometry scan)")
