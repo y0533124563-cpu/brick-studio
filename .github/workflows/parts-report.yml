@@ -3,7 +3,7 @@ name: Parts report
 on:
   push:
     branches: [main]
-    paths: [scripts/parts-report.py, scripts/snap-report.py, .github/workflows/parts-report.yml]
+    paths: [scripts/parts-report.py, scripts/snap-report.py, scripts/snap-detail.py, .github/workflows/parts-report.yml]
   workflow_dispatch:
 
 jobs:
@@ -15,12 +15,10 @@ jobs:
         with:
           path: ldraw-complete.zip
           key: ldraw-complete-v1
-      - name: Search
-        run: python3 scripts/parts-report.py ldraw-complete.zip "pneumatic cylinder" "linear actuator" "piston rod" "technic beam 3 x 5" "technic beam 15"
       - name: Build connection data
         run: |
           python3 scripts/get-ldraw.py ldraw-complete.zip > /dev/null
           git clone -q --depth 1 https://github.com/RolandMelkert/LDCadShadowLibrary shadow
           python3 scripts/build-snaps.py web/ldraw shadow > /dev/null
-      - name: Connections of cylinder parts
-        run: python3 scripts/snap-report.py web/ldraw 2793c03 2797c03 2796c01 2799c01 19467c01 21828c01 2943ac01 2944c01 62274c01 62274c02 92696 61905 2793 2797
+      - name: Cylinder details
+        run: python3 scripts/snap-detail.py web/ldraw 2793c01-f1 61927-f1 2796c01 2793c03
