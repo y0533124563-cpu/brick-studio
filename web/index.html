@@ -147,6 +147,24 @@ textarea{min-height:70px;resize:vertical;font-size:12px;direction:ltr;text-align
 .pro-list{margin:0;padding-inline-start:20px;display:flex;flex-direction:column;gap:6px;line-height:1.45}
 .panel a.btn{text-decoration:none;text-align:center}
 .pro-badge{font-size:12px;font-weight:700;background:var(--accent);color:var(--accent-ink);border-radius:999px;padding:2px 9px;vertical-align:middle}
+.selbar,.instr{position:absolute;left:50%;transform:translateX(-50%);bottom:12px;width:min(560px,calc(100% - 24px));background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.18);padding:8px;display:flex;flex-direction:column;gap:6px;z-index:6}
+.selrow{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:center}
+.selrow .cnt{font-weight:700;margin-inline-end:auto;padding-inline:4px;font-variant-numeric:tabular-nums}
+.sb{border:1px solid var(--line);background:var(--surface-2);border-radius:10px;min-width:40px;height:38px;padding:0 10px;display:inline-flex;align-items:center;justify-content:center;gap:4px;font-weight:600;font-size:13px}
+.sb svg{width:20px;height:20px}
+.sb.warn{color:var(--danger)}
+.sb.go{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+.pad{display:grid;grid-template-columns:repeat(3,40px);gap:4px;direction:ltr}
+.acts2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;flex:1;min-width:150px}
+.pad .sb{min-width:0;padding:0}
+.instr .parts-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px}
+.instr .ip{flex:none;display:flex;flex-direction:column;align-items:center;font-size:12px;gap:2px;color:var(--muted)}
+.instr .ip img{width:56px;height:56px;border-radius:8px;background:var(--surface-2)}
+.instr .ip b{color:var(--ink);font-variant-numeric:tabular-nums}
+.cmore{flex:none;width:34px;height:34px;border-radius:9px;border:2px dashed var(--line);background:transparent;font-weight:700;font-size:18px;color:var(--muted)}
+.allcol{display:grid;grid-template-columns:repeat(auto-fill,minmax(38px,1fr));gap:6px}
+.allcol button{aspect-ratio:1;border-radius:9px;border:2px solid var(--line)}
+.allcol button[aria-pressed="true"]{border-color:var(--ink)}
 @media (prefers-reduced-motion: reduce){*{transition:none!important}}
 @media (min-width:900px){.parts .part{width:88px}.part img{width:70px;height:70px}}
 </style>
@@ -163,6 +181,7 @@ textarea{min-height:70px;resize:vertical;font-size:12px;direction:ltr;text-align
     <div class="spacer"></div>
     <button class="ib" id="undo" title="ביטול" aria-label="ביטול"><svg class="i" viewBox="0 0 24 24"><path d="M15 9h1.5a4.5 4.5 0 0 1 0 9H10"/><path d="M15 9H5"/><path d="M9 5L5 9l4 4"/></svg></button>
     <button class="ib" id="redo" title="חזרה" aria-label="חזרה"><svg class="i" viewBox="0 0 24 24"><path d="M9 9H7.5a4.5 4.5 0 0 0 0 9H14"/><path d="M9 9h10"/><path d="M15 5l4 4-4 4"/></svg></button>
+    <button class="ib" id="instrBtn" title="הוראות בנייה (פרו)" aria-label="הוראות בנייה"><svg class="i" viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5M9 7h6M9 11h6"/></svg></button>
     <button class="ib play" id="playBtn" title="הפעל מנגנון (פרו)" aria-label="הפעל מנגנון"><svg class="i" viewBox="0 0 24 24"><path d="M7 5l12 7-12 7z"/></svg></button>
     <button class="ib" id="bomBtn" title="רשימת חלקים" aria-label="רשימת חלקים"><svg class="i" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/></svg></button>
     <button class="ib" id="shareBtn" title="שיתוף" aria-label="שיתוף"><svg class="i" viewBox="0 0 24 24"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4"/></svg></button>
@@ -182,11 +201,28 @@ textarea{min-height:70px;resize:vertical;font-size:12px;direction:ltr;text-align
     <div class="rail" role="group" aria-label="מצב עבודה">
       <button class="mode" data-mode="build" aria-pressed="true"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>בנייה</button>
       <button class="mode" data-mode="paint" aria-pressed="false"><svg class="i" viewBox="0 0 24 24"><path d="M4 20c2 0 4-1 4-3a2 2 0 0 0-4 0"/><path d="M8 17L19 6a2 2 0 0 0-3-3L5 14"/></svg>צביעה</button>
+      <button class="mode" data-mode="select" aria-pressed="false"><svg class="i" viewBox="0 0 24 24"><path d="M5 3l14 8-6 2-2 6z"/></svg>בחירה</button>
       <button class="mode" data-mode="erase" aria-pressed="false"><svg class="i" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>מחיקה</button>
     </div>
     <div class="fabs">
       <button class="fab" id="rotBtn" aria-label="סובב חלק"><svg class="i" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v5h-5"/></svg>סובב</button>
     </div>
+    <div class="selbar" id="selbar" hidden>
+      <div class="selrow"><span class="cnt" id="selCount">0 נבחרו</span>
+        <button class="sb" data-sa="conn">כל המחובר</button><button class="sb" data-sa="all">הכל</button><button class="sb" data-sa="none">נקה</button></div>
+      <div class="selrow">
+        <div class="pad">
+          <span></span><button class="sb" data-sa="f" aria-label="הזז רחוק"><svg class="i" viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></svg></button><button class="sb" data-sa="u" aria-label="הרם"><svg class="i" viewBox="0 0 24 24"><path d="M5 15l7-7 7 7"/></svg></button>
+          <button class="sb" data-sa="l" aria-label="הזז שמאלה"><svg class="i" viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></button><button class="sb" data-sa="b" aria-label="הזז קרוב"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M6 13l6 6 6-6"/></svg></button><button class="sb" data-sa="r" aria-label="הזז ימינה"><svg class="i" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+          <span></span><span></span><button class="sb" data-sa="d" aria-label="הורד"><svg class="i" viewBox="0 0 24 24"><path d="M5 9l7 7 7-7"/></svg></button>
+        </div>
+        <div class="acts2"><button class="sb" data-sa="rot"><svg class="i" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v5h-5"/></svg>סובב</button>
+        <button class="sb" data-sa="dup"><svg class="i" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>שכפל</button>
+        <button class="sb" data-sa="paint"><svg class="i" viewBox="0 0 24 24"><path d="M4 20c2 0 4-1 4-3a2 2 0 0 0-4 0"/><path d="M8 17L19 6a2 2 0 0 0-3-3L5 14"/></svg>צבע</button>
+        <button class="sb warn" data-sa="del"><svg class="i" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>מחק</button></div>
+      </div>
+    </div>
+    <div class="instr" id="instr" hidden></div>
     <div class="toast" id="toast"></div>
   </main>
 
@@ -339,7 +375,10 @@ const GEO={};function info(id){if(!GEO[id]){REC=[];const r=PMAP[id].make(),st=RE
 
 /* ---------- materials ---------- */
 const darkMat=new THREE.MeshStandardMaterial({color:DARK,roughness:.6,side:THREE.DoubleSide});
-const MATS={};function mat(ci){if(!MATS[ci]){const c=COLORS[ci];MATS[ci]=new THREE.MeshStandardMaterial({side:THREE.DoubleSide,color:c.h,roughness:c.glass?.08:.33,metalness:0,transparent:!!c.glass,opacity:c.glass?.5:1})}return MATS[ci]}
+const MATS={};function mat(ci){if(!MATS[ci]){const c=COLORS[ci]||COLORS[0];MATS[ci]=new THREE.MeshStandardMaterial({side:THREE.DoubleSide,color:c.h,roughness:c.rough||(c.glass?.08:.33),metalness:c.metal||0,transparent:!!c.glass,opacity:c.glass?(c.alpha||.5):1})}return MATS[ci]}
+/* dark outlines like printed building instructions */
+const outlineMat=new THREE.LineBasicMaterial({color:0x1b2027,transparent:true,opacity:.32});const EDGES={};
+function edgesFor(pid){if(!EDGES[pid])EDGES[pid]=new THREE.EdgesGeometry(info(pid).geo,35);return EDGES[pid]}
 const paneMat=new THREE.MeshStandardMaterial({color:'#BFE6F0',transparent:true,opacity:.45,roughness:.05});
 const hlMat=new THREE.MeshBasicMaterial({color:0xF2F4F6,transparent:true,opacity:.55,depthTest:false,depthWrite:false});
 const hlRing=new THREE.MeshBasicMaterial({color:0xFFFFFF,transparent:true,opacity:.9,depthTest:false,depthWrite:false});
@@ -385,12 +424,12 @@ function posMesh(m,b){if(b.f){m.position.set(b.px,b.py,b.pz);m.quaternion.set(b.
 function sync(){const keep=new Set();
   for(const b of S.bricks){if(!ready(b.p)){keep.add(b.id);ldEnsure(b.p).then(refresh,()=>{});continue}const key=(b.f?[b.p,b.c,'f',b.px,b.py,b.pz,...b.q]:[b.p,b.c,b.x,b.y,b.z,b.r]).join('|');keep.add(b.id);let m=meshes.get(b.id);
     if(m&&m.userData.key!==key){scene.remove(m);m=null}
-    if(!m){m=new THREE.Mesh(info(b.p).geo,[mat(b.c),darkMat,paneMat]);m.castShadow=!COLORS[b.c].glass;m.receiveShadow=true;m.userData={bid:b.id,key};posMesh(m,b);scene.add(m);meshes.set(b.id,m)}}
+    if(!m){m=new THREE.Mesh(info(b.p).geo,[mat(b.c),darkMat,paneMat]);m.castShadow=!(COLORS[b.c]||{}).glass;{const e=new THREE.LineSegments(edgesFor(b.p),outlineMat);e.name='edge';m.add(e)}m.receiveShadow=true;m.userData={bid:b.id,key};posMesh(m,b);scene.add(m);meshes.set(b.id,m)}}
   for(const [id,m] of meshes)if(!keep.has(id)){scene.remove(m);meshes.delete(id)}}
 const snap=()=>JSON.stringify(S.bricks);
 function restore(json){S.bricks=JSON.parse(json);S.nextId=S.bricks.reduce((a,b)=>Math.max(a,b.id),0)+1;refresh()}
 function commit(prev){S.undo.push(prev);if(S.undo.length>300)S.undo.shift();S.redo=[];refresh()}
-function refresh(){if(SIM)stopSim();rebuildHM();sync();scheduleSave();$('#count').textContent=S.bricks.length+' חלקים';$('#undo').disabled=!S.undo.length;$('#redo').disabled=!S.redo.length;
+function refresh(){if(SIM)stopSim();if(INS)closeInstr();rebuildHM();sync();scheduleSave();drawSel();$('#count').textContent=S.bricks.length+' חלקים';$('#undo').disabled=!S.undo.length;$('#redo').disabled=!S.redo.length;
   try{localStorage.setItem('bs:current',snap())}catch(e){} if(sel){if(sel.kind!=='grid'&&sel.bid&&!brickById(sel.bid))hideSel();else showSel(sel)}}
 const brickById=id=>S.bricks.find(q=>q.id===id);
 
@@ -475,7 +514,8 @@ const cv=renderer.domElement;
 cv.addEventListener('pointerdown',e=>{pointers++;usingTouch=e.pointerType!=='mouse';down=pointers===1?{x:e.clientX,y:e.clientY,t:performance.now()}:null});
 cv.addEventListener('pointerup',e=>{pointers=Math.max(0,pointers-1);if(!down)return;const moved=Math.hypot(e.clientX-down.x,e.clientY-down.y),dt=performance.now()-down.t;down=null;if(moved<9&&dt<450)tap(e)});
 cv.addEventListener('pointercancel',()=>{pointers=0;down=null});
-function tap(e){if(SIM){stopSim();return}const h=pick(e);$('#hint').hidden=true;
+function tap(e){if(SIM){stopSim();return}if(INS)return;const h=pick(e);$('#hint').hidden=true;
+  if(S.mode==='select'){if(h&&h.bid){S.sel.has(h.bid)?S.sel.delete(h.bid):S.sel.add(h.bid)}else S.sel.clear();drawSel();return}
   if(S.mode==='build'){if(!ready(S.part)){toast('החלק עוד נטען, נסה שוב בעוד רגע');return}if(h)tapBuild(h);return}
   if(!h||!h.bid)return;const prev=snap();
   if(S.mode==='erase'){const b=S.bricks.find(q=>q.id===h.bid);S.bricks=S.bricks.filter(q=>q.id!==h.bid);commit(prev);toast('נמחק: '+PMAP[b.p].name)}
@@ -484,7 +524,7 @@ function tap(e){if(SIM){stopSim();return}const h=pick(e);$('#hint').hidden=true;
 /* ---------- UI ---------- */
 let tt;function toast(t){const el=$('#toast');el.textContent=t;el.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>el.classList.remove('show'),1500)}
 document.querySelectorAll('.mode').forEach(b=>b.onclick=()=>{if(SIM)stopSim();S.mode=b.dataset.mode;document.querySelectorAll('.mode').forEach(x=>x.setAttribute('aria-pressed',x===b));
-  if(S.mode!=='build')hideSel();$('#rotBtn').hidden=S.mode!=='build';toast({build:'מצב בנייה',paint:'גע בחלק כדי לצבוע אותו',erase:'גע בחלק כדי למחוק אותו'}[S.mode])});
+  if(S.mode!=='build')hideSel();$('#rotBtn').hidden=S.mode!=='build';drawSel();toast({build:'מצב בנייה',paint:'גע בחלק כדי לצבוע אותו',erase:'גע בחלק כדי למחוק אותו',select:'גע בחלקים כדי לבחור אותם. נגיעה נוספת מבטלת'}[S.mode])});
 $('#rotBtn').onclick=$('#rotSel').onclick=()=>{
   if(sel&&sel.kind==='snap'){sel.rot=(sel.rot+1)%4;showSel(sel);toast('סיבוב '+sel.rot*90+'°');return}
   if(sel&&sel.kind==='insert'){const M=(info(S.part).conns[sel.mi].len-1)/2;let s=sel.s+.5;if(s>M+1e-6)s=-M;sel.s=s;showSel(sel);toast('הוזז לאורך החור');return}
@@ -521,6 +561,7 @@ function selectPart(id){if(!ready(id)){toast('טוען חלק…');ldEnsure(id).
 $('#q').addEventListener('input',e=>{S.q=e.target.value;renderParts()});
 const colEl=$('#colors');COLORS.forEach((c,i)=>{const b=document.createElement('button');b.className='c'+(c.glass?' glass':'');b.style.background=c.h;if(c.glass)b.style.backgroundColor=c.h;b.title=c.n;b.setAttribute('aria-label',c.n);
   b.onclick=()=>{S.color=i;colEl.querySelectorAll('.c').forEach((x,j)=>x.setAttribute('aria-pressed',j===i));updateCur()};colEl.appendChild(b)});
+{const mb=document.createElement('button');mb.className='cmore';mb.id='moreCol';mb.textContent='+';mb.title='כל הצבעים';mb.setAttribute('aria-label','כל הצבעים');mb.hidden=true;mb.onclick=()=>openColors();colEl.appendChild(mb)}
 function updateCur(){$('#curName').textContent=PMAP[S.part].name;$('#curColor').textContent=COLORS[S.color].n;$('#curSw').style.background=COLORS[S.color].h;
   colEl.querySelectorAll('.c').forEach((x,j)=>x.setAttribute('aria-pressed',j===S.color));ghostMat.color.set(COLORS[S.color].glass?'#7fd3df':COLORS[S.color].h)}
 
@@ -739,6 +780,76 @@ function openPro(){const head=`<h2><span>סטודיו לבנים <span class="pr
     <p class="note">התשלום מתבצע בעמוד המאובטח של Lemon Squeezy. פרטי האשראי לא עוברים דרכנו. אחרי התשלום חזור לכאן, והפרו ייפתח לבד תוך כמה שניות.</p>`;scrim.hidden=false}
 $('#playBtn').onclick=()=>SIM?stopSim():startSim();
 
+/* ---------- select, move, rotate, duplicate ---------- */
+S.sel=new Set();const r4=v=>Math.round(v*1e4)/1e4;
+const selEdge=new THREE.LineBasicMaterial({color:0xF2B705,transparent:true,opacity:1,depthTest:false});
+function drawSel(){for(const m of meshes.values()){const o=m.getObjectByName('selhl');if(o)m.remove(o)}
+  for(const id of [...S.sel]){const m=meshes.get(id),b=brickById(id);if(!m||!b){S.sel.delete(id);continue}const l=new THREE.LineSegments(edgesFor(b.p),selEdge);l.name='selhl';l.renderOrder=30;m.add(l)}
+  $('#selbar').hidden=!(S.mode==='select'&&S.sel.size);$('#selCount').textContent=S.sel.size===1?'חלק אחד נבחר':S.sel.size+' חלקים נבחרו'}
+const selBricks=()=>S.bricks.filter(b=>S.sel.has(b.id));
+function centerXZ(b){if(b.f)return {x:b.px,z:b.pz};const f=fp(b.p,b.r);return {x:b.x+f.w/2,z:b.z+f.d/2}}
+function camAxes(){const fw=new THREE.Vector3();camera.getWorldDirection(fw);fw.y=0;if(fw.lengthSq()<1e-6)fw.set(0,0,-1);
+  const ax=Math.abs(fw.x)>Math.abs(fw.z)?new THREE.Vector3(Math.sign(fw.x),0,0):new THREE.Vector3(0,0,Math.sign(fw.z));
+  return {fw:ax,right:new THREE.Vector3().crossVectors(ax,new THREE.Vector3(0,1,0))}}
+function moveSel(v,dy){const L=selBricks();if(!L.length)return;const prev=snap();
+  for(const b of L){if(b.f){b.px=r4(b.px+v.x);b.pz=r4(b.pz+v.z);b.py=r4(b.py+dy*PH)}else{b.x+=Math.round(v.x);b.z+=Math.round(v.z);b.y=Math.max(0,b.y+dy)}}commit(prev)}
+function rotSel(){const L=selBricks();if(!L.length)return;let sx=0,sz=0;for(const b of L){const c=centerXZ(b);sx+=c.x;sz+=c.z}
+  const px=Math.round(sx/L.length),pz=Math.round(sz/L.length),q=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),Math.PI/2),prev=snap();
+  for(const b of L){if(b.f){const rx=b.px-px,rz=b.pz-pz;b.px=r4(px+rz);b.pz=r4(pz-rx);const bq=new THREE.Quaternion(b.q[0],b.q[1],b.q[2],b.q[3]).premultiply(q);b.q=[bq.x,bq.y,bq.z,bq.w].map(r4)}
+    else{const f=fp(b.p,b.r),cx=b.x+f.w/2,cz=b.z+f.d/2,nx=px+(cz-pz),nz=pz-(cx-px);b.r=(b.r+1)%4;const f2=fp(b.p,b.r);b.x=Math.round(nx-f2.w/2);b.z=Math.round(nz-f2.d/2)}}
+  commit(prev);toast('סובב ב-90°')}
+function dupSel(){const L=selBricks();if(!L.length)return;const {right}=camAxes();let lo=1e9,hi=-1e9;
+  for(const b of L){const c=centerXZ(b),f=b.f?{w:1,d:1}:fp(b.p,b.r),half=Math.abs(right.x)?f.w/2:f.d/2,v=right.x?c.x*right.x:c.z*right.z;lo=Math.min(lo,v-half);hi=Math.max(hi,v+half)}
+  const n=Math.ceil(hi-lo)+1,o=right.clone().multiplyScalar(n),prev=snap(),ids=new Set();
+  for(const b of L){const nb=JSON.parse(JSON.stringify(b));nb.id=S.nextId++;if(nb.f){nb.px=r4(nb.px+o.x);nb.pz=r4(nb.pz+o.z)}else{nb.x+=o.x;nb.z+=o.z}S.bricks.push(nb);ids.add(nb.id)}
+  S.sel=ids;commit(prev);toast('שוכפל. העותק בחור עכשיו, אפשר להזיז אותו')}
+function connectedSel(){if(!S.sel.size){toast('בחר קודם חלק אחד');return}const {joints}=buildJoints(),adj=new Map();
+  for(const j of joints){if(!adj.has(j.a))adj.set(j.a,[]);if(!adj.has(j.b))adj.set(j.b,[]);adj.get(j.a).push(j.b);adj.get(j.b).push(j.a)}
+  const seen=new Set(S.sel),st=[...S.sel];while(st.length){const x=st.pop();for(const y of adj.get(x)||[])if(!seen.has(y)){seen.add(y);st.push(y)}}
+  S.sel=seen;drawSel();toast('נבחרו כל החלקים שמחוברים')}
+$('#selbar').addEventListener('click',e=>{const btn=e.target.closest('[data-sa]');if(!btn)return;const a=btn.dataset.sa,{fw,right}=camAxes();
+  if(a==='f')moveSel(fw,0);else if(a==='b')moveSel(fw.clone().negate(),0);else if(a==='r')moveSel(right,0);else if(a==='l')moveSel(right.clone().negate(),0);
+  else if(a==='u')moveSel(new THREE.Vector3(),1);else if(a==='d')moveSel(new THREE.Vector3(),-1);else if(a==='rot')rotSel();else if(a==='dup')dupSel();
+  else if(a==='paint'){const prev=snap();selBricks().forEach(b=>b.c=S.color);commit(prev);toast('נצבע ב'+COLORS[S.color].n)}
+  else if(a==='del'){if(!btn.dataset.sure){btn.dataset.sure=1;btn.textContent='בטוח?';setTimeout(()=>{delete btn.dataset.sure;btn.innerHTML='<svg class="i" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>מחק'},2500);return}
+    const prev=snap(),n=S.sel.size;S.bricks=S.bricks.filter(b=>!S.sel.has(b.id));S.sel.clear();commit(prev);toast(n+' חלקים נמחקו. אפשר לבטל עם החץ למעלה')}
+  else if(a==='all'){S.sel=new Set(S.bricks.map(b=>b.id));drawSel()}else if(a==='none'){S.sel.clear();drawSel()}else if(a==='conn')connectedSel()});
+document.addEventListener('keydown',e=>{if(S.mode!=='select'||!S.sel.size||e.target.matches('input,textarea'))return;const {fw,right}=camAxes(),k=e.key;
+  const map={ArrowUp:()=>moveSel(fw,0),ArrowDown:()=>moveSel(fw.clone().negate(),0),ArrowRight:()=>moveSel(right,0),ArrowLeft:()=>moveSel(right.clone().negate(),0),PageUp:()=>moveSel(new THREE.Vector3(),1),PageDown:()=>moveSel(new THREE.Vector3(),-1),Delete:()=>$('[data-sa="del"]').click()};
+  if(map[k]){e.preventDefault();map[k]()}});
+
+/* ---------- official LDraw colours ---------- */
+let LDCOL=[];
+async function loadLDColors(){try{const r=await fetch(LD_BASE+'ldconfig.ldr');if(!r.ok)return;const t=await r.text(),list=[];
+  for(const line of t.split(/\r?\n/)){const m=line.match(/^0\s+!COLOUR\s+(\S+)\s+CODE\s+(\d+)\s+VALUE\s+#([0-9A-Fa-f]{6})(.*)$/);if(!m)continue;const code=+m[2];if(code===16||code===24)continue;
+    const rest=m[4],al=rest.match(/ALPHA\s+(\d+)/),c={n:m[1].replace(/_/g,' '),h:'#'+m[3],code};if(al&&+al[1]<255){c.glass=true;c.alpha=Math.max(.25,+al[1]/255)}
+    if(/CHROME|METAL/.test(rest)){c.metal=.85;c.rough=.25}else if(/PEARLESCENT/.test(rest)){c.metal=.45;c.rough=.3}if(/RUBBER/.test(rest))c.rough=.9;
+    COLORS['L'+code]=c;list.push('L'+code)}
+  LDCOL=list;for(const k in MATS)if(k[0]==='L')delete MATS[k];for(const b of S.bricks)if(String(b.c)[0]==='L'){const m=meshes.get(b.id);if(m)m.material=[mat(b.c),darkMat,paneMat]}
+  $('#moreCol').hidden=!list.length}catch(e){}}
+function openColors(){const groups=[['רגילים',LDCOL.filter(k=>!COLORS[k].glass&&!COLORS[k].metal)],['שקופים',LDCOL.filter(k=>COLORS[k].glass)],['מתכתיים ופנינה',LDCOL.filter(k=>COLORS[k].metal)]];
+  panel.innerHTML=`<h2>כל הצבעים ${closeBtn}</h2><p class="note">${LDCOL.length} הצבעים הרשמיים של ספריית LDraw.</p>`+groups.filter(g=>g[1].length).map(([n,ks])=>`<h3>${n}</h3><div class="allcol">${ks.map(k=>`<button data-col="${k}" title="${esc(COLORS[k].n)}" aria-label="${esc(COLORS[k].n)}" aria-pressed="${S.color===k}" style="background:${COLORS[k].h}"></button>`).join('')}</div>`).join('');
+  scrim.hidden=false;panel.querySelectorAll('[data-col]').forEach(b=>b.onclick=()=>{S.color=b.dataset.col;updateCur();closePanel();toast('צבע: '+COLORS[S.color].n)})}
+
+/* ---------- building instructions (Pro) ---------- */
+let INS=null;const insEdge=new THREE.LineBasicMaterial({color:0xF2B705,transparent:true,opacity:1,depthTest:false});
+function openInstr(){if(!isPro()){openPro();return}if(SIM)stopSim();hideSel();if(!S.bricks.length){toast('הדגם ריק. הוסף חלקים כדי ליצור הוראות');return}
+  const items=S.bricks.map((b,i)=>{const m=meshes.get(b.id);let y=0;if(m){const bb=new THREE.Box3().setFromObject(m);y=bb.min.y}return {b,i,layer:Math.round(y/PH+1e-3)}});
+  items.sort((a,b)=>a.layer-b.layer||a.i-b.i);const steps=[];
+  for(const it of items){const last=steps[steps.length-1];if(last&&last.layer===it.layer&&last.ids.length<4)last.ids.push(it.b.id);else steps.push({layer:it.layer,ids:[it.b.id]})}
+  INS={steps,k:0};S.sel.clear();drawSel();$('#selbar').hidden=true;showStep()}
+function showStep(){const {steps,k}=INS,shown=new Set(),cur=new Set(steps[k].ids);for(let i=0;i<=k;i++)steps[i].ids.forEach(id=>shown.add(id));
+  for(const [id,m] of meshes){m.visible=shown.has(id);const o=m.getObjectByName('inshl');if(o)m.remove(o);if(cur.has(id)){const l=new THREE.LineSegments(edgesFor(brickById(id).p),insEdge);l.name='inshl';l.renderOrder=30;m.add(l)}}
+  const cnt={};for(const id of steps[k].ids){const b=brickById(id),key=b.p+'|'+b.c;cnt[key]=(cnt[key]||0)+1}
+  const el=$('#instr');el.hidden=false;
+  el.innerHTML=`<div class="selrow"><span class="cnt">שלב ${k+1} מתוך ${steps.length}</span><button class="sb" data-ia="prev" ${k?'':'disabled'}>הקודם</button><button class="sb go" data-ia="next">${k<steps.length-1?'הבא':'סיום'}</button><button class="sb" data-ia="close" aria-label="סגור הוראות">✕</button></div>
+    <div class="parts-row">${Object.entries(cnt).map(([key,n])=>{const [p,c]=key.split('|'),col=COLORS[c]||COLORS[0];return `<div class="ip"><img alt="" data-tid="${esc(p)}" src="${THUMBS[p]||BLANK}" style="box-shadow:inset 0 -6px 0 ${col.h}"><span><b>×${n}</b> ${esc(col.n)}</span></div>`}).join('')}</div>`;
+  el.querySelectorAll('img[data-tid]').forEach(im=>{const p=im.dataset.tid;if(!THUMBS[p]&&ready(p)){setThumb(p);if(THUMBS[p])im.src=THUMBS[p]}})}
+function closeInstr(){if(!INS)return;INS=null;for(const m of meshes.values()){m.visible=true;const o=m.getObjectByName('inshl');if(o)m.remove(o)}$('#instr').hidden=true;drawSel()}
+$('#instr').addEventListener('click',e=>{const b=e.target.closest('[data-ia]');if(!b||!INS)return;const a=b.dataset.ia;
+  if(a==='prev'&&INS.k>0){INS.k--;showStep()}else if(a==='next'){if(INS.k<INS.steps.length-1){INS.k++;showStep()}else{closeInstr();toast('סיימת את כל השלבים')}}else if(a==='close')closeInstr()});
+$('#instrBtn').onclick=()=>INS?closeInstr():openInstr();
+
 /* ---------- panels ---------- */
 const scrim=$('#scrim'),panel=$('#panel');
 scrim.addEventListener('click',e=>{if(e.target===scrim)closePanel()});
@@ -748,7 +859,7 @@ const closeBtn='<button class="ib" data-close aria-label="סגירה"><svg class
 function readModels(){try{return JSON.parse(localStorage.getItem('bs:models')||'{}')}catch(e){return {}}}
 function writeModels(m){try{localStorage.setItem('bs:models',JSON.stringify(m));return true}catch(e){return false}}
 function encode(){return btoa(unescape(encodeURIComponent(JSON.stringify(S.bricks.map(b=>b.f?[b.p,b.c,'f',b.px,b.py,b.pz,...b.q]:[b.p,b.c,b.x,b.y,b.z,b.r])))))}
-function decode(t){const a=JSON.parse(decodeURIComponent(escape(atob(t.trim()))));return a.filter(r=>(PMAP[r[0]]||/^ld:/.test(r[0]))&&COLORS[r[1]]).map((r,i)=>r[2]==='f'?{id:i+1,p:r[0],c:r[1],f:1,px:r[3],py:r[4],pz:r[5],q:r.slice(6,10)}:{id:i+1,p:r[0],c:r[1],x:r[2],y:r[3],z:r[4],r:r[5]||0})}
+function decode(t){const a=JSON.parse(decodeURIComponent(escape(atob(t.trim()))));return a.filter(r=>(PMAP[r[0]]||/^ld:/.test(r[0]))&&(COLORS[r[1]]||/^L\d+$/.test(r[1]))).map((r,i)=>r[2]==='f'?{id:i+1,p:r[0],c:r[1],f:1,px:r[3],py:r[4],pz:r[5],q:r.slice(6,10)}:{id:i+1,p:r[0],c:r[1],x:r[2],y:r[3],z:r[4],r:r[5]||0})}
 function loadBricks(arr,msg){const prev=snap();S.bricks=arr;S.nextId=arr.reduce((a,b)=>Math.max(a,b.id),0)+1;commit(prev);hideSel();toast(msg)}
 
 function openSave(){
@@ -871,7 +982,7 @@ ldReg('ld:3001');ldEnsure('ld:3001').catch(()=>{});
 const hadAny=migrate();
 if(!hadAny&&!Object.keys(local.read()).length&&!FB){ // first visit: a sample project to look at
   openProject({id:newId(),name:'בית לדוגמה',data:'[]'});$('#home').hidden=false;ldSample().then(()=>saveNow()).then(()=>renderHome())}
-renderHome();initFB();
+renderHome();initFB();loadLDColors();
 $('#q').placeholder='חיפוש חלק: שם או מספר, למשל brick 2 x 4, 3001, גלגל';renderParts();updateCur();
 })();
 </script>
