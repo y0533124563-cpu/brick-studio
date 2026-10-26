@@ -27,7 +27,7 @@
   --scene:#161C24; --base:#3E6B4B; color-scheme:dark}
 html,body{height:100%}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;overflow:hidden;-webkit-tap-highlight-color:transparent}
-#app{height:100%;display:grid;grid-template-rows:auto 1fr auto}
+#app{height:100%;display:grid;grid-template-rows:auto 1fr auto;grid-template-columns:minmax(0,1fr)}
 button{font:inherit;color:inherit;cursor:pointer}
 button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
@@ -71,7 +71,8 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke
 .handle .chev{margin-inline-start:auto;transition:transform .2s}
 #sheet.closed .chev{transform:rotate(180deg)}
 #sheet.closed .drawer{display:none}
-.drawer{display:flex;flex-direction:column;gap:8px}
+.drawer{display:flex;flex-direction:column;gap:8px;min-width:0}
+.sheet-in>*{min-width:0}
 .search{display:flex;align-items:center;gap:8px;background:var(--surface-2);border-radius:10px;padding:0 10px;height:40px}
 .search input{flex:1;min-width:0;border:0;background:transparent;font:inherit;color:var(--ink);outline:none}
 .row{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
@@ -133,11 +134,13 @@ textarea{min-height:70px;resize:vertical;font-size:12px;direction:ltr;text-align
   </header>
 
   <main id="stage">
-    <div class="hint" id="hint">בלשונית "כל החלקים" יש את כל ספריית LDraw. גע במקום שבו תרצה לחבר את החלק, ואז לחץ "אישור". ציר × נכנס לחור × או ○, פין ○ נכנס רק לחור ○. גלגל או קורה: בחר אותם וגע בציר.</div>
+    <div class="hint" id="hint">גע במקום שבו תרצה לחבר את החלק. החיבורים יסומנו בלבן, ואז לחץ "אישור".</div>
     <div class="confirm" id="confirm" hidden>
       <button class="ok" id="okBtn" aria-label="אישור והנחת החלק"><svg class="i" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>אישור</button>
       <button id="rotSel"><svg class="i" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v5h-5"/></svg><span id="rotLbl">סובב</span></button>
-      <button id="nextHole" hidden><svg class="i" viewBox="0 0 24 24"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="12" r="2.5"/><path d="M10 12h4"/></svg>חור הבא</button>
+      <button id="nextHole" hidden><svg class="i" viewBox="0 0 24 24"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="12" r="2.5"/><path d="M10 12h4"/></svg><span id="nextLbl">חור הבא</span></button>
+      <button id="slideBtn" hidden><svg class="i" viewBox="0 0 24 24"><path d="M4 12h16M8 8l-4 4 4 4M16 8l4 4-4 4"/></svg>הזז</button>
+      <button id="flipBtn" hidden><svg class="i" viewBox="0 0 24 24"><path d="M7 4v16M7 20l-3-3M7 20l3-3M17 20V4M17 4l-3 3M17 4l3 3"/></svg>הפוך</button>
       <button id="cancelSel" aria-label="ביטול הסימון"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>ביטול</button>
     </div>
     <div class="rail" role="group" aria-label="מצב עבודה">
@@ -188,7 +191,8 @@ const COLORS=[
 
 /* ---------- geometry helpers ---------- */
 function box(w,h,d,x,y,z){const g=new THREE.BoxGeometry(w,h,d);g.translate(x,y,z);return g}
-function cyl(r,h,x,y,z,axis,seg){const g=new THREE.CylinderGeometry(r,r,h,seg||18);if(axis==='z')g.rotateX(Math.PI/2);if(axis==='x')g.rotateZ(Math.PI/2);g.translate(x,y,z);return g}
+let REC=null;
+function cyl(r,h,x,y,z,axis,seg){if(REC&&r===SR&&h===SHt&&!axis)REC.push([x,y-SHt/2,z]);const g=new THREE.CylinderGeometry(r,r,h,seg||18);if(axis==='z')g.rotateX(Math.PI/2);if(axis==='x')g.rotateZ(Math.PI/2);g.translate(x,y,z);return g}
 function studs(w,d,top){const a=[];for(let i=0;i<w;i++)for(let j=0;j<d;j++)a.push(cyl(SR,SHt,-w/2+i+.5,top+SHt/2,-d/2+j+.5));return a}
 function merge(list){ // list of [geo, flag]
   const gs=list.map(([g])=>{const n=g.index?g.toNonIndexed():g; if(!n.attributes.uv){n.setAttribute('uv',new THREE.BufferAttribute(new Float32Array(n.attributes.position.count*2),2))} return n});
@@ -280,7 +284,7 @@ P('door4','special','דלת 1×4×6',()=>mkDoor(4,18));P('door3','special','דל
 [[2,2],[4,3],[6,5]].forEach(([n,h])=>P(`pan${n}x${h}`,'special',`קיר דק 1×${n}×${h}`,()=>mkPanel(n,h*3)));
 P('fence4','special','גדר 1×4×2',()=>mkFence(4));P('fence6','special','גדר 1×6×2',()=>mkFence(6));
 const PMAP={};PARTS.forEach(p=>PMAP[p.id]=p);
-const GEO={};function info(id){if(!GEO[id]){const r=PMAP[id].make();GEO[id]={geo:merge(r.list),w:r.w,d:r.d,h:r.h,conns:r.conns||[]}}return GEO[id]}
+const GEO={};function info(id){if(!GEO[id]){REC=[];const r=PMAP[id].make(),st=REC;REC=null;GEO[id]={geo:merge(r.list),w:r.w,d:r.d,h:r.h,conns:r.conns||[],studs:st}}return GEO[id]}
 
 /* ---------- materials ---------- */
 const darkMat=new THREE.MeshStandardMaterial({color:DARK,roughness:.6,side:THREE.DoubleSide});
@@ -335,7 +339,7 @@ const snap=()=>JSON.stringify(S.bricks);
 function restore(json){S.bricks=JSON.parse(json);S.nextId=S.bricks.reduce((a,b)=>Math.max(a,b.id),0)+1;refresh()}
 function commit(prev){S.undo.push(prev);if(S.undo.length>300)S.undo.shift();S.redo=[];refresh()}
 function refresh(){rebuildHM();sync();$('#count').textContent=S.bricks.length+' חלקים';$('#undo').disabled=!S.undo.length;$('#redo').disabled=!S.redo.length;
-  try{localStorage.setItem('bs:current',snap())}catch(e){} if(sel){if(sel.kind!=='grid'&&!brickById(sel.bid))hideSel();else showSel(sel)}}
+  try{localStorage.setItem('bs:current',snap())}catch(e){} if(sel){if(sel.kind!=='grid'&&sel.bid&&!brickById(sel.bid))hideSel();else showSel(sel)}}
 const brickById=id=>S.bricks.find(q=>q.id===id);
 
 /* ---------- ghost & picking ---------- */
@@ -356,8 +360,13 @@ function freeXf(s){const tm=meshes.get(s.bid);tm.updateMatrixWorld();const tq=tm
   const A=AXV[tc.a].clone().applyQuaternion(tq),T=tm.localToWorld(new V3(...tc.p).addScaledVector(AXV[tc.a],s.t));
   return {pos:T.clone().sub(new V3(...h.p).applyQuaternion(q)),q,hc:T,A}}
 function addHL(geo,mat,pos,dir,from,order){const m=new THREE.Mesh(geo,mat);m.position.copy(pos);if(dir)m.quaternion.setFromUnitVectors(from,dir);m.renderOrder=order;hl.add(m)}
-function showSel(s){sel=s;clearHL();const rl=$('#rotLbl'),nh=$('#nextHole');
-  if(s.kind!=='grid'){const x=freeXf(s),Z=AXV.z;
+function showSel(s){sel=s;clearHL();const rl=$('#rotLbl'),nh=$('#nextHole');$('#slideBtn').hidden=true;$('#flipBtn').hidden=true;$('#nextLbl').textContent=s.kind==='snap'?'חיבור הבא':'חור הבא';
+  if(s.kind==='snap'){const x=snapXf(s);
+    for(const t of engaged(s,x)){const r=Math.max(...t.secs.map(q=>q[1]))*.05,L=Math.max(t.L,.2),mid=t.S.clone().addScaledVector(t.D,L/2);
+      addHL(new THREE.CylinderGeometry(r+.04,r+.04,L,20),hlMat,mid,t.D,AXV.y,20);addHL(new THREE.RingGeometry(r+.02,r+.14,28),hlRing,t.S,t.D,AXV.z,21)}
+    rl.textContent='סובב';nh.hidden=s.C.length<2;const [lo,hi]=slideRange(s);$('#slideBtn').hidden=lo===hi;$('#flipBtn').hidden=!(x.t.caps==='none'||x.h.caps==='none');
+    $('#confirm').hidden=false;return}
+  if(s.kind==='insert'||s.kind==='mount'){const x=freeXf(s),Z=AXV.z;
     addHL(new THREE.CircleGeometry(s.kind==='mount'?.5:.34,28),hlMat,x.hc,x.A,Z,20);
     addHL(new THREE.RingGeometry(s.kind==='mount'?.5:.34,s.kind==='mount'?.66:.5,32),hlRing,x.hc,x.A,Z,21);
     if(s.kind==='insert')addHL(new THREE.CylinderGeometry(.17,.17,x.len,14),hlMat,x.center,x.A,AXV.y,20);
@@ -384,9 +393,10 @@ function pick(e){const r=renderer.domElement.getBoundingClientRect();ndc.set(((e
   return {cell:{x,z},bid:b.id,mesh:h.object,point:h.point}}
 function place(){if(!sel)return;const prev=snap(),r4=v=>Math.round(v*1e4)/1e4;
   if(sel.kind==='grid'){const p=placement(sel.cell.x,sel.cell.z,S.part,S.rot);S.bricks.push({id:S.nextId++,p:S.part,c:S.color,r:S.rot,...p})}
-  else{const x=freeXf(sel);S.bricks.push({id:S.nextId++,p:S.part,c:S.color,f:1,px:r4(x.pos.x),py:r4(x.pos.y),pz:r4(x.pos.z),q:[x.q.x,x.q.y,x.q.z,x.q.w].map(r4)})}
+  else{const x=sel.kind==='snap'?snapXf(sel):freeXf(sel);S.bricks.push({id:S.nextId++,p:S.part,c:S.color,f:1,px:r4(x.pos.x),py:r4(x.pos.y),pz:r4(x.pos.z),q:[x.q.x,x.q.y,x.q.z,x.q.w].map(r4)})}
   hideSel();commit(prev);toast('חובר: '+PMAP[S.part].name)}
-function tapBuild(h){const own=info(S.part).conns;
+function tapBuild(h){const own=info(S.part).conns,tb=h.bid&&brickById(h.bid);
+  if(/^ld:/.test(S.part)||(tb&&/^ld:/.test(tb.p))){if(snapTap(h))return;if(/^ld:/.test(S.part)){showSel({kind:'grid',cell:h.cell});toast('לא נמצא כאן חיבור מתאים, החלק יונח על המשבצות');return}}
   if(h.bid){const b=brickById(h.bid),tc=info(b.p).conns;
     if(tc.length&&own.length){const lp=h.mesh.worldToLocal(h.point.clone()),mi=own.findIndex(isMale);
       if(mi>=0){let best=-1,bd=1e9;tc.forEach((c,i)=>{if(!isHole(c))return;const d=new V3(...c.p).sub(lp),a=AXV[c.a],al=d.dot(a),perp=d.clone().addScaledVector(a,-al).length();if(perp<.45&&Math.abs(al)<.75&&perp<bd){bd=perp;best=i}});
@@ -415,10 +425,13 @@ let tt;function toast(t){const el=$('#toast');el.textContent=t;el.classList.add(
 document.querySelectorAll('.mode').forEach(b=>b.onclick=()=>{S.mode=b.dataset.mode;document.querySelectorAll('.mode').forEach(x=>x.setAttribute('aria-pressed',x===b));
   if(S.mode!=='build')hideSel();$('#rotBtn').hidden=S.mode!=='build';toast({build:'מצב בנייה',paint:'גע בחלק כדי לצבוע אותו',erase:'גע בחלק כדי למחוק אותו'}[S.mode])});
 $('#rotBtn').onclick=$('#rotSel').onclick=()=>{
+  if(sel&&sel.kind==='snap'){sel.rot=(sel.rot+1)%4;showSel(sel);toast('סיבוב '+sel.rot*90+'°');return}
   if(sel&&sel.kind==='insert'){const M=(info(S.part).conns[sel.mi].len-1)/2;let s=sel.s+.5;if(s>M+1e-6)s=-M;sel.s=s;showSel(sel);toast('הוזז לאורך החור');return}
   if(sel&&sel.kind==='mount'){sel.phi=(sel.phi+1)%4;showSel(sel);toast('סיבוב סביב הציר '+sel.phi*90+'°');return}
   S.rot=(S.rot+1)%4;if(sel)showSel(sel);toast('סיבוב '+S.rot*90+'°')};
-$('#nextHole').onclick=()=>{if(sel&&sel.kind==='mount'){sel.hi=sel.ok[(sel.ok.indexOf(sel.hi)+1)%sel.ok.length];showSel(sel);toast('חור '+(sel.ok.indexOf(sel.hi)+1)+' מתוך '+sel.ok.length)}};
+$('#slideBtn').onclick=()=>{if(!sel||sel.kind!=='snap')return;const [lo,hi]=slideRange(sel);sel.off+=.5;if(sel.off>hi+1e-6)sel.off=lo;showSel(sel);toast('הוזז לאורך החיבור')};
+$('#flipBtn').onclick=()=>{if(!sel||sel.kind!=='snap')return;sel.flip=!sel.flip;sel.off=defOff(sel);showSel(sel);toast('הוכנס מהצד השני')};
+$('#nextHole').onclick=()=>{if(sel&&sel.kind==='snap'){sel.ci=(sel.ci+1)%sel.C.length;sel.off=defOff(sel);showSel(sel);toast('חיבור '+(sel.ci+1)+' מתוך '+sel.C.length);return}if(sel&&sel.kind==='mount'){sel.hi=sel.ok[(sel.ok.indexOf(sel.hi)+1)%sel.ok.length];showSel(sel);toast('חור '+(sel.ok.indexOf(sel.hi)+1)+' מתוך '+sel.ok.length)}};
 $('#okBtn').onclick=place;$('#cancelSel').onclick=hideSel;
 $('#undo').onclick=()=>{if(!S.undo.length)return;S.redo.push(snap());restore(S.undo.pop());toast('בוטל')};
 $('#redo').onclick=()=>{if(!S.redo.length)return;S.undo.push(snap());restore(S.redo.pop());toast('הוחזר')};
@@ -462,7 +475,7 @@ const HE=[['גלגל שיניים','gear'],['שיניים','gear'],['לבנים'
 function ldKey(t){t=' '+String(t).toLowerCase().replace(/×/g,' x ')+' ';for(const [h,e] of HE)t=t.split(h).join(' '+e+' ');t=t.replace(/\s+/g,' ');
   for(let i=0;i<2;i++)t=t.replace(/(\d+(?:\.\d+)?) x (\d+(?:\.\d+)?)/g,'$1x$2');return t.trim()}
 const ldLabel=e=>e.d+' · '+e.n;
-function ldReg(id){const n=id.slice(3),e=LDX&&LDX.find(x=>x.n===n);PMAP[id]={id,cat:'ld',name:e?ldLabel(e):'חלק '+n,ph:!e}}
+function ldReg(id){const n=id.slice(3),e=LDX&&LDX.find(x=>x.n===n);PMAP[id]={id,cat:'ld',name:e?ldLabel(e):'חלק '+n,ph:!e};if(!e)ldIndex().then(()=>updateCur(),()=>{})}
 function ldIndex(){if(!LDXp)LDXp=fetch(LD_BASE+'index.json').then(r=>{if(!r.ok)throw new Error('no index');return r.json()}).then(arr=>{
     LDX=arr.map(([n,d,c])=>({n,d,c,k:ldKey(n+' '+d+' '+c)}));
     for(const id in PMAP)if(PMAP[id].ph){const e=LDX.find(x=>x.n===id.slice(3));if(e)PMAP[id]={id,cat:'ld',name:ldLabel(e)}}return LDX})
@@ -470,7 +483,7 @@ function ldIndex(){if(!LDXp)LDXp=fetch(LD_BASE+'index.json').then(r=>{if(!r.ok)t
 const QUICK=['brick','plate','tile','slope','technic beam','axle','pin','gear','wheel','tyre','window','door','minifig','arch','panel','plant'];
 function renderLD(){const el=$('#parts'),gen=++ldGen;el.innerHTML='<div class="empty">טוען את רשימת כל החלקים…</div>';
   ldIndex().then(X=>{if(gen!==ldGen)return;const q=ldKey(S.q);el.innerHTML='';
-    if(!q){el.innerHTML=`<div class="empty">${X.length.toLocaleString('he-IL')} חלקים מספריית LDraw. כתוב בחיפוש שם או מספר חלק, או בחר:</div>`;
+    if(!q){el.innerHTML=`<div class="empty">${X.length.toLocaleString('he-IL')} חלקים מספריית LDraw. כתוב בחיפוש שם או מספר חלק, או בחר. חיבורים: LDCad Shadow Library (CC BY-SA 4.0).</div>`;
       QUICK.forEach(w=>{const b=document.createElement('button');b.className='tab';b.textContent=w;b.onclick=()=>{$('#q').value=w;S.q=w;renderParts()};el.appendChild(b)});return}
     const toks=q.split(' ');let res=X.filter(e=>toks.every(t=>e.k.includes(t)));
     res.sort((a,b)=>(b.n===q)-(a.n===q)||a.d.length-b.d.length);const total=res.length;res=res.slice(0,80);
@@ -498,16 +511,71 @@ function ldFlat(name,M,col,pos,depth){const lines=ldParsed[name];if(!lines||dept
     else{const v=l.v,g=pos[c==='16'?0:1],P=[];for(let j=0;j<v.length;j+=3){_v.set(v[j],v[j+1],v[j+2]).applyMatrix4(M);P.push(_v.x,_v.y,_v.z)}
       g.push(P[0],P[1],P[2],P[3],P[4],P[5],P[6],P[7],P[8]);if(v.length===12)g.push(P[0],P[1],P[2],P[6],P[7],P[8],P[9],P[10],P[11])}}}
 function ldEnsure(id){if(GEO[id])return Promise.resolve();
-  if(!ldBuilt[id])ldBuilt[id]=ldGet(id.slice(3)+'.dat').then(()=>{const file=ldNorm(id.slice(3)+'.dat'),pos=[[],[]];
+  if(!ldBuilt[id])ldBuilt[id]=(async()=>{const num=id.slice(3);await ldGet(num+'.dat');const file=ldNorm(num+'.dat'),pos=[[],[]];
     ldFlat(file,new THREE.Matrix4().makeScale(.05,-.05,-.05),'16',pos,0); // 20 LDraw units = 1 stud; LDraw's Y points down
     if(!pos[0].length&&!pos[1].length){delete ldBuilt[id];throw new Error('empty part')}
     const g=new THREE.BufferGeometry(),all=pos[0].concat(pos[1]);g.setAttribute('position',new THREE.Float32BufferAttribute(all,3));
     g.addGroup(0,pos[0].length/3,0);g.addGroup(pos[0].length/3,pos[1].length/3,1);g.computeBoundingBox();
     const bb=g.boundingBox,x0=bb.min.x,x1=bb.max.x,y0=bb.min.y,y1=bb.max.y,z0=bb.min.z,z1=bb.max.z;
     const h=Math.max(1,Math.round((y1<=.25?-y0:y1-y0)/PH)); // most parts have their top surface at the origin
-    g.translate(-(x0+x1)/2,-y0,-(z0+z1)/2);g.computeVertexNormals();g.computeBoundingBox();
-    GEO[id]={geo:g,w:Math.max(1,Math.round(x1-x0)),d:Math.max(1,Math.round(z1-z0)),h,conns:[]};if(!PMAP[id])ldReg(id)});
+    const off=new THREE.Vector3(-(x0+x1)/2,-y0,-(z0+z1)/2);g.translate(off.x,off.y,off.z);g.computeVertexNormals();g.computeBoundingBox();
+    let sn=[];try{const r=await fetch(LD_BASE+'snap/'+num.toLowerCase()+'.json');if(r.ok)sn=await r.json()}catch(e){}
+    const snaps=sn.map(a=>{const secs=[];for(let i=0;i<a[3].length;i+=3)secs.push([a[3][i],a[3][i+1]]);
+      return {g:a[0],caps:a[1],slide:!!a[2],secs,S:new THREE.Vector3(a[4]*.05,-a[5]*.05,-a[6]*.05).add(off),
+        D:new THREE.Vector3(a[7],-a[8],-a[9]).normalize(),U:new THREE.Vector3(a[10],-a[11],-a[12]).normalize(),L:a[13]*.05}});
+    GEO[id]={geo:g,w:Math.max(1,Math.round(x1-x0)),d:Math.max(1,Math.round(z1-z0)),h,conns:[],studs:[],snaps};if(!PMAP[id])ldReg(id)})();
   return ldBuilt[id]}
+
+/* ---------- real connections: every stud, anti-stud, hole, axle and pin is a "snap" cylinder ----------
+   LDraw parts use the LDCad Shadow Library data; built-in parts get theirs generated below. */
+function perp(D){const a=Math.abs(D.y)>.9?new THREE.Vector3(1,0,0):new THREE.Vector3(0,1,0);return a.addScaledVector(D,-a.dot(D)).normalize()}
+function bSnaps(id){const g=info(id),out=[],H=g.h*PH,V=THREE.Vector3,up=new V(0,1,0);
+  const add=(gd,shape,L,S,D,caps,slide)=>out.push({g:gd,secs:[[shape,6]],L,S,D,U:perp(D),caps,slide});
+  for(const [x,y,z] of g.studs)add('M','R',.2,new V(x,y,z),up,'one',false);
+  if(!/^(la|lax|ax|pin|con|g\d|wheel)/.test(id))for(let i=0;i<g.w;i++)for(let j=0;j<g.d;j++)add('F','R',Math.min(H,1),new V(-g.w/2+i+.5,0,-g.d/2+j+.5),up,'one',false);
+  for(const c of g.conns){const D=AXV[c.a].clone(),P=new V(...c.p);
+    if(c.t==='rh'){const L=c.a==='y'?.4:1;add('F','R',L,P.clone().addScaledVector(D,-L/2),D,'none',true)}
+    else if(c.t==='xh')add('F','A',1,P.clone().addScaledVector(D,-.5),D,'none',true);
+    else if(c.t==='axle')add('M','A',c.len,P.clone().addScaledVector(D,-c.len/2),D,'none',true);
+    else if(c.t==='pin')add('M','R',c.len,P.clone().addScaledVector(D,-c.len/2),D,'none',false)}
+  return out}
+function snapsFor(id){const g=info(id);if(!g.snaps)g.snaps=/^ld:/.test(id)?[]:bSnaps(id);return g.snaps}
+const shp=x=>x==='A'?'A':x==='S'?'S':'R';
+function compat(a,b){if(a.g===b.g)return false;const m=a.g==='M'?a:b,f=a.g==='M'?b:a;
+  for(const [ms,mr] of m.secs)for(const [fs,fr] of f.secs){if(Math.abs(mr-fr)>.35)continue;const M=shp(ms),F=shp(fs);
+    if(M==='A'&&(F==='A'||F==='R'))return true;if(M==='R'&&(F==='R'||F==='S'))return true;if(M==='S'&&F==='S')return true}
+  return false}
+function wSnaps(b){const m=meshes.get(b.id);if(!m)return[];m.updateMatrixWorld();const W=m.matrixWorld;
+  return snapsFor(b.p).map(x=>({...x,S:x.S.clone().applyMatrix4(W),D:x.D.clone().transformDirection(W),U:x.U.clone().transformDirection(W)}))}
+const baseSnap=(cx,cz)=>({g:'M',secs:[['R',6]],L:.2,S:new THREE.Vector3(cx+.5,0,cz+.5),D:new THREE.Vector3(0,1,0),U:new THREE.Vector3(1,0,0),caps:'one',slide:false,base:1});
+function segDist(p,t){const v=p.clone().sub(t.S),k=Math.max(0,Math.min(t.L,v.dot(t.D)));return v.addScaledVector(t.D,-k).length()}
+function snapXf(s){const h=snapsFor(S.part)[s.C[s.ci]],t=s.t,V=THREE.Vector3;
+  const Dt=s.flip?t.D.clone().negate():t.D.clone(),Ut=t.U.clone().addScaledVector(Dt,-t.U.dot(Dt)).normalize().applyAxisAngle(Dt,s.rot*Math.PI/2);
+  const Uh=h.U.clone().addScaledVector(h.D,-h.U.dot(h.D)).normalize();
+  const Fh=new THREE.Matrix4().makeBasis(Uh,h.D,new V().crossVectors(Uh,h.D)),Ft=new THREE.Matrix4().makeBasis(Ut,Dt,new V().crossVectors(Ut,Dt));
+  const q=new THREE.Quaternion().setFromRotationMatrix(Ft.multiply(Fh.transpose()));
+  const anchor=s.flip?t.S.clone().addScaledVector(t.D,t.L):t.S.clone();
+  return {q,pos:anchor.clone().addScaledVector(Dt,s.off).sub(h.S.clone().applyQuaternion(q)),anchor,Dt,h,t}}
+function slideRange(s){const h=snapsFor(S.part)[s.C[s.ci]];if(!(h.slide&&s.t.slide))return [0,0];let lo=-h.L+.5,hi=s.t.L-.5;if(lo>hi)lo=hi=0;return [lo,hi]}
+function defOff(s,hit){const [lo,hi]=slideRange(s);if(lo===hi)return lo;const x=snapXf({...s,off:0}),h=x.h;
+  const proj=hit?hit.clone().sub(x.anchor).dot(x.Dt):(s.t.L-h.L)/2;return Math.max(lo,Math.min(hi,Math.round((proj-h.L/2)*2)/2))}
+function snapTap(h){const H=snapsFor(S.part);if(!H.length)return false;let T;
+  if(h.bid){const b=brickById(h.bid);if(!ready(b.p))return false;T=wSnaps(b)}else T=[baseSnap(h.cell.x,h.cell.z)];
+  const cand=T.map(t=>({t,d:segDist(h.point,t)})).filter(o=>o.d<.75).sort((a,b)=>a.d-b.d);
+  const g=info(S.part),ctr=new THREE.Vector3(0,g.h*PH/2,0);
+  for(const o of cand){const C=H.map((x,k)=>k).filter(k=>compat(H[k],o.t));if(!C.length)continue;
+    C.sort((a,b)=>H[a].S.distanceTo(ctr)-H[b].S.distanceTo(ctr));
+    const sl={kind:'snap',bid:h.bid||null,t:o.t,T,C,ci:0,rot:0,flip:false,off:0};sl.off=defOff(sl,h.point);showSel(sl);
+    const hs=H[C[0]],word=x=>({R:'○',A:'×',S:'□'}[shp(x.secs[0][0])]);toast(o.t.base||hs.secs[0][1]===6&&o.t.caps==='one'?'חיבור לבליטות':`חיבור ${hs.g==='M'?'זכר':'חור'} ${word(hs)} אל ${o.t.g==='M'?'זכר':'חור'} ${word(o.t)}`);return true}
+  return false}
+function engaged(s,x){ // which target connections line up once the part sits there (all get marked)
+  const out=[];const W=new THREE.Matrix4().compose(x.pos,x.q,new THREE.Vector3(1,1,1));
+  const held=snapsFor(S.part).map(h=>({...h,S:h.S.clone().applyMatrix4(W),D:h.D.clone().applyQuaternion(x.q)}));
+  if(s.t.base){for(const h of held)if(h.g==='F'&&h.D.y>.95&&Math.abs(h.S.y)<.06){const cx=Math.floor(h.S.x),cz=Math.floor(h.S.z);
+      if(Math.abs(h.S.x-cx-.5)<.08&&Math.abs(h.S.z-cz-.5)<.08&&cx>=-BOUND&&cx<BOUND&&cz>=-BOUND&&cz<BOUND)out.push(baseSnap(cx,cz))}return out.length?out:[s.t]}
+  for(const t of s.T)if(t===s.t||held.some(h=>compat(h,t)&&Math.abs(h.D.dot(t.D))>.95&&(h.S.distanceTo(t.S)<.08||h.slide&&t.slide&&segDist(h.S,t)<.08)))out.push(t);
+  return out}
+
 
 /* ---------- panels ---------- */
 const scrim=$('#scrim'),panel=$('#panel');

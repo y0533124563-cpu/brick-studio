@@ -31,6 +31,10 @@ jobs:
           key: ldraw-complete-v1
       - name: Get LDraw parts library
         run: python3 scripts/get-ldraw.py ldraw-complete.zip
+      - name: Get connection data (LDCad Shadow Library)
+        run: git clone --depth 1 https://github.com/RolandMelkert/LDCadShadowLibrary shadow
+      - name: Build connection points for every part
+        run: python3 scripts/build-snaps.py web/ldraw shadow
       - name: Library size
         run: du -sh web/ldraw && find web/ldraw -type f | wc -l
       - uses: actions/configure-pages@v5

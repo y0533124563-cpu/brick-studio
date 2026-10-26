@@ -9,4 +9,6 @@
 
 ספריית החלקים המלאה מגיעה מ-The LDraw Parts Library (ldraw.org), ברישיון Creative Commons Attribution 2.0. היא מורדת אוטומטית בזמן בניית האתר.
 
+נקודות החיבור של החלקים (בליטות, חורים, צירים ופינים) מחושבות מ-LDCad Shadow Library של Roland Melkert ותורמים (github.com/RolandMelkert/LDCadShadowLibrary), ברישיון CC BY-SA 4.0. קבצי החיבורים שנוצרים ממנה (`ldraw/snap`) משותפים באותו רישיון.
+
 LEGO® הוא סימן מסחרי של קבוצת LEGO, שאינה נותנת חסות או אישור לפרויקט זה.
