@@ -360,19 +360,28 @@ function freeXf(s){const tm=meshes.get(s.bid);tm.updateMatrixWorld();const tq=tm
   const A=AXV[tc.a].clone().applyQuaternion(tq),T=tm.localToWorld(new V3(...tc.p).addScaledVector(AXV[tc.a],s.t));
   return {pos:T.clone().sub(new V3(...h.p).applyQuaternion(q)),q,hc:T,A}}
 function addHL(geo,mat,pos,dir,from,order){const m=new THREE.Mesh(geo,mat);m.position.copy(pos);if(dir)m.quaternion.setFromUnitVectors(from,dir);m.renderOrder=order;hl.add(m)}
-function showSel(s){sel=s;clearHL();const rl=$('#rotLbl'),nh=$('#nextHole');$('#slideBtn').hidden=true;$('#flipBtn').hidden=true;$('#nextLbl').textContent=s.kind==='snap'?'חיבור הבא':'חור הבא';
-  if(s.kind==='snap'){const x=snapXf(s);
+/* see-through preview of the part where it will connect, shown until the user taps "אישור" */
+const ghostMat=new THREE.MeshStandardMaterial({color:'#C91A09',transparent:true,opacity:.45,roughness:.4,depthWrite:false,side:THREE.DoubleSide});
+const ghostEdge=new THREE.LineBasicMaterial({color:0xffffff,transparent:true,opacity:.7});
+const ghost=new THREE.Mesh(new THREE.BufferGeometry(),[ghostMat,ghostMat,ghostMat]);ghost.renderOrder=15;ghost.visible=false;scene.add(ghost);
+let ghostLines=null,ghostLinesFor=null;
+function showGhost(id,pos,q){const g=info(id).geo;ghost.geometry=g;ghost.position.copy(pos);ghost.quaternion.copy(q);
+  if(ghostLinesFor!==id){if(ghostLines){ghost.remove(ghostLines);ghostLines.geometry.dispose()}ghostLines=new THREE.LineSegments(new THREE.EdgesGeometry(g,30),ghostEdge);ghostLinesFor=id;ghost.add(ghostLines)}
+  ghostMat.color.set(COLORS[S.color].glass?'#7fd3df':COLORS[S.color].h);ghost.visible=true}
+function showSel(s){sel=s;clearHL();ghost.visible=false;$('#rotBtn').hidden=true;const rl=$('#rotLbl'),nh=$('#nextHole');$('#slideBtn').hidden=true;$('#flipBtn').hidden=true;$('#nextLbl').textContent=s.kind==='snap'?'חיבור הבא':'חור הבא';
+  if(s.kind==='snap'){const x=snapXf(s);showGhost(S.part,x.pos,x.q);
     for(const t of engaged(s,x)){const r=Math.max(...t.secs.map(q=>q[1]))*.05,L=Math.max(t.L,.2),mid=t.S.clone().addScaledVector(t.D,L/2);
       addHL(new THREE.CylinderGeometry(r+.04,r+.04,L,20),hlMat,mid,t.D,AXV.y,20);addHL(new THREE.RingGeometry(r+.02,r+.14,28),hlRing,t.S,t.D,AXV.z,21)}
     rl.textContent='סובב';nh.hidden=s.C.length<2;const [lo,hi]=slideRange(s);$('#slideBtn').hidden=lo===hi;$('#flipBtn').hidden=!(x.t.caps==='none'||x.h.caps==='none');
     $('#confirm').hidden=false;return}
-  if(s.kind==='insert'||s.kind==='mount'){const x=freeXf(s),Z=AXV.z;
+  if(s.kind==='insert'||s.kind==='mount'){const x=freeXf(s),Z=AXV.z;showGhost(S.part,x.pos,x.q);
     addHL(new THREE.CircleGeometry(s.kind==='mount'?.5:.34,28),hlMat,x.hc,x.A,Z,20);
     addHL(new THREE.RingGeometry(s.kind==='mount'?.5:.34,s.kind==='mount'?.66:.5,32),hlRing,x.hc,x.A,Z,21);
     if(s.kind==='insert')addHL(new THREE.CylinderGeometry(.17,.17,x.len,14),hlMat,x.center,x.A,AXV.y,20);
     rl.textContent=s.kind==='insert'?'הזז':'סובב';nh.hidden=!(s.kind==='mount'&&s.ok.length>1);$('#confirm').hidden=false;return}
   rl.textContent='סובב';nh.hidden=true;
   const cell=s.cell,p=placement(cell.x,cell.z,S.part,S.rot),f=fp(S.part,S.rot),y=p.y*PH+.03;
+  {const o=new THREE.Object3D();posMesh(o,{p:S.part,r:S.rot,...p});showGhost(S.part,o.position,o.quaternion)}
   for(let i=0;i<f.w;i++)for(let j=0;j<f.d;j++){const a=new THREE.Mesh(cellGeo,hlMat);a.position.set(p.x+i+.5,y,p.z+j+.5);a.renderOrder=20;hl.add(a);
     const r=new THREE.Mesh(ringGeo,hlRing);r.position.set(p.x+i+.5,y+.01,p.z+j+.5);r.renderOrder=21;hl.add(r)}
   const pts=[[p.x,p.z],[p.x+f.w,p.z],[p.x+f.w,p.z+f.d],[p.x,p.z+f.d]].map(([x,z])=>new THREE.Vector3(x,y+.02,z));
@@ -382,7 +391,7 @@ function showSel(s){sel=s;clearHL();const rl=$('#rotLbl'),nh=$('#nextHole');$('#
     const g=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(cx+dx*.5,y,cz+dz*.5),new THREE.Vector3(cx+px*.35,y,cz+pz*.35),new THREE.Vector3(cx-px*.35,y,cz-pz*.35)]);
     const ar=new THREE.Mesh(g,new THREE.MeshBasicMaterial({color:0xffffff,side:THREE.DoubleSide,depthTest:false,transparent:true,opacity:.95}));ar.renderOrder=22;hl.add(ar)}
   $('#confirm').hidden=false}
-function hideSel(){sel=null;clearHL();$('#confirm').hidden=true}
+function hideSel(){sel=null;clearHL();ghost.visible=false;$('#rotBtn').hidden=S.mode!=='build';$('#confirm').hidden=true}
 const ray=new THREE.Raycaster(),ndc=new THREE.Vector2();
 function pick(e){const r=renderer.domElement.getBoundingClientRect();ndc.set(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1);ray.setFromCamera(ndc,camera);
   const hits=ray.intersectObjects([base,...meshes.values()],false);if(!hits.length)return null;const h=hits[0];
@@ -461,7 +470,7 @@ $('#q').addEventListener('input',e=>{S.q=e.target.value;renderParts()});
 const colEl=$('#colors');COLORS.forEach((c,i)=>{const b=document.createElement('button');b.className='c'+(c.glass?' glass':'');b.style.background=c.h;if(c.glass)b.style.backgroundColor=c.h;b.title=c.n;b.setAttribute('aria-label',c.n);
   b.onclick=()=>{S.color=i;colEl.querySelectorAll('.c').forEach((x,j)=>x.setAttribute('aria-pressed',j===i));updateCur()};colEl.appendChild(b)});
 function updateCur(){$('#curName').textContent=PMAP[S.part].name;$('#curColor').textContent=COLORS[S.color].n;$('#curSw').style.background=COLORS[S.color].h;
-  colEl.querySelectorAll('.c').forEach((x,j)=>x.setAttribute('aria-pressed',j===S.color))}
+  colEl.querySelectorAll('.c').forEach((x,j)=>x.setAttribute('aria-pressed',j===S.color));ghostMat.color.set(COLORS[S.color].glass?'#7fd3df':COLORS[S.color].h)}
 
 /* thumbnails */
 const BLANK='data:image/gif;base64,R0lGODlhAQABAAAAACw=';
