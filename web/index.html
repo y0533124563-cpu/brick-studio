@@ -170,26 +170,39 @@ textarea{min-height:70px;resize:vertical;font-size:12px;direction:ltr;text-align
 #app.simming #playBtn{display:none}
 .simbar{position:absolute;top:10px;left:50%;transform:translateX(-50%);display:flex;gap:6px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:6px;box-shadow:0 6px 18px rgba(0,0,0,.15);z-index:7}
 .simchip{font-weight:700;padding:0 8px;color:var(--accent-ink);background:var(--accent);border-radius:9px;height:38px;display:inline-flex;align-items:center}
-.remote{position:absolute;top:66px;bottom:12px;left:calc(12px + env(safe-area-inset-left,0px));width:min(210px,52%);overflow-y:auto;background:color-mix(in srgb,var(--surface) 92%,transparent);border:1px solid var(--line);border-radius:16px;padding:10px;display:flex;flex-direction:column;gap:10px;z-index:7;box-shadow:0 8px 24px rgba(0,0,0,.16)}
-.rw{display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px;border-radius:12px;border:2px solid transparent;background:var(--surface-2)}
-.rw.picked{border-color:var(--accent)}
-.joy{width:130px;height:130px;border-radius:50%;background:radial-gradient(circle at 50% 50%,var(--surface) 0 30%,var(--bg) 70%);border:2px solid var(--line);position:relative;touch-action:none}
-.knob{position:absolute;left:50%;top:50%;width:52px;height:52px;margin:-26px 0 0 -26px;border-radius:50%;background:var(--accent);box-shadow:0 4px 10px rgba(0,0,0,.25);transition:transform .08s}
-.bpair{display:flex;gap:8px}
-.hb{width:64px;height:52px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font-size:20px;font-weight:700;touch-action:none;user-select:none}
-.hb.down{background:var(--accent);color:var(--accent-ink)}
-.hb.small{width:auto;height:32px;font-size:13px;padding:0 12px}
-.rw input[type=range]{width:100%;accent-color:var(--accent)}
-.rlab{font-size:12px;color:var(--muted);text-align:center}
+.remote{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(10px + env(safe-area-inset-bottom,0px));width:min(560px,calc(100% - 16px));z-index:7;display:flex;flex-direction:column-reverse;gap:8px;pointer-events:none}
+.remote>*{pointer-events:auto}
+.gp{position:relative;padding-top:30px;direction:ltr;user-select:none;-webkit-user-select:none}
+.gp-body{position:relative;aspect-ratio:2.15/1;background:linear-gradient(180deg,var(--surface),var(--surface-2));border:1px solid var(--line);border-radius:44% 44% 30% 30%/58% 58% 42% 42%;box-shadow:0 10px 28px rgba(0,0,0,.22)}
+.gb{position:absolute;border:1px solid var(--line);background:var(--surface-2);font-size:11px;font-weight:700;color:var(--muted);touch-action:none}
+.trig{top:0;width:22%;height:30px;border-radius:12px 12px 4px 4px}.trig.l{left:9%}.trig.r{right:9%}
+.bump{top:16px;width:26%;height:22px;border-radius:10px;z-index:-1;padding-top:0}.bump.l{left:4%}.bump.r{right:4%}
+.bump{top:20px;height:18px;font-size:10px;z-index:1}
+.stick{position:absolute;width:22%;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,var(--bg) 0 55%,var(--line) 56% 60%,var(--bg) 61%);border:2px solid var(--line);touch-action:none}
+.stick.ls{left:9%;top:12%}.stick.rs{left:56%;top:50%}
+.stick .knob{position:absolute;left:20%;top:20%;width:60%;height:60%;margin:0;border-radius:50%;background:var(--ink);box-shadow:0 4px 10px rgba(0,0,0,.35),inset 0 -4px 0 rgba(255,255,255,.12);transition:transform .06s}
+.dpad{position:absolute;left:26%;top:50%;width:21%;aspect-ratio:1}
+.dp{position:absolute;border:1px solid var(--line);background:var(--ink);touch-action:none;padding:0}
+.dp.u,.dp.d{left:34%;width:32%;height:36%}.dp.u{top:0;border-radius:6px 6px 0 0}.dp.d{bottom:0;border-radius:0 0 6px 6px}
+.dp.l,.dp.r{top:34%;height:32%;width:36%}.dp.l{left:0;border-radius:6px 0 0 6px}.dp.r{right:0;border-radius:0 6px 6px 0}
+.dp.c{position:absolute;left:33%;top:33%;width:34%;height:34%;background:var(--ink)}
+.face{position:absolute;right:8%;top:10%;width:24%;aspect-ratio:1}
+.fb{position:absolute;width:36%;height:36%;border-radius:50%;border:1px solid var(--line);background:var(--ink);color:var(--surface);font-weight:800;font-size:15px;touch-action:none;padding:0;box-shadow:0 3px 0 rgba(0,0,0,.3)}
+.fb.t{left:32%;top:0}.fb.b{left:32%;bottom:0}.fb.l{left:0;top:32%}.fb.r{right:0;top:32%}
+.gb.down,.dp.down,.fb.down{background:var(--accent);color:var(--accent-ink)}
+.gp-hint{position:absolute;left:50%;transform:translateX(-50%);top:14%;font-size:11px;color:var(--muted);direction:rtl;white-space:nowrap}
+.remote.editing .has::after{content:"";position:absolute;right:-2px;top:-2px;width:10px;height:10px;border-radius:50%;background:var(--accent);border:2px solid var(--surface)}
+.remote.editing .on{outline:3px solid var(--accent);outline-offset:2px}
+.abox{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:6px;max-height:38vh;overflow:auto;box-shadow:0 8px 24px rgba(0,0,0,.18);direction:rtl}
+.abox-head{display:flex;align-items:center;gap:8px}.abox-head b{margin-inline-end:auto}
+.axsw{display:flex;gap:4px}.axsw button{border:1px solid var(--line);background:var(--surface-2);border-radius:8px;width:34px;height:30px;font-size:16px}.axsw button.on{background:var(--accent);color:var(--accent-ink);outline:none}
+.tgts{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:6px}
+.abox-foot{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .rnote{font-size:12px;color:var(--muted);line-height:1.4;margin:0}
-.rsplit{display:flex;flex-direction:column;gap:4px;width:100%}
-.rpick{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:5px;font-size:12px;font-weight:600}
-.rpick.on{border-color:var(--accent);background:var(--accent);color:var(--accent-ink)}
-.abox{display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--line);padding-top:10px}
-.tgt{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:7px 9px;display:flex;flex-direction:column;align-items:flex-start;text-align:right}
+.tgt{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:7px 9px;display:flex;flex-direction:column;align-items:flex-start;text-align:right;min-width:0}
 .tgt span{font-weight:700}.tgt small{font-size:11px;color:var(--muted);direction:ltr;text-align:left;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.tgt.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset}
-.tgt.warn{color:var(--danger);align-items:center}
+.tgt.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset;outline:none}
+.mini.warn{color:var(--danger);border-color:var(--danger);background:transparent}
 .inv{display:flex;align-items:center;gap:6px;font-size:13px}
 @media (prefers-reduced-motion: reduce){*{transition:none!important}}
 @media (min-width:900px){.parts .part{width:88px}.part img{width:70px;height:70px}}
@@ -249,7 +262,7 @@ textarea{min-height:70px;resize:vertical;font-size:12px;direction:ltr;text-align
       </div>
     </div>
     <div class="instr" id="instr" hidden></div>
-    <div class="simbar" id="simbar" hidden><span class="simchip">הדמיה</span><button class="sb" id="editBtn">עריכה</button><button class="sb" id="exitSim">יציאה</button></div>
+    <div class="simbar" id="simbar" hidden><span class="simchip">הדמיה</span><span class="simchip pad" id="padChip" hidden>שלט מחובר</span><button class="sb" id="editBtn">עריכה</button><button class="sb" id="exitSim">יציאה</button></div>
     <div class="remote" id="remote" hidden></div>
     <div class="toast" id="toast"></div>
   </main>
@@ -789,11 +802,21 @@ function buildMech(){const {W,joints}=buildJoints(),K=new Map(S.bricks.map(b=>[b
     if(!best)continue;used.add(best.r.id);const rg=groups.get(find(best.r.id));if(rg.ground||rg.D)continue;
     cyls.push({id:b.id,rod:rg,A:B.A.clone().multiplyScalar(Math.sign(best.al)||1),stroke:Math.max(.6,B.len*.45),ext:0})}
   return {moving,cranks,cyls,jam,K}}
-const SIMUI={on:false,edit:false,sel:null};const IN={jx:0,jy:0,s1:0,b1:0,b2:0};
-const OUTS=[['jy','ג׳ויסטיק: קדימה ואחורה'],['jx','ג׳ויסטיק: ימינה ושמאלה'],['s1','מחוון'],['b1','כפתורים א'],['b2','כפתורים ב']];
+const SIMUI={on:false,edit:false,sel:null};
+const OUTS=[['lsy','סטיק שמאלי ↕'],['lsx','סטיק שמאלי ↔'],['rsy','סטיק ימני ↕'],['rsx','סטיק ימני ↔'],['dpy','חצים ↕'],['dpx','חצים ↔'],
+  ['b1','כפתור 1'],['b2','כפתור 2'],['b3','כפתור 3'],['b4','כפתור 4'],['lb','כתף שמאל'],['rb','כתף ימין'],['lt','הדק שמאל'],['rt','הדק ימין']];
+const IN={},PADIN={};OUTS.forEach(([k])=>{IN[k]=0;PADIN[k]=0});let padName='';
+const val=k=>Math.abs(IN[k])>=Math.abs(PADIN[k])?IN[k]:PADIN[k];
+/* a real game controller (Bluetooth or USB) through the browser's standard mapping */
+function readPad(){const pads=navigator.getGamepads?navigator.getGamepads():[];let g=null;for(const p of pads)if(p&&p.connected){g=p;break}
+  const name=g?(g.id||'שלט'):'';if(name!==padName){padName=name;const c=$('#padChip');if(c){c.hidden=!g}if(g)toast('שלט משחק חובר')}
+  if(!g){for(const k in PADIN)PADIN[k]=0;return}const ax=i=>{const v=g.axes[i]||0;return Math.abs(v)<.15?0:v},bt=i=>g.buttons[i]?(g.buttons[i].value||(g.buttons[i].pressed?1:0)):0;
+  PADIN.lsx=ax(0);PADIN.lsy=-ax(1);PADIN.rsx=ax(2);PADIN.rsy=-ax(3);PADIN.dpy=bt(12)-bt(13);PADIN.dpx=bt(15)-bt(14);
+  PADIN.b1=bt(0);PADIN.b2=bt(1);PADIN.b3=bt(2);PADIN.b4=bt(3);PADIN.lb=bt(4);PADIN.rb=bt(5);PADIN.lt=bt(6);PADIN.rt=bt(7)}
+
 function targetsList(){const out=[];let mi=0,ci=0;for(const b of S.bricks){const k=kindOf(b);if(k.motor)out.push({id:b.id,t:'m',name:'מנוע '+(++mi),sub:descOf(b).replace(/^Electric\s*/,'')});
     else if(cylKind(descOf(b))==='body')out.push({id:b.id,t:'c',name:'צילינדר '+(++ci),sub:descOf(b).replace(/^Technic\s*/,'')})}return out}
-function inputFor(id){let v=0;for(const [k] of OUTS){const m=S.ctrl&&S.ctrl[k];if(m&&m.id===id)v+=IN[k]*(m.inv?-1:1)}return Math.max(-1,Math.min(1,v))}
+function inputFor(id){let v=0;for(const [k] of OUTS){const m=S.ctrl&&S.ctrl[k];if(m&&m.id===id)v+=val(k)*(m.inv?-1:1)}return Math.max(-1,Math.min(1,v))}
 function startSim(){const M=buildMech();
   const movers=new Set();for(const g of M.moving)g.ids.forEach(i=>movers.add(i));for(const c of M.cranks){c.rod.ids.forEach(i=>movers.add(i));c.piston.ids.forEach(i=>movers.add(i))}for(const c of M.cyls)c.rod.ids.forEach(i=>movers.add(i));
   const rest=new Map();for(const id of movers){const m=meshes.get(id);if(!m)continue;m.updateMatrix();rest.set(id,m.matrix.clone());m.matrixAutoUpdate=false}
@@ -801,7 +824,7 @@ function startSim(){const M=buildMech();
 const _T=new M4(),_R=new M4(),_B=new M4(),SPEED=Math.PI*2;
 function rotAbout(Pp,D,th){return new M4().makeTranslation(Pp.x,Pp.y,Pp.z).multiply(_R.makeRotationAxis(D,th)).multiply(_B.makeTranslation(-Pp.x,-Pp.y,-Pp.z))}
 function place3(ids,M){for(const id of ids){const m=meshes.get(id);if(!m||!SIM.rest.has(id))continue;m.matrix.multiplyMatrices(M,SIM.rest.get(id));m.matrixWorldNeedsUpdate=true}}
-function stepSim(dt){const sp=new Map();const v=id=>{if(!sp.has(id))sp.set(id,inputFor(id));return sp.get(id)};
+function stepSim(dt){readPad();const sp=new Map();const v=id=>{if(!sp.has(id))sp.set(id,inputFor(id));return sp.get(id)};
   for(const g of SIM.moving){g.theta+=SPEED*v(g.motor)*g.ratio*dt;place3(g.ids,rotAbout(g.P,g.D,g.theta))}
   for(const c of SIM.cranks){const P=c.P0.clone().applyMatrix4(rotAbout(c.cg.P,c.cg.D,c.cg.theta)),w=c.Q0.clone().sub(P),wd=w.dot(c.d),disc=wd*wd-w.lengthSq()+c.L*c.L;if(disc<0)continue;
     const sOff=-wd+Math.sqrt(disc),Q=c.Q0.clone().addScaledVector(c.d,sOff);place3(c.piston.ids,new M4().makeTranslation(c.d.x*sOff,c.d.y*sOff,c.d.z*sOff));
@@ -815,7 +838,8 @@ function stopSim(){if(!SIM)return;for(const [id] of SIM.rest){const m=meshes.get
 function enterSim(){if(!isPro()){openPro();return}if(!LDXM){toast('טוען את רשימת החלקים, נסה שוב בעוד רגע');ldIndex().catch(()=>{});return}
   hideSel();if(INS)closeInstr();S.sel.clear();drawSel();S.ctrl=S.ctrl||{};
   const T=targetsList(),ids=new Set(T.map(t=>t.id));for(const k in S.ctrl)if(!ids.has(S.ctrl[k].id))delete S.ctrl[k];
-  if(!Object.keys(S.ctrl).length){const order=['jy','jx','b1','b2','s1'];T.forEach((t,i)=>{if(order[i])S.ctrl[order[i]]={id:t.id,inv:false}})}
+  {const old={jy:'lsy',jx:'lsx',b1:'dpy',b2:'rsy',s1:'rsx'};for(const k in old)if(S.ctrl[k]){S.ctrl[old[k]]=S.ctrl[k];delete S.ctrl[k]}}
+  if(!Object.keys(S.ctrl).length){const order=['lsy','rsx','rsy','lsx','dpy','dpx'];T.forEach((t,i)=>{if(order[i])S.ctrl[order[i]]={id:t.id,inv:false}})}
   const M=startSim();SIMUI.on=true;SIMUI.edit=false;SIMUI.sel=null;$('#app').classList.add('simming');$('#simbar').hidden=false;$('#remote').hidden=false;renderRemote();setTimeout(resize,0);
   if(!T.length)toast('אין בדגם מנועים או צילינדרים. אפשר לצאת, להוסיף אותם ולחזור');
   else if(M.jam.size)toast('חלק מהמנועים תקועים: חלק שמסתובב מחובר לחלק שעומד על המשטח');
@@ -825,37 +849,45 @@ const simEdge=new THREE.LineBasicMaterial({color:0xF2B705,transparent:true,opaci
 function clearSimHL(){for(const m of meshes.values()){const o=m.getObjectByName('simhl');if(o)m.remove(o)}}
 function simHL(id){clearSimHL();const m=meshes.get(id),b=brickById(id);if(!m||!b)return;const l=new THREE.LineSegments(edgesFor(b.p),simEdge);l.name='simhl';l.renderOrder=30;m.add(l)}
 function labelOf(k){const m=S.ctrl[k];if(!m)return 'לא מחובר';const t=targetsList().find(x=>x.id===m.id);return t?t.name+(m.inv?' (הפוך)':''):'לא מחובר'}
-function renderRemote(){const r=$('#remote'),E=SIMUI.edit;$('#editBtn').textContent=E?'סיום עריכה':'עריכה';$('#editBtn').classList.toggle('go',E);
-  const tag=k=>`<span class="rlab${SIMUI.sel===k?' on':''}">${esc(labelOf(k))}</span>`;
-  r.innerHTML=`<div class="rw${E&&(SIMUI.sel==='jx'||SIMUI.sel==='jy')?' picked':''}" data-w="joy"><div class="joy" id="joy"><div class="knob" id="knob"></div></div>${E?`<div class="rsplit"><button class="rpick${SIMUI.sel==='jy'?' on':''}" data-pick="jy">↕ ${esc(labelOf('jy'))}</button><button class="rpick${SIMUI.sel==='jx'?' on':''}" data-pick="jx">↔ ${esc(labelOf('jx'))}</button></div>`:`${tag('jy')}`}</div>
-    <div class="rw${E&&SIMUI.sel==='b1'?' picked':''}" data-w="b1"><div class="bpair"><button class="hb" data-hold="b1" data-v="1">▲</button><button class="hb" data-hold="b1" data-v="-1">▼</button></div>${tag('b1')}</div>
-    <div class="rw${E&&SIMUI.sel==='b2'?' picked':''}" data-w="b2"><div class="bpair"><button class="hb" data-hold="b2" data-v="1">▲</button><button class="hb" data-hold="b2" data-v="-1">▼</button></div>${tag('b2')}</div>
-    <div class="rw${E&&SIMUI.sel==='s1'?' picked':''}" data-w="s1"><input type="range" id="s1" min="-100" max="100" step="5" value="${Math.round(IN.s1*100)}" aria-label="מחוון מהירות"><button class="hb small" id="s1zero">עצור</button>${tag('s1')}</div>
-    ${E?assignBox():'<p class="rnote">לחץ "עריכה" כדי לבחור איזה מנוע כל שלט מפעיל.</p>'}`;
+const has=k=>S.ctrl[k]?' has':'',on=(...ks)=>ks.includes(SIMUI.sel)?' on':'';
+function renderRemote(){const r=$('#remote'),E=SIMUI.edit;$('#editBtn').textContent=E?'סיום עריכה':'עריכה';$('#editBtn').classList.toggle('go',E);r.classList.toggle('editing',E);
+  r.innerHTML=`<div class="gp">
+    <button class="gb trig l${has('lt')}${on('lt')}" data-hold="lt" data-v="1">הדק</button><button class="gb trig r${has('rt')}${on('rt')}" data-hold="rt" data-v="1">הדק</button>
+    <button class="gb bump l${has('lb')}${on('lb')}" data-hold="lb" data-v="1">כתף</button><button class="gb bump r${has('rb')}${on('rb')}" data-hold="rb" data-v="1">כתף</button>
+    <div class="gp-body">
+      <div class="stick ls${has('lsx')||has('lsy')}${on('lsx','lsy')}" data-stick="ls"><div class="knob"></div></div>
+      <div class="dpad${has('dpx')||has('dpy')}${on('dpx','dpy')}" data-dp="1">
+        <button class="dp u" data-hold="dpy" data-v="1" aria-label="למעלה"></button><button class="dp d" data-hold="dpy" data-v="-1" aria-label="למטה"></button>
+        <button class="dp l" data-hold="dpx" data-v="-1" aria-label="שמאלה"></button><button class="dp r" data-hold="dpx" data-v="1" aria-label="ימינה"></button><span class="dp c"></span></div>
+      <div class="stick rs${has('rsx')||has('rsy')}${on('rsx','rsy')}" data-stick="rs"><div class="knob"></div></div>
+      <div class="face">${[['b4','4','t'],['b2','2','r'],['b1','1','b'],['b3','3','l']].map(([k,n,p])=>`<button class="fb ${p}${has(k)}${on(k)}" data-hold="${k}" data-v="1">${n}</button>`).join('')}</div>
+      <span class="gp-hint">${E?'גע בכפתור כדי לחבר אותו':(padName?'שלט אמיתי מחובר':'')}</span>
+    </div></div>
+    ${E&&SIMUI.sel?assignBox():''}`;
   wireRemote()}
-function assignBox(){if(!SIMUI.sel)return '<p class="rnote">בחר שלט (ג׳ויסטיק, כפתורים או מחוון), ואז בחר למה לחבר אותו.</p>';
-  const k=SIMUI.sel,m=S.ctrl[k],T=targetsList(),name=OUTS.find(o=>o[0]===k)[1];
-  return `<div class="abox"><b>${esc(name)}</b><span class="rnote">חבר אל:</span>${T.length?T.map(t=>`<button class="tgt${m&&m.id===t.id?' on':''}" data-tgt="${t.id}"><span>${esc(t.name)}</span><small>${esc(t.sub)}</small></button>`).join(''):'<span class="rnote">אין בדגם מנועים או צילינדרים.</span>'}
-    <span class="rnote">אפשר גם לגעת במנוע או בצילינדר בדגם עצמו.</span>
-    <label class="inv"><input type="checkbox" id="invChk" ${m&&m.inv?'checked':''} ${m?'':'disabled'}> הפוך כיוון</label>
-    ${m?'<button class="tgt warn" data-tgt="none">נתק</button>':''}</div>`}
+function assignBox(){const k=SIMUI.sel,m=S.ctrl[k],T=targetsList(),name=OUTS.find(o=>o[0]===k)[1],axis=k.match(/^(ls|rs|dp)([xy])$/);
+  return `<div class="abox"><div class="abox-head"><b>${esc(name)}</b>${axis?`<span class="axsw"><button data-ax="${axis[1]}y" class="${axis[2]==='y'?'on':''}">↕</button><button data-ax="${axis[1]}x" class="${axis[2]==='x'?'on':''}">↔</button></span>`:''}<button class="mini" data-close-a>סגור</button></div>
+    <span class="rnote">חבר אל (או גע במנוע/צילינדר בדגם):</span>
+    <div class="tgts">${T.length?T.map(t=>`<button class="tgt${m&&m.id===t.id?' on':''}" data-tgt="${t.id}"><span>${esc(t.name)}</span><small>${esc(t.sub)}</small></button>`).join(''):'<span class="rnote">אין בדגם מנועים או צילינדרים.</span>'}</div>
+    <div class="abox-foot"><label class="inv"><input type="checkbox" id="invChk" ${m&&m.inv?'checked':''} ${m?'':'disabled'}> הפוך כיוון</label>${m?'<button class="mini warn" data-tgt="none">נתק</button>':''}</div></div>`}
 function assign(k,id){if(id===null)delete S.ctrl[k];else S.ctrl[k]={id,inv:(S.ctrl[k]&&S.ctrl[k].id===id)?S.ctrl[k].inv:false};if(id)simHL(id);else clearSimHL();renderRemote();saveCtrl()}
 function saveCtrl(){if(S.proj)saveNow()}
+function pickOut(k){SIMUI.sel=k;const m=S.ctrl[k];m?simHL(m.id):clearSimHL();renderRemote()}
 function wireRemote(){const r=$('#remote'),E=SIMUI.edit;
-  r.querySelectorAll('[data-w]').forEach(w=>w.addEventListener('pointerdown',e=>{if(!E||e.target.closest('.abox'))return;const k=w.dataset.w==='joy'?(SIMUI.sel==='jy'?'jy':SIMUI.sel==='jx'?'jx':'jy'):w.dataset.w;
-    if(e.target.closest('[data-pick]'))return;SIMUI.sel=k;const m=S.ctrl[k];m?simHL(m.id):clearSimHL();renderRemote()}));
-  r.querySelectorAll('[data-pick]').forEach(b=>b.onclick=()=>{SIMUI.sel=b.dataset.pick;const m=S.ctrl[SIMUI.sel];m?simHL(m.id):clearSimHL();renderRemote()});
-  r.querySelectorAll('[data-tgt]').forEach(b=>b.onclick=()=>assign(SIMUI.sel,b.dataset.tgt==='none'?null:+b.dataset.tgt));
-  const inv=$('#invChk');if(inv)inv.onchange=()=>{if(S.ctrl[SIMUI.sel]){S.ctrl[SIMUI.sel].inv=inv.checked;renderRemote();saveCtrl()}};
-  if(E)return;
-  r.querySelectorAll('[data-hold]').forEach(b=>{const k=b.dataset.hold,v=+b.dataset.v,up=()=>{IN[k]=0;b.classList.remove('down')};
+  if(E){r.querySelectorAll('[data-hold]').forEach(b=>b.onclick=()=>pickOut(b.dataset.hold));
+    r.querySelectorAll('[data-stick]').forEach(st=>st.onclick=()=>pickOut(st.dataset.stick+(SIMUI.sel===st.dataset.stick+'x'?'x':'y')));
+    r.querySelectorAll('[data-ax]').forEach(b=>b.onclick=()=>pickOut(b.dataset.ax));
+    r.querySelectorAll('[data-tgt]').forEach(b=>b.onclick=()=>assign(SIMUI.sel,b.dataset.tgt==='none'?null:+b.dataset.tgt));
+    const c=r.querySelector('[data-close-a]');if(c)c.onclick=()=>{SIMUI.sel=null;clearSimHL();renderRemote()};
+    const inv=$('#invChk');if(inv)inv.onchange=()=>{if(S.ctrl[SIMUI.sel]){S.ctrl[SIMUI.sel].inv=inv.checked;renderRemote();saveCtrl()}};return}
+  r.querySelectorAll('[data-hold]').forEach(b=>{const k=b.dataset.hold,v=+b.dataset.v,up=()=>{if(IN[k]===v)IN[k]=0;b.classList.remove('down')};
     b.addEventListener('pointerdown',e=>{e.preventDefault();b.setPointerCapture(e.pointerId);IN[k]=v;b.classList.add('down')});b.addEventListener('pointerup',up);b.addEventListener('pointercancel',up)});
-  const s1=$('#s1');s1.oninput=()=>{IN.s1=s1.value/100};$('#s1zero').onclick=()=>{IN.s1=0;s1.value=0};
-  const joy=$('#joy'),knob=$('#knob');let jid=null;
-  const mv=e=>{const rc=joy.getBoundingClientRect(),R=rc.width/2;let x=(e.clientX-rc.left-R)/R,y=(e.clientY-rc.top-R)/R;const l=Math.hypot(x,y);if(l>1){x/=l;y/=l}
-    IN.jx=Math.abs(x)<.12?0:x;IN.jy=Math.abs(y)<.12?0:-y;knob.style.transform=`translate(${x*R*.62}px,${y*R*.62}px)`};
-  joy.addEventListener('pointerdown',e=>{jid=e.pointerId;joy.setPointerCapture(jid);mv(e)});joy.addEventListener('pointermove',e=>{if(e.pointerId===jid)mv(e)});
-  const end=()=>{jid=null;IN.jx=0;IN.jy=0;knob.style.transform=''};joy.addEventListener('pointerup',end);joy.addEventListener('pointercancel',end)}
+  r.querySelectorAll('[data-stick]').forEach(st=>{const knob=st.querySelector('.knob'),p=st.dataset.stick;let id=null;
+    const mv=e=>{const rc=st.getBoundingClientRect(),R=rc.width/2;let x=(e.clientX-rc.left-R)/R,y=(e.clientY-rc.top-R)/R;const l=Math.hypot(x,y);if(l>1){x/=l;y/=l}
+      IN[p+'x']=Math.abs(x)<.12?0:x;IN[p+'y']=Math.abs(y)<.12?0:-y;knob.style.transform=`translate(${x*R*.55}px,${y*R*.55}px)`};
+    st.addEventListener('pointerdown',e=>{e.preventDefault();id=e.pointerId;st.setPointerCapture(id);mv(e)});st.addEventListener('pointermove',e=>{if(e.pointerId===id)mv(e)});
+    const end=()=>{id=null;IN[p+'x']=0;IN[p+'y']=0;knob.style.transform=''};st.addEventListener('pointerup',end);st.addEventListener('pointercancel',end)})}
+window.addEventListener('gamepadconnected',()=>{if(SIMUI.on){readPad();renderRemote()}});
 $('#editBtn').onclick=()=>{SIMUI.edit=!SIMUI.edit;SIMUI.sel=null;for(const k in IN)IN[k]=0;clearSimHL();renderRemote()};
 $('#exitSim').onclick=exitSim;
 function openPro(){const head=`<h2><span>סטודיו לבנים <span class="pro-badge">פרו</span></span> ${closeBtn}</h2>`;
