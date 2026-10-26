@@ -223,11 +223,14 @@ textarea{min-height:70px;resize:vertical;font-size:12px;direction:ltr;text-align
 .proj:hover{border-color:var(--muted)}
 .pro-badge{background:var(--accent);color:var(--accent-ink)}
 .toast{border-radius:10px}
-.plates{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
-.plate{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:8px 4px;display:flex;flex-direction:column;align-items:center;gap:3px}
-.plate .pv{width:calc(14px + 30px * var(--k));aspect-ratio:1;border-radius:3px;background:var(--base);box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
-.plate b{font-size:13px;font-variant-numeric:tabular-nums}.plate small{font-size:11px;color:var(--muted)}
-.plate.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset}
+.wd{display:flex;align-items:flex-end;gap:8px;flex-wrap:wrap;direction:rtl}
+.wd label{display:flex;flex-direction:column;gap:3px}.wd small{font-size:12px;color:var(--muted);font-weight:600}
+.wd input{width:84px;border:1px solid var(--line);background:var(--surface-2);border-radius:12px;padding:10px 8px;font:inherit;font-size:20px;font-weight:700;text-align:center;color:var(--ink);font-variant-numeric:tabular-nums;direction:ltr}
+.wd input:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 20%,transparent)}
+.wd .x{font-size:24px;font-weight:700;color:var(--muted);padding-bottom:9px}
+.wdv{width:48px;height:48px;display:grid;place-items:center;margin-inline-start:4px}
+.wdv i{display:block;border-radius:4px;background:var(--base);box-shadow:inset 0 0 0 1px rgba(0,0,0,.1);background-image:radial-gradient(circle,rgba(255,255,255,.45) 1.2px,transparent 1.6px);background-size:6px 6px;transition:width .15s,height .15s}
+.wd .btn{margin-inline-start:auto}
 #okBtn:disabled{opacity:.45;filter:grayscale(.6)}
 /* ---- upgraded look: floating stage, glass top bar, soft cards ---- */
 body{background:linear-gradient(180deg,var(--bg) 0%,var(--bg-2) 100%)}
@@ -252,6 +255,45 @@ body{background:linear-gradient(180deg,var(--bg) 0%,var(--bg-2) 100%)}
 @media (hover:hover){.proj:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg)}}
 .confirm button,.fab,.selbar,.instr,.simbar,.abox{border-radius:16px;box-shadow:var(--shadow-lg)}
 .hint{border-radius:14px;background:var(--glass);box-shadow:var(--shadow)}
+/* ---- mockup look: brand line, project chip, red save, avatar, camera + zoom pills ---- */
+.brand{gap:10px}
+.brand-mark{width:34px;height:34px;padding:5px;border-radius:11px;background:color-mix(in srgb,var(--accent) 10%,var(--surface));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 18%,transparent)}
+.brand-txt{display:flex;flex-direction:column;line-height:1.05;text-align:right}
+.brand-txt b{font-family:var(--f-display);font-weight:700;font-size:20px}
+.brand-txt small{font-family:var(--f-body);font-size:11.5px;font-weight:500;color:var(--muted);letter-spacing:.02em;margin-top:2px}
+.projchip{display:flex;align-items:center;gap:6px;background:var(--surface-2);border-radius:999px;padding:3px 4px 3px 4px;padding-inline-start:12px;min-width:0}
+.projchip #projName{font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:22vw}
+.projchip .pill{background:var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.savebtn{display:inline-flex;align-items:center;gap:6px;height:40px;padding:0 16px;border:0;border-radius:12px;font-weight:700;color:var(--accent-ink);background:linear-gradient(135deg,var(--accent) 0%,var(--accent-deep) 100%);box-shadow:0 4px 16px color-mix(in srgb,var(--accent) 30%,transparent)}
+.savebtn svg{width:19px;height:19px}
+.avatar{width:38px;height:38px;border-radius:50%;border:2px solid var(--surface);box-shadow:0 0 0 1px var(--line),var(--shadow);padding:0;overflow:hidden;background:linear-gradient(135deg,var(--accent-2),var(--accent));color:#fff;font-weight:700;display:grid;place-items:center;flex:none}
+.avatar img{width:100%;height:100%;object-fit:cover;display:block}
+#previewBtn[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.cam,.zoom{position:absolute;bottom:12px;display:flex;align-items:center;gap:2px;background:var(--glass);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:16px;padding:4px;box-shadow:var(--shadow);z-index:3}
+.cam button,.zoom button{width:38px;height:38px;border:0;border-radius:12px;background:transparent;display:grid;place-items:center;color:var(--ink)}
+.cam button:hover,.zoom button:hover{background:var(--surface-2)}
+.cam svg,.zoom svg{width:19px;height:19px}
+.cam{left:calc(12px + env(safe-area-inset-left,0px))}
+.zoom{right:calc(12px + env(safe-area-inset-right,0px));direction:ltr}
+.zoom input{width:110px;accent-color:var(--accent)}
+.fabs{bottom:70px}
+.endprev{position:absolute;top:12px;left:50%;transform:translateX(-50%);display:inline-flex;align-items:center;gap:6px;border:0;border-radius:999px;padding:9px 16px;font-weight:700;background:var(--ink);color:var(--bg);box-shadow:var(--shadow-lg);z-index:6}
+#app.preview #sheet,#app.preview .rail,#app.preview .fabs,#app.preview .hint,#app.preview #confirm,#app.preview #selbar,#app.preview .cam{display:none!important}
+#app.simming .cam,#app.simming .zoom{display:none!important}
+.sheet-head{display:flex;align-items:center;gap:8px;padding-inline:4px}
+.sheet-head b{font-family:var(--f-display);font-weight:700;font-size:17px}
+.sheet-head .pill:empty{display:none}
+.tab{display:inline-flex;align-items:center;gap:6px;background:var(--surface);border-color:var(--line);padding:6px 13px}
+.tab svg{width:17px;height:17px;stroke-width:1.8}
+.tab[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:transparent;box-shadow:0 4px 12px color-mix(in srgb,var(--accent) 28%,transparent)}
+.parts .part{background:var(--surface);border:1px solid var(--line);box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.part[aria-pressed="true"]{border:2px solid var(--accent);box-shadow:0 6px 18px color-mix(in srgb,var(--accent) 22%,transparent)}
+.part img{border-radius:10px;background:radial-gradient(circle at 50% 40%,var(--scene-hi),var(--surface-2))}
+.colors .c{border-radius:50%}
+.cmore{border-radius:50%}
+@media (max-width:700px){.brand-txt{display:none}.projchip #projName{max-width:34vw}.zoom input{width:70px}}
+.parts .tab{align-self:center}
+@media (max-width:480px){.projchip{display:none}.savebtn span{display:none}.savebtn{padding:0 11px}#bomBtn,#previewBtn{display:none}.zoom input{display:none}.cam button,.zoom button{width:34px;height:34px}}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 .home-body,.bar,#sheet{animation:fadeIn .4s ease both}
 @media (prefers-reduced-motion: reduce){*{transition:none!important}}
@@ -264,9 +306,9 @@ body{background:linear-gradient(180deg,var(--bg) 0%,var(--bg-2) 100%)}
   <header class="bar">
     <button class="brand" id="homeBtn" title="הפרויקטים שלי">
       <svg class="brand-mark" viewBox="0 0 26 26" aria-hidden="true"><rect x="2" y="9" width="22" height="13" rx="2.5" fill="#E11D48"/><rect x="5" y="5" width="6" height="5" rx="1.5" fill="#E11D48"/><rect x="15" y="5" width="6" height="5" rx="1.5" fill="#E11D48"/><rect x="2" y="17" width="22" height="5" rx="2.5" fill="#000" opacity=".12"/></svg>
-      <span id="projName">סטודיו לבנים</span>
+      <span class="brand-txt"><b>סטודיו לבנים</b><small>בנה. עצב. השראה.</small></span>
     </button>
-    <span class="pill" id="count">0 חלקים</span>
+    <span class="projchip"><span id="projName">פרויקט</span><span class="pill" id="count">0 חלקים</span></span>
     <div class="spacer"></div>
     <button class="ib" id="undo" title="ביטול" aria-label="ביטול"><svg class="i" viewBox="0 0 24 24"><path d="M15 9h1.5a4.5 4.5 0 0 1 0 9H10"/><path d="M15 9H5"/><path d="M9 5L5 9l4 4"/></svg></button>
     <button class="ib" id="redo" title="חזרה" aria-label="חזרה"><svg class="i" viewBox="0 0 24 24"><path d="M9 9H7.5a4.5 4.5 0 0 0 0 9H14"/><path d="M9 9h10"/><path d="M15 5l4 4-4 4"/></svg></button>
@@ -274,6 +316,9 @@ body{background:linear-gradient(180deg,var(--bg) 0%,var(--bg-2) 100%)}
     <button class="ib play wide" id="playBtn" title="הדמיה (פרו)"><svg class="i" viewBox="0 0 24 24"><path d="M7 5l12 7-12 7z"/></svg><span>הדמיה</span></button>
     <button class="ib" id="bomBtn" title="רשימת חלקים" aria-label="רשימת חלקים"><svg class="i" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/></svg></button>
     <button class="ib" id="shareBtn" title="הגדרות ושיתוף" aria-label="הגדרות ושיתוף"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+    <button class="ib" id="previewBtn" title="תצוגה נקייה" aria-label="תצוגה נקייה"><svg class="i" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
+    <button class="savebtn" id="saveNowBtn" title="שמור עכשיו"><svg class="i" viewBox="0 0 24 24"><path d="M5 3h11l3 3v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M7 3v5h8V3M7 21v-7h10v7"/></svg><span>שמור</span></button>
+    <button class="avatar" id="barUser" title="הפרויקטים שלי" aria-label="הפרויקטים שלי"><span>?</span></button>
     <button class="ib" id="saveBtn" title="הפרויקטים שלי" aria-label="הפרויקטים שלי"><svg class="i" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></button>
   </header>
 
@@ -295,6 +340,19 @@ body{background:linear-gradient(180deg,var(--bg) 0%,var(--bg-2) 100%)}
       <button class="mode" data-mode="select" aria-pressed="false"><svg class="i" viewBox="0 0 24 24"><path d="M5 3l14 8-6 2-2 6z"/></svg>בחירה</button>
       <button class="mode" data-mode="erase" aria-pressed="false"><svg class="i" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>מחיקה</button>
     </div>
+    <div class="cam" role="group" aria-label="מצלמה">
+      <button id="camL" title="סובב מבט שמאלה" aria-label="סובב מבט שמאלה"><svg class="i" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.3-5.6"/><path d="M4 4v5h5"/></svg></button>
+      <button id="camHome" title="מבט התחלתי" aria-label="מבט התחלתי"><svg class="i" viewBox="0 0 24 24"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg></button>
+      <button id="camTop" title="מבט מלמעלה" aria-label="מבט מלמעלה"><svg class="i" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg></button>
+      <button id="camR" title="סובב מבט ימינה" aria-label="סובב מבט ימינה"><svg class="i" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v5h-5"/></svg></button>
+    </div>
+    <div class="zoom" role="group" aria-label="זום">
+      <button id="zOut" aria-label="התרחק"><svg class="i" viewBox="0 0 24 24"><path d="M6 12h12"/></svg></button>
+      <input id="zoomR" type="range" min="0" max="100" value="50" aria-label="זום">
+      <button id="zIn" aria-label="התקרב"><svg class="i" viewBox="0 0 24 24"><path d="M12 6v12M6 12h12"/></svg></button>
+      <button id="fsBtn" title="מסך מלא" aria-label="מסך מלא"><svg class="i" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+    </div>
+    <button class="endprev" id="endPrev" hidden><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>סיום תצוגה</button>
     <div class="fabs">
       <button class="fab" id="rotBtn" aria-label="סובב חלק"><svg class="i" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v5h-5"/></svg>סובב</button>
     </div>
@@ -328,6 +386,7 @@ body{background:linear-gradient(180deg,var(--bg) 0%,var(--bg-2) 100%)}
         <svg class="i chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
       </button>
       <div class="drawer">
+        <div class="sheet-head"><b>חלקים זמינים</b><span class="pill" id="partsCount"></span></div>
         <label class="search"><svg class="i" viewBox="0 0 24 24" style="width:18px;height:18px"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="q" type="search" placeholder="חיפוש חלק, למשל: 2×4, גלגל, משופע" autocomplete="off"></label>
         <div class="row" id="tabs" role="group" aria-label="קטגוריות"></div>
         <div class="row parts" id="parts"></div>
@@ -359,7 +418,7 @@ body{background:linear-gradient(180deg,var(--bg) 0%,var(--bg-2) 100%)}
 <script src="lib/BufferGeometryUtils.js"></script>
 <script>
 (function(){
-const PH=0.4, SR=0.3, SHt=0.17, DARK='#2B3038';let BOUND=16;
+const PH=0.4, SR=0.3, SHt=0.17, DARK='#2B3038';let X0=-16,X1=16,Z0=-16,Z1=16;
 const $=s=>document.querySelector(s);
 
 /* ---------- colors ---------- */
@@ -495,12 +554,17 @@ Object.assign(sun.shadow.camera,{left:-20,right:20,top:20,bottom:-20,near:1,far:
 const baseMat=new THREE.MeshStandardMaterial({color:'#7FA98A',roughness:.5});
 /* the base plate: its size (studs per side) belongs to each project and can be changed */
 const sg=new THREE.CylinderGeometry(SR,SR,SHt,12);let base=null,studIM=null;
-function setPlate(n){n=Math.max(8,Math.min(96,Math.round(n/2)*2));BOUND=n/2;S.plate=n;
+const PMIN=4,PMAX=128;
+function plateWD(p){if(p&&typeof p==='object')return {w:+p.w||32,d:+p.d||32};const n=+p||32;return {w:n,d:n}} // old projects stored one number
+function clampP(v){v=Math.round(+v||0);return Math.max(PMIN,Math.min(PMAX,v))}
+function setPlate(w,d){if(d===undefined){const p=plateWD(w);w=p.w;d=p.d}w=clampP(w);d=clampP(d);
+  X0=-Math.floor(w/2);X1=X0+w;Z0=-Math.floor(d/2);Z1=Z0+d;S.plate={w,d};
   if(base){scene.remove(base);base.geometry.dispose()}if(studIM){scene.remove(studIM);studIM.dispose()}
-  base=new THREE.Mesh(new THREE.BoxGeometry(n,.4,n),baseMat);base.position.y=-.2;base.receiveShadow=true;base.userData.base=true;scene.add(base);
-  studIM=new THREE.InstancedMesh(sg,baseMat,n*n);const m=new THREE.Matrix4();let k=0;for(let i=-BOUND;i<BOUND;i++)for(let j=-BOUND;j<BOUND;j++){m.makeTranslation(i+.5,SHt/2,j+.5);studIM.setMatrixAt(k++,m)}
-  studIM.receiveShadow=true;scene.add(studIM);const e=BOUND+6;Object.assign(sun.shadow.camera,{left:-e,right:e,top:e,bottom:-e,far:Math.max(70,n*2)});sun.shadow.camera.updateProjectionMatrix();
-  controls.maxDistance=Math.max(75,n*2.4)}
+  base=new THREE.Mesh(new THREE.BoxGeometry(w,.4,d),baseMat);base.position.set((X0+X1)/2,-.2,(Z0+Z1)/2);base.receiveShadow=true;base.userData.base=true;scene.add(base);
+  studIM=new THREE.InstancedMesh(sg,baseMat,w*d);const m=new THREE.Matrix4();let k=0;for(let i=X0;i<X1;i++)for(let j=Z0;j<Z1;j++){m.makeTranslation(i+.5,SHt/2,j+.5);studIM.setMatrixAt(k++,m)}
+  const n=Math.max(w,d);studIM.receiveShadow=true;scene.add(studIM);const e=n/2+6;Object.assign(sun.shadow.camera,{left:-e,right:e,top:e,bottom:-e,far:Math.max(70,n*2)});sun.shadow.camera.updateProjectionMatrix();
+  controls.maxDistance=Math.max(75,n*2.4);if(typeof syncZoom==='function')syncZoom()}
+function outOfPlate(){return S.bricks.filter(q=>{const c=centerXZ(q);return c.x<X0||c.x>X1||c.z<Z0||c.z>Z1}).length}
 
 function applyTheme(){const cs=getComputedStyle(document.documentElement);scene.background=null;baseMat.color.set(cs.getPropertyValue('--base').trim()||'#7FA98A')}
 applyTheme();matchMedia('(prefers-color-scheme: dark)').addEventListener('change',applyTheme);
@@ -517,7 +581,7 @@ const meshes=new Map();let HM=new Map();setPlate(32);
 const fp=(id,r)=>{const g=info(id);return (r%2)?{w:g.d,d:g.w}:{w:g.w,d:g.d}};
 function rebuildHM(){HM=new Map();for(const b of S.bricks){if(!PMAP[b.p]&&/^ld:/.test(b.p))ldReg(b.p);if(b.f||!ready(b.p))continue;const f=fp(b.p,b.r),t=b.y+info(b.p).h;for(let i=0;i<f.w;i++)for(let j=0;j<f.d;j++){const k=(b.x+i)+','+(b.z+j);if((HM.get(k)||0)<t)HM.set(k,t)}}}
 function placement(cx,cz,id,r){const f=fp(id,r);let x=cx-Math.floor((f.w-1)/2),z=cz-Math.floor((f.d-1)/2);
-  x=Math.max(-BOUND,Math.min(BOUND-f.w,x));z=Math.max(-BOUND,Math.min(BOUND-f.d,z));let y=0;
+  x=Math.max(X0,Math.min(X1-f.w,x));z=Math.max(Z0,Math.min(Z1-f.d,z));let y=0;
   for(let i=0;i<f.w;i++)for(let j=0;j<f.d;j++)y=Math.max(y,HM.get((x+i)+','+(z+j))||0);return {x,y,z}}
 function posMesh(m,b){if(b.f){m.position.set(b.px,b.py,b.pz);m.quaternion.set(b.q[0],b.q[1],b.q[2],b.q[3]);return}const f=fp(b.p,b.r);m.position.set(b.x+f.w/2,b.y*PH,b.z+f.d/2);m.rotation.y=b.r*Math.PI/2}
 function sync(){const keep=new Set();
@@ -651,6 +715,27 @@ document.addEventListener('keydown',e=>{if(e.target.matches('input,textarea'))re
   if((e.ctrlKey||e.metaKey)&&k==='z'){e.preventDefault();(e.shiftKey?$('#redo'):$('#undo')).click()}else if(k==='r'||k==='ק'){$('#rotBtn').click()}else if(k==='escape')hideSel();else if(k==='enter'&&sel){e.preventDefault();place()}});
 $('#handle').onclick=()=>{const s=$('#sheet');s.classList.toggle('closed');$('#handle').setAttribute('aria-expanded',!s.classList.contains('closed'))};
 
+/* camera buttons, zoom slider, full screen, clean view, quick save */
+const HOME_DIR=new THREE.Vector3(15,14,19).normalize();
+function camTo(pos,tgt){controls.target.copy(tgt);camera.position.copy(pos);controls.update();syncZoom()}
+function camHome(){const p=S.plate||{w:32,d:32},n=Math.max(p.w,p.d),c=new THREE.Vector3((X0+X1)/2,1,(Z0+Z1)/2);camTo(c.clone().add(HOME_DIR.clone().multiplyScalar(Math.max(18,n*.95))),c)}
+function camSpin(a){const o=camera.position.clone().sub(controls.target);o.applyAxisAngle(new THREE.Vector3(0,1,0),a);camTo(controls.target.clone().add(o),controls.target.clone())}
+function camTop(){const t=controls.target.clone(),dist=camera.position.distanceTo(t);camTo(t.clone().add(new THREE.Vector3(0,dist,.001+dist*.18)),t)}
+function zoomDist(v){const a=Math.log(controls.minDistance),b=Math.log(controls.maxDistance);return Math.exp(a+(b-a)*(1-v/100))}
+function setZoom(v){v=Math.max(0,Math.min(100,v));const o=camera.position.clone().sub(controls.target).setLength(zoomDist(v));camera.position.copy(controls.target).add(o);controls.update();$('#zoomR').value=v}
+function syncZoom(){const r=$('#zoomR');if(!r)return;const a=Math.log(controls.minDistance),b=Math.log(controls.maxDistance),d=Math.log(camera.position.distanceTo(controls.target));r.value=Math.round(100*(1-(d-a)/(b-a)))}
+$('#camL').onclick=()=>camSpin(-Math.PI/4);$('#camR').onclick=()=>camSpin(Math.PI/4);$('#camHome').onclick=camHome;$('#camTop').onclick=camTop;
+$('#zoomR').addEventListener('input',e=>setZoom(+e.target.value));$('#zIn').onclick=()=>setZoom(+$('#zoomR').value+10);$('#zOut').onclick=()=>setZoom(+$('#zoomR').value-10);
+controls.addEventListener('change',()=>{if(document.activeElement!==$('#zoomR'))syncZoom()});
+$('#fsBtn').onclick=()=>{const d=document,el=d.documentElement;try{if(d.fullscreenElement||d.webkitFullscreenElement)(d.exitFullscreen||d.webkitExitFullscreen).call(d);else (el.requestFullscreen||el.webkitRequestFullscreen).call(el)}catch(e){toast('מסך מלא לא זמין כאן')}};
+function setPreview(on){$('#app').classList.toggle('preview',on);$('#endPrev').hidden=!on;$('#previewBtn').setAttribute('aria-pressed',on);if(on){hideSel&&hideSel()}setTimeout(resize,0)}
+$('#previewBtn').onclick=()=>setPreview(!$('#app').classList.contains('preview'));$('#endPrev').onclick=()=>setPreview(false);
+$('#saveNowBtn').onclick=async()=>{if(!S.proj){toast('אין פרויקט פתוח');return}await saveNow();toast('נשמר')};
+$('#barUser').onclick=()=>goHome();
+function barUser(){const b=$('#barUser');if(!b)return;const u=typeof USER!=='undefined'?USER:null;
+  if(u&&u.photoURL)b.innerHTML=`<img src="${esc(u.photoURL)}" alt="" referrerpolicy="no-referrer">`;else b.innerHTML=`<span>${esc(((u&&(u.displayName||u.email))||'?').trim().charAt(0).toUpperCase())}</span>`;
+  b.title=u?(u.displayName||u.email||''):'הפרויקטים שלי'}
+setTimeout(syncZoom,0);
 const tabs=$('#tabs');
 /* the full LDraw library is the only catalogue; the old built-in parts are used only if it cannot load (e.g. offline preview) */
 let LDFAIL=false;
@@ -659,7 +744,13 @@ const LCATS=[['all','הכל'],['Brick','לבנים'],['Plate','פלטות'],['Ti
 const CATW={Brick:['brick'],Plate:['plate','baseplate'],Tile:['tile'],Slope:['slope','wedge'],Technic:['technic'],Minifig:['minifig'],wheels:['wheel','tyre','tire'],
   windoor:['window','door','glass','windscreen'],Arch:['arch'],round:['cylinder','cone','dish','dome','round'],Plant:['plant']};
 function inCat(e,c){if(c==='all')return true;const k=e.c.toLowerCase();if(c==='other')return !Object.values(CATW).some(ws=>ws.some(w=>k.startsWith(w)));return CATW[c].some(w=>k.startsWith(w))}
-function buildTabs(){tabs.innerHTML='';(LDFAIL?CATS:LCATS).forEach(([id,n])=>{const b=document.createElement('button');b.className='tab';b.textContent=n;b.dataset.cat=id;
+const CATI={all:'<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>',
+  Brick:'<rect x="3" y="9" width="18" height="10" rx="1.5"/><path d="M7 9V6h3v3M14 9V6h3v3"/>',Plate:'<rect x="3" y="12" width="18" height="5" rx="1"/><path d="M7 12v-2h3v2M14 12v-2h3v2"/>',
+  Tile:'<rect x="3" y="12" width="18" height="5" rx="1"/>',Slope:'<path d="M3 19h18V9L9 9z"/>',Technic:'<rect x="3" y="9" width="18" height="7" rx="1.5"/><circle cx="8" cy="12.5" r="1.6"/><circle cx="16" cy="12.5" r="1.6"/>',
+  Minifig:'<circle cx="12" cy="6" r="3"/><path d="M7 21v-8a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v8"/>',wheels:'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/>',
+  windoor:'<rect x="5" y="3" width="14" height="18" rx="1.5"/><path d="M12 3v18M5 12h14"/>',Arch:'<path d="M3 20V9h18v11h-4v-4a5 5 0 0 0-10 0v4z"/>',round:'<ellipse cx="12" cy="7" rx="7" ry="3"/><path d="M5 7v10c0 1.7 3.1 3 7 3s7-1.3 7-3V7"/>',
+  Plant:'<path d="M12 21V10M12 10c0-4 3-6 7-6 0 4-3 6-7 6zM12 13c0-3-2-5-6-5 0 3 2 5 6 5z"/>',other:'<circle cx="6" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="18" cy="12" r="1.5"/>'};
+function buildTabs(){tabs.innerHTML='';(LDFAIL?CATS:LCATS).forEach(([id,n])=>{const b=document.createElement('button');b.className='tab';b.innerHTML=(CATI[id]?`<svg class="i" viewBox="0 0 24 24">${CATI[id]}</svg>`:'')+`<span>${n}</span>`;b.dataset.cat=id;
   b.onclick=()=>{S.cat=id;S.q='';$('#q').value='';renderParts()};tabs.appendChild(b)})}
 buildTabs();
 const THUMBS={};
@@ -707,10 +798,10 @@ function ldIndex(){if(!LDXp)LDXp=fetch(LD_BASE+'index.json').then(r=>{if(!r.ok)t
 const QUICK=['brick','plate','tile','slope','technic beam','axle','pin','gear','wheel','tyre','window','door','minifig','arch','panel','plant'];
 function renderLD(){const el=$('#parts'),gen=++ldGen;el.innerHTML='<div class="empty">טוען את רשימת כל החלקים…</div>';
   ldIndex().then(X=>{if(gen!==ldGen)return;const q=ldKey(S.q);el.innerHTML='';
-    if(!q&&S.cat==='all'){el.innerHTML=`<div class="empty"><b>${X.length.toLocaleString('he-IL')} חלקים</b> בספרייה המלאה. כתוב בחיפוש שם או מספר חלק, או בחר. חיבורים: LDCad Shadow Library (CC BY-SA 4.0).</div>`;
+    if(!q&&S.cat==='all'){$('#partsCount').textContent=X.length.toLocaleString('he-IL');el.innerHTML=`<div class="empty"><b>${X.length.toLocaleString('he-IL')} חלקים</b> בספרייה המלאה. כתוב בחיפוש שם או מספר חלק, או בחר. חיבורים: LDCad Shadow Library (CC BY-SA 4.0).</div>`;
       QUICK.forEach(w=>{const b=document.createElement('button');b.className='tab';b.textContent=w;b.onclick=()=>{$('#q').value=w;S.q=w;renderParts()};el.appendChild(b)});return}
     const toks=q.split(' ');let res=X.filter(e=>inCat(e,S.cat)&&toks.every(t=>e.k.includes(t)));
-    res.sort((a,b)=>(b.n===q)-(a.n===q)||a.d.length-b.d.length);const total=res.length;res=res.slice(0,80);
+    res.sort((a,b)=>(b.n===q)-(a.n===q)||a.d.length-b.d.length);const total=res.length;res=res.slice(0,80);$('#partsCount').textContent=total.toLocaleString('he-IL');
     if(!res.length){el.innerHTML='<div class="empty">לא נמצא. נסה באנגלית, למשל "brick 2 x 4", או מספר חלק כמו 3001.</div>';return}
     res.forEach(e=>{const id='ld:'+e.n;if(!PMAP[id]||PMAP[id].ph)PMAP[id]={id,cat:'ld',name:ldLabel(e)};
       const b=document.createElement('button');b.className='part ld';b.setAttribute('aria-pressed',id===S.part);
@@ -813,7 +904,7 @@ function engaged(s,x){ // which target connections line up once the part sits th
   const out=[];const W=new THREE.Matrix4().compose(x.pos,x.q,new THREE.Vector3(1,1,1));
   const held=snapsFor(S.part).map(h=>({...h,S:h.S.clone().applyMatrix4(W),D:h.D.clone().applyQuaternion(x.q)}));
   if(s.t.base){for(const h of held)if(h.g==='F'&&h.D.y>.95&&Math.abs(h.S.y)<.06){const cx=Math.floor(h.S.x),cz=Math.floor(h.S.z);
-      if(Math.abs(h.S.x-cx-.5)<.08&&Math.abs(h.S.z-cz-.5)<.08&&cx>=-BOUND&&cx<BOUND&&cz>=-BOUND&&cz<BOUND)out.push(baseSnap(cx,cz))}return out.length?out:[s.t]}
+      if(Math.abs(h.S.x-cx-.5)<.08&&Math.abs(h.S.z-cz-.5)<.08&&cx>=X0&&cx<X1&&cz>=Z0&&cz<Z1)out.push(baseSnap(cx,cz))}return out.length?out:[s.t]}
   for(const t of s.T)if(t===s.t||held.some(h=>compat(h,t)&&Math.abs(h.D.dot(t.D))>.95&&(h.S.distanceTo(t.S)<.08||h.slide&&t.slide&&segDist(h.S,t)<.08)))out.push(t);
   return out}
 
@@ -1064,7 +1155,7 @@ const placeQ=()=>new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0
 function qBox(id,q){const bb=info(id).geo.boundingBox,mn=new THREE.Vector3(1e9,1e9,1e9),mx=new THREE.Vector3(-1e9,-1e9,-1e9);
   for(const x of [bb.min.x,bb.max.x])for(const y of [bb.min.y,bb.max.y])for(const z of [bb.min.z,bb.max.z]){const p=new THREE.Vector3(x,y,z).applyQuaternion(q);mn.min(p);mx.max(p)}return {mn,mx}}
 function tiltPlacement(cell){const q=placeQ(),{mn,mx}=qBox(S.part,q),w=Math.max(1,Math.round(mx.x-mn.x)),d=Math.max(1,Math.round(mx.z-mn.z));
-  let x=cell.x-Math.floor((w-1)/2),z=cell.z-Math.floor((d-1)/2);x=Math.max(-BOUND,Math.min(BOUND-w,x));z=Math.max(-BOUND,Math.min(BOUND-d,z));let y=0;
+  let x=cell.x-Math.floor((w-1)/2),z=cell.z-Math.floor((d-1)/2);x=Math.max(X0,Math.min(X1-w,x));z=Math.max(Z0,Math.min(Z1-d,z));let y=0;
   for(let i=0;i<w;i++)for(let j=0;j<d;j++)y=Math.max(y,HM.get((x+i)+','+(z+j))||0);
   return {q,x,z,w,d,y,pos:new THREE.Vector3(x+w/2-(mn.x+mx.x)/2,y*PH-mn.y,z+d/2-(mn.z+mx.z)/2)}}
 function tiltPlace(axisName){if(sel&&sel.kind==='snap'&&sel.t.base)sel={kind:'grid',cell:{x:Math.floor(sel.t.S.x),z:Math.floor(sel.t.S.z)}};const ax=axisName==='A'?new THREE.Vector3(1,0,0):new THREE.Vector3(0,0,1);S.tq.premultiply(new THREE.Quaternion().setFromAxisAngle(ax,Math.PI/2));
@@ -1162,15 +1253,16 @@ function loadBricks(arr,msg){const prev=snap();S.bricks=arr;S.nextId=arr.reduce(
 function openSave(){
   panel.innerHTML=`<h2>הגדרות הפרויקט ${closeBtn}</h2>
   <h3>שם</h3><div class="field"><input id="setName" maxlength="40" value="${esc(S.proj?S.proj.name:'')}"><button class="btn ghost" id="setNameGo">שמור שם</button></div>
-  <h3>גודל המשטח</h3>${plateChips(S.plate)}<p class="note" id="plateNote">חלקים שנשארים מחוץ למשטח לא נמחקים.</p>
+  <h3>גודל המשטח</h3>${plateInput(S.plate,'שנה גודל')}<p class="note" id="plateNote">חלקים שנשארים מחוץ למשטח לא נמחקים.</p>
   <h3>שיתוף</h3>
   <p class="note">"העתק קוד" שומר את כל הדגם כטקסט. שלח אותו למישהו, והוא ידביק אותו כאן כדי לפתוח את הדגם אצלו.</p>
   <div class="field"><button class="btn ghost" id="mCopy">העתק קוד דגם</button><button class="btn ghost" id="mNew">משטח ריק</button></div>
   <textarea id="mCode" placeholder="הדבק כאן קוד דגם"></textarea>
   <div class="field"><button class="btn" id="mLoad">טען קוד לפרויקט הזה</button></div>`;
   scrim.hidden=false;
-  panel.querySelectorAll('[data-plate]').forEach(b=>b.onclick=()=>{const n=+b.dataset.plate;setPlate(n);rebuildHM();panel.querySelectorAll('[data-plate]').forEach(x=>x.classList.toggle('on',x===b));
-    const out=S.bricks.filter(q=>{const c=centerXZ(q);return Math.abs(c.x)>BOUND||Math.abs(c.z)>BOUND}).length;$('#plateNote').textContent=out?`${out} חלקים נמצאים עכשיו מחוץ למשטח. אפשר להזיז אותם במצב בחירה.`:'המשטח שונה ל-'+n+'×'+n+'.';if(S.proj)saveNow()});
+  wirePlatePrev();const goPlate=()=>{const p=readPlate();$('#pW').value=p.w;$('#pD').value=p.d;setPlate(p.w,p.d);rebuildHM();
+    const out=outOfPlate();$('#plateNote').textContent=out?`${out} חלקים נמצאים עכשיו מחוץ למשטח. אפשר להזיז אותם במצב בחירה.`:'המשטח שונה ל-'+p.w+'×'+p.d+'.';if(S.proj)saveNow()};
+  $('#pGo').onclick=goPlate;['#pW','#pD'].forEach(k=>$(k).addEventListener('keydown',e=>{if(e.key==='Enter')goPlate()}));
   $('#setNameGo').onclick=async()=>{const n=$('#setName').value.trim();if(!n||!S.proj)return;S.proj.name=n;$('#projName').textContent=n;try{await patchProject(S.proj.id,{name:n});toast('השם נשמר')}catch(e){toast('לא הצלחתי לשמור את השם')}};
   $('#mCopy').onclick=()=>{const code=encode(),ta=$('#mCode');ta.value=code;
     const fallback=()=>{ta.focus();ta.select();toast('הקוד מסומן, העתק אותו ידנית')};
@@ -1229,15 +1321,20 @@ function scheduleSave(){if(!S.proj||snap()===S.proj.saved)return;clearTimeout(sa
 async function saveNow(){clearTimeout(saveT);if(!S.proj)return;const data=snap(),p=S.proj;
   try{await putProject(p.id,{name:p.name,updated:Date.now(),count:S.bricks.length,thumb:snapThumb(),data,ctrl:JSON.stringify(S.ctrl||{}),plate:S.plate});p.saved=data}
   catch(e){toast(USER?'השמירה נכשלה. בדוק את החיבור לאינטרנט':'השמירה נכשלה, הזיכרון במכשיר מלא')}}
-function openProject(p){if(SIMUI.on)exitSim();setPlate(p.plate||32);S.proj={id:p.id,name:p.name,saved:p.data||'[]'};try{S.ctrl=p.ctrl?JSON.parse(p.ctrl):{}}catch(e){S.ctrl={}}S.bricks=JSON.parse(p.data||'[]');S.nextId=S.bricks.reduce((a,b)=>Math.max(a,b.id),0)+1;
+function openProject(p){if(SIMUI.on)exitSim();setPlate(plateWD(p.plate));setTimeout(camHome,0);S.proj={id:p.id,name:p.name,saved:p.data||'[]'};try{S.ctrl=p.ctrl?JSON.parse(p.ctrl):{}}catch(e){S.ctrl={}}S.bricks=JSON.parse(p.data||'[]');S.nextId=S.bricks.reduce((a,b)=>Math.max(a,b.id),0)+1;
   S.undo=[];S.redo=[];hideSel();refresh();$('#projName').textContent=p.name;$('#home').hidden=true;setTimeout(resize,0)}
-const PLATES=[[16,'קטן'],[24,'בינוני'],[32,'רגיל'],[48,'גדול'],[64,'ענק']];
-function plateChips(cur){return `<div class="plates">${PLATES.map(([n,l])=>`<button class="plate${n===cur?' on':''}" data-plate="${n}"><span class="pv" style="--k:${n/64}"></span><b>${n}×${n}</b><small>${l}</small></button>`).join('')}</div>`}
-async function newProject(){const list=await listProjects().catch(()=>[]);let size=32;
+function plateInput(cur,btn){const p=plateWD(cur);return `<div class="wd"><label><small>רוחב</small><input id="pW" type="number" inputmode="numeric" min="${PMIN}" max="${PMAX}" value="${p.w}"></label>
+  <span class="x">×</span><label><small>אורך</small><input id="pD" type="number" inputmode="numeric" min="${PMIN}" max="${PMAX}" value="${p.d}"></label>
+  <span class="wdv"><i id="pPrev"></i></span>${btn?`<button class="btn ghost" id="pGo">${btn}</button>`:''}</div>
+  <p class="note">כותבים כמה בליטות לרוחב וכמה לאורך, מ-${PMIN} עד ${PMAX}.</p>`}
+function readPlate(){return {w:clampP($('#pW').value),d:clampP($('#pD').value)}}
+function wirePlatePrev(){const up=()=>{const w=clampP($('#pW').value),d=clampP($('#pD').value),k=Math.max(w,d);const i=$('#pPrev');i.style.width=(10+34*w/k)+'px';i.style.height=(10+34*d/k)+'px'};
+  $('#pW').addEventListener('input',up);$('#pD').addEventListener('input',up);up()}
+async function newProject(){const list=await listProjects().catch(()=>[]);
   panel.innerHTML=`<h2>פרויקט חדש ${closeBtn}</h2><label class="note" for="npName">שם הפרויקט</label><div class="field"><input id="npName" maxlength="40" value="פרויקט ${list.length+1}"></div>
-    <h3>גודל המשטח</h3>${plateChips(size)}<p class="note">אפשר לשנות את הגודל גם אחר כך, בכפתור ההגדרות שבתוך הפרויקט.</p><button class="btn big" id="npGo">צור פרויקט</button>`;
-  scrim.hidden=false;panel.querySelectorAll('[data-plate]').forEach(b=>b.onclick=()=>{size=+b.dataset.plate;panel.querySelectorAll('[data-plate]').forEach(x=>x.classList.toggle('on',x===b))});
-  $('#npGo').onclick=async()=>{const name=$('#npName').value.trim()||('פרויקט '+(list.length+1));closePanel();openProject({id:newId(),name,data:'[]',plate:size});await saveNow();toast('פרויקט חדש נוצר')}}
+    <h3>גודל המשטח</h3>${plateInput({w:32,d:32})}<p class="note">אפשר לשנות את הגודל גם אחר כך, בכפתור ההגדרות שבתוך הפרויקט.</p><button class="btn big" id="npGo">צור פרויקט</button>`;
+  scrim.hidden=false;wirePlatePrev();
+  $('#npGo').onclick=async()=>{const name=$('#npName').value.trim()||('פרויקט '+(list.length+1)),size=readPlate();closePanel();openProject({id:newId(),name,data:'[]',plate:size});await saveNow();toast('פרויקט חדש נוצר')}}
 async function goHome(){if(S.proj&&snap()!==S.proj.saved)await saveNow();$('#home').hidden=false;renderHome()}
 async function signIn(){if(!fbAuth){toast('ההתחברות עם Google עוד לא הוגדרה');return}
   if(/; wv\)/.test(navigator.userAgent)){toast('באפליקציה ההתחברות עוד לא זמינה. התחבר באתר בדפדפן');return}
@@ -1280,7 +1377,7 @@ function loadScript(src){return new Promise((res,rej)=>{const el=document.create
 async function initFB(){if(!FB){fbReady=true;return}
   try{for(const x of ['firebase-app-compat.js','firebase-auth-compat.js','firebase-firestore-compat.js'])await loadScript('lib/'+x);
     firebase.initializeApp(FB);fbAuth=firebase.auth();fbDb=firebase.firestore();fbAuth.getRedirectResult().catch(()=>{});
-    fbAuth.onAuthStateChanged(async u=>{USER=u;fbReady=true;watchPro();if(u){try{await uploadLocal()}catch(e){}}if(!$('#home').hidden)renderHome();else if(!u){$('#home').hidden=false;renderHome()}})}
+    fbAuth.onAuthStateChanged(async u=>{USER=u;fbReady=true;barUser();watchPro();if(u){try{await uploadLocal()}catch(e){}}if(!$('#home').hidden)renderHome();else if(!u){$('#home').hidden=false;renderHome()}})}
   catch(e){fbAuth=null;fbReady=true;renderHome()}}
 function migrate(){try{if(localStorage.getItem('bs:migrated'))return false;localStorage.setItem('bs:migrated','1')}catch(e){return false}
   const o=local.read();let n=0;const cur=(()=>{try{return localStorage.getItem('bs:current')}catch(e){return null}})();
