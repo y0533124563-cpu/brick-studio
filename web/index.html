@@ -7,26 +7,27 @@
 <title>סטודיו לבנים</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&family=Secular+One&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700&family=Heebo:wght@400;500;600;700&display=swap">
 <style>
 /* Layout: full-bleed 3D workbench, slim tool bar on top, part drawer at the bottom (phone first) */
 :root{
-  --bg:#E9EDF1; --surface:#FFFFFF; --surface-2:#F3F5F8; --ink:#17202B; --muted:#5B6776;
-  --line:#D5DBE2; --accent:#F2B705; --accent-ink:#1E1A08; --danger:#C2341B;
-  --scene:#DCE3EA; --base:#7FA98A;
-  --f-display:"Secular One","Assistant",system-ui,sans-serif;
-  --f-body:"Assistant",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --bg:#FAF9F5; --surface:#FFFFFF; --surface-2:#F0EEE6; --ink:#1F1E1D; --muted:#73726C;
+  --line:#E3E0D5; --accent:#C96442; --accent-ink:#FFFFFF; --danger:#B53333;
+  --scene:#F0EEE6; --base:#B9B09A;
+  --f-display:"Frank Ruhl Libre",Georgia,"Times New Roman",serif;
+  --f-body:"Heebo",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --r:12px;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#11151B; --surface:#1A2029; --surface-2:#222A35; --ink:#E7ECF2; --muted:#9AA6B5;
-  --line:#2E3845; --accent:#F5C21B; --accent-ink:#1E1A08; --danger:#F06A4F;
-  --scene:#161C24; --base:#3E6B4B; color-scheme:dark}}
+  --bg:#262624; --surface:#30302E; --surface-2:#3A3A37; --ink:#F5F4EE; --muted:#A6A39A;
+  --line:#47463F; --accent:#D97757; --accent-ink:#FFFFFF; --danger:#E26D5A;
+  --scene:#1F1E1D; --base:#4A463E; color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#11151B; --surface:#1A2029; --surface-2:#222A35; --ink:#E7ECF2; --muted:#9AA6B5;
-  --line:#2E3845; --accent:#F5C21B; --accent-ink:#1E1A08; --danger:#F06A4F;
-  --scene:#161C24; --base:#3E6B4B; color-scheme:dark}
+  --bg:#262624; --surface:#30302E; --surface-2:#3A3A37; --ink:#F5F4EE; --muted:#A6A39A;
+  --line:#47463F; --accent:#D97757; --accent-ink:#FFFFFF; --danger:#E26D5A;
+  --scene:#1F1E1D; --base:#4A463E; color-scheme:dark}
 html,body{height:100%}
-body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;overflow:hidden;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45;overflow:hidden;-webkit-tap-highlight-color:transparent}
 #app{height:100%;display:grid;grid-template-rows:auto 1fr auto;grid-template-columns:minmax(0,1fr)}
 button{font:inherit;color:inherit;cursor:pointer}
 button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -35,7 +36,7 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke
 /* top bar */
 .bar{display:flex;align-items:center;gap:8px;background:var(--surface);border-bottom:1px solid var(--line);
   padding-block:8px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));z-index:5}
-.brand{display:flex;align-items:center;gap:8px;font-family:var(--f-display);font-size:19px;white-space:nowrap}
+.brand{display:flex;align-items:center;gap:8px;font-family:var(--f-display);font-weight:500;font-size:20px;white-space:nowrap}
 .brand-mark{width:26px;height:26px;flex:none}
 .spacer{flex:1}
 .pill{font-size:13px;color:var(--muted);background:var(--surface-2);border-radius:999px;padding:3px 10px;font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -78,7 +79,7 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke
 .row{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
 .row::-webkit-scrollbar{display:none}
 .tab{flex:none;border:1px solid var(--line);background:transparent;border-radius:999px;padding:5px 13px;font-weight:600;font-size:14px;color:var(--muted)}
-.tab[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.tab[aria-pressed="true"]{background:var(--surface-2);color:var(--ink);border-color:var(--muted)}
 .parts .part{flex:none;width:78px;border:2px solid transparent;border-radius:12px;background:var(--surface-2);padding:4px 2px 5px;display:flex;flex-direction:column;align-items:center;gap:1px}
 .part img{width:62px;height:62px;display:block}
 .part span{font-size:11.5px;line-height:1.15;color:var(--muted);text-align:center}
@@ -139,9 +140,9 @@ textarea{min-height:70px;resize:vertical;font-size:12px;direction:ltr;text-align
 .signin p{margin:0;line-height:1.5;color:var(--muted)}
 .gbtn{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
 .home-empty{color:var(--muted);line-height:1.5;grid-column:1/-1}
-.brand{cursor:pointer;border:0;background:transparent;color:inherit;font:inherit;font-family:var(--f-display);font-size:19px;padding:0;min-width:0}
+.brand{cursor:pointer;border:0;background:transparent;color:inherit;font:inherit;font-family:var(--f-display);font-weight:500;font-size:20px;padding:0;min-width:0}
 .brand span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:38vw}
-@media (max-width:480px){#saveBtn{display:none}}
+@media (max-width:480px){#saveBtn,#count{display:none}.bar{gap:4px}.ib{width:36px}}
 .ib.play{color:var(--accent-ink);background:var(--accent)}
 .ib.play:hover{background:var(--accent);filter:brightness(1.05)}
 .pro-list{margin:0;padding-inline-start:20px;display:flex;flex-direction:column;gap:6px;line-height:1.45}
@@ -165,7 +166,7 @@ textarea{min-height:70px;resize:vertical;font-size:12px;direction:ltr;text-align
 .allcol{display:grid;grid-template-columns:repeat(auto-fill,minmax(38px,1fr));gap:6px}
 .allcol button{aspect-ratio:1;border-radius:9px;border:2px solid var(--line)}
 .allcol button[aria-pressed="true"]{border-color:var(--ink)}
-.ib.wide{width:auto;padding:0 12px;gap:6px;font-weight:700}
+.ib.wide{width:auto;padding:0 12px;gap:6px;font-weight:600;display:inline-flex;align-items:center}
 #app.simming #sheet,#app.simming .rail,#app.simming .fabs,#app.simming .hint,#app.simming #selbar,#app.simming #confirm,#app.simming .bar .ib:not(#playBtn){display:none!important}
 #app.simming #playBtn{display:none}
 .simbar{position:absolute;top:10px;left:50%;transform:translateX(-50%);display:flex;gap:6px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:6px;box-shadow:0 6px 18px rgba(0,0,0,.15);z-index:7}
@@ -173,13 +174,13 @@ textarea{min-height:70px;resize:vertical;font-size:12px;direction:ltr;text-align
 .remote{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(10px + env(safe-area-inset-bottom,0px));width:min(560px,calc(100% - 16px));z-index:7;display:flex;flex-direction:column-reverse;gap:8px;pointer-events:none}
 .remote>*{pointer-events:auto}
 .remote.top{flex-direction:column}
-.gp{position:relative;padding-top:40px;direction:ltr;user-select:none;-webkit-user-select:none}
+.gp{position:relative;padding-top:30px;direction:ltr;user-select:none;-webkit-user-select:none}
 .gp-body{position:relative;z-index:2;aspect-ratio:2.15/1;background:linear-gradient(180deg,var(--surface),var(--surface-2));border:1px solid var(--line);border-radius:44% 44% 30% 30%/58% 58% 42% 42%;box-shadow:0 10px 28px rgba(0,0,0,.22)}
 .gb{position:absolute;border:1px solid var(--line);font-size:10px;font-weight:700;letter-spacing:.02em;color:var(--muted);touch-action:none;padding:0;display:flex;align-items:flex-start;justify-content:center}
-.trig{top:0;width:15%;height:40px;padding-top:5px;background:linear-gradient(180deg,var(--surface-2),var(--bg));border-radius:16px 16px 8px 8px/22px 22px 8px 8px;z-index:0}
-.trig.l{left:15%;transform:rotate(-6deg)}.trig.r{right:15%;transform:rotate(6deg)}
-.bump{top:24px;width:24%;height:30px;padding-top:4px;background:linear-gradient(180deg,var(--surface),var(--surface-2));border-radius:40px 40px 6px 6px/26px 26px 6px 6px;z-index:1;box-shadow:0 -2px 6px rgba(0,0,0,.08)}
-.bump.l{left:7%;transform:rotate(-8deg);transform-origin:right bottom}.bump.r{right:7%;transform:rotate(8deg);transform-origin:left bottom}
+.trig{top:0;width:15%;height:40px;padding-top:6px;background:linear-gradient(180deg,var(--surface-2),var(--bg));border-radius:18px 18px 6px 6px/24px 24px 6px 6px;z-index:1}
+.trig.l{left:6%}.trig.r{right:6%}
+.bump{top:6px;width:20%;height:34px;padding-top:6px;background:linear-gradient(180deg,var(--surface),var(--surface-2));border-radius:20px 20px 6px 6px/22px 22px 6px 6px;z-index:1}
+.bump.l{left:22%}.bump.r{right:22%}
 .gb.down{color:var(--accent-ink)}
 .grip{position:absolute;left:50%;top:5%;transform:translateX(-50%);width:54px;height:22px;border-radius:11px;display:flex;align-items:center;justify-content:center;gap:3px;cursor:grab;touch-action:none;z-index:3}
 .grip i{display:block;width:4px;height:4px;border-radius:50%;background:var(--muted);opacity:.7}
@@ -211,6 +212,17 @@ textarea{min-height:70px;resize:vertical;font-size:12px;direction:ltr;text-align
 .tgt.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset;outline:none}
 .mini.warn{color:var(--danger);border-color:var(--danger);background:transparent}
 .inv{display:flex;align-items:center;gap:6px;font-size:13px}
+.bar{box-shadow:none}
+.panel{border-radius:20px 20px 0 0}
+.btn{border-radius:10px;font-weight:600}
+.btn.ghost{background:var(--surface-2)}
+.home{background:var(--bg)}
+.home-top{background:var(--bg)}
+.home-foot{background:var(--bg)}
+.proj{border-radius:16px;transition:border-color .15s}
+.proj:hover{border-color:var(--muted)}
+.pro-badge{background:var(--accent);color:var(--accent-ink)}
+.toast{border-radius:10px}
 @media (prefers-reduced-motion: reduce){*{transition:none!important}}
 @media (min-width:900px){.parts .part{width:88px}.part img{width:70px;height:70px}}
 </style>
@@ -220,7 +232,7 @@ textarea{min-height:70px;resize:vertical;font-size:12px;direction:ltr;text-align
 <div id="app" dir="rtl">
   <header class="bar">
     <button class="brand" id="homeBtn" title="הפרויקטים שלי">
-      <svg class="brand-mark" viewBox="0 0 26 26" aria-hidden="true"><rect x="2" y="9" width="22" height="13" rx="2.5" fill="#F2B705"/><rect x="5" y="5" width="6" height="5" rx="1.5" fill="#F2B705"/><rect x="15" y="5" width="6" height="5" rx="1.5" fill="#F2B705"/><rect x="2" y="17" width="22" height="5" rx="2.5" fill="#000" opacity=".12"/></svg>
+      <svg class="brand-mark" viewBox="0 0 26 26" aria-hidden="true"><rect x="2" y="9" width="22" height="13" rx="2.5" fill="#C96442"/><rect x="5" y="5" width="6" height="5" rx="1.5" fill="#C96442"/><rect x="15" y="5" width="6" height="5" rx="1.5" fill="#C96442"/><rect x="2" y="17" width="22" height="5" rx="2.5" fill="#000" opacity=".12"/></svg>
       <span id="projName">סטודיו לבנים</span>
     </button>
     <span class="pill" id="count">0 חלקים</span>
@@ -297,7 +309,7 @@ textarea{min-height:70px;resize:vertical;font-size:12px;direction:ltr;text-align
 <section class="home" id="home" dir="rtl">
   <header class="home-top">
     <div class="brand" style="cursor:default">
-      <svg class="brand-mark" viewBox="0 0 26 26" aria-hidden="true"><rect x="2" y="9" width="22" height="13" rx="2.5" fill="#F2B705"/><rect x="5" y="5" width="6" height="5" rx="1.5" fill="#F2B705"/><rect x="15" y="5" width="6" height="5" rx="1.5" fill="#F2B705"/><rect x="2" y="17" width="22" height="5" rx="2.5" fill="#000" opacity=".12"/></svg>
+      <svg class="brand-mark" viewBox="0 0 26 26" aria-hidden="true"><rect x="2" y="9" width="22" height="13" rx="2.5" fill="#C96442"/><rect x="5" y="5" width="6" height="5" rx="1.5" fill="#C96442"/><rect x="15" y="5" width="6" height="5" rx="1.5" fill="#C96442"/><rect x="2" y="17" width="22" height="5" rx="2.5" fill="#000" opacity=".12"/></svg>
       <span>סטודיו לבנים</span>
     </div>
     <div class="acct" id="acct"></div>
@@ -923,7 +935,7 @@ function enterSim(){if(!isPro()){openPro();return}if(!LDXM){toast('טוען את
   else if(M.jam.size)toast('חלק מהמנועים תקועים: חלק שמסתובב מחובר לחלק שעומד על המשטח');
   else if(!M.moving.length&&!M.cyls.length)toast('המנוע לא מחובר לציר. הכנס ציר לחור של המנוע');}
 function exitSim(){stopSim();SIMUI.on=false;SIMUI.edit=false;for(const k in IN)IN[k]=0;clearSimHL();$('#app').classList.remove('simming');$('#simbar').hidden=true;$('#remote').hidden=true;setTimeout(resize,0)}
-const simEdge=new THREE.LineBasicMaterial({color:0xF2B705,transparent:true,opacity:1,depthTest:false});
+const simEdge=new THREE.LineBasicMaterial({color:0xD97757,transparent:true,opacity:1,depthTest:false});
 function clearSimHL(){for(const m of meshes.values()){const o=m.getObjectByName('simhl');if(o)m.remove(o)}}
 function simHL(id){clearSimHL();const m=meshes.get(id),b=brickById(id);if(!m||!b)return;const l=new THREE.LineSegments(edgesFor(b.p),simEdge);l.name='simhl';l.renderOrder=30;m.add(l)}
 function labelOf(k){const m=S.ctrl[k];if(!m)return 'לא מחובר';const t=targetsList().find(x=>x.id===m.id);return t?t.name+(m.inv?' (הפוך)':''):'לא מחובר'}
@@ -1017,7 +1029,7 @@ function tiltSel(axis){const L=selBricks();if(!L.length)return;const prev=snap()
 
 /* ---------- select, move, rotate, duplicate ---------- */
 S.sel=new Set();const r4=v=>Math.round(v*1e4)/1e4;
-const selEdge=new THREE.LineBasicMaterial({color:0xF2B705,transparent:true,opacity:1,depthTest:false});
+const selEdge=new THREE.LineBasicMaterial({color:0xD97757,transparent:true,opacity:1,depthTest:false});
 function drawSel(){for(const m of meshes.values()){const o=m.getObjectByName('selhl');if(o)m.remove(o)}
   for(const id of [...S.sel]){const m=meshes.get(id),b=brickById(id);if(!m||!b){S.sel.delete(id);continue}const l=new THREE.LineSegments(edgesFor(b.p),selEdge);l.name='selhl';l.renderOrder=30;m.add(l)}
   $('#selbar').hidden=!(S.mode==='select'&&S.sel.size);$('#selCount').textContent=S.sel.size===1?'חלק אחד נבחר':S.sel.size+' חלקים נבחרו'}
@@ -1067,7 +1079,7 @@ function openColors(){const groups=[['רגילים',LDCOL.filter(k=>!COLORS[k].g
   scrim.hidden=false;panel.querySelectorAll('[data-col]').forEach(b=>b.onclick=()=>{S.color=b.dataset.col;updateCur();closePanel();toast('צבע: '+COLORS[S.color].n)})}
 
 /* ---------- building instructions (Pro) ---------- */
-let INS=null;const insEdge=new THREE.LineBasicMaterial({color:0xF2B705,transparent:true,opacity:1,depthTest:false});
+let INS=null;const insEdge=new THREE.LineBasicMaterial({color:0xD97757,transparent:true,opacity:1,depthTest:false});
 function openInstr(){if(!isPro()){openPro();return}if(SIM)stopSim();hideSel();if(!S.bricks.length){toast('הדגם ריק. הוסף חלקים כדי ליצור הוראות');return}
   const items=S.bricks.map((b,i)=>{const m=meshes.get(b.id);let y=0;if(m){const bb=new THREE.Box3().setFromObject(m);y=bb.min.y}return {b,i,layer:Math.round(y/PH+1e-3)}});
   items.sort((a,b)=>a.layer-b.layer||a.i-b.i);const steps=[];
