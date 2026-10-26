@@ -86,7 +86,10 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke
 .colors .c{flex:none;width:34px;height:34px;border-radius:9px;border:2px solid var(--line);position:relative}
 .colors .c[aria-pressed="true"]{border-color:var(--ink);box-shadow:0 0 0 2px var(--surface) inset}
 .colors .c.glass{background-image:linear-gradient(135deg,rgba(255,255,255,.7) 0 30%,transparent 30% 60%,rgba(255,255,255,.5) 60%)}
-.empty{color:var(--muted);font-size:14px;padding:18px 4px}
+.empty{color:var(--muted);font-size:14px;padding:12px 4px;flex:none;max-width:320px;line-height:1.4}
+.parts .part.ld{width:100px}
+.part.ld span{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;direction:ltr}
+.part small{font-size:10.5px;color:var(--muted);font-variant-numeric:tabular-nums;direction:ltr}
 
 /* panel */
 .scrim{position:fixed;inset:0;background:rgba(10,14,20,.45);z-index:20;display:flex;align-items:flex-end;justify-content:center}
@@ -130,7 +133,7 @@ textarea{min-height:70px;resize:vertical;font-size:12px;direction:ltr;text-align
   </header>
 
   <main id="stage">
-    <div class="hint" id="hint">גע במקום שבו תרצה לחבר את החלק, ואז לחץ "אישור". ציר × נכנס לחור × או ○, פין ○ נכנס רק לחור ○. גלגל או קורה: בחר אותם וגע בציר.</div>
+    <div class="hint" id="hint">בלשונית "כל החלקים" יש את כל ספריית LDraw. גע במקום שבו תרצה לחבר את החלק, ואז לחץ "אישור". ציר × נכנס לחור × או ○, פין ○ נכנס רק לחור ○. גלגל או קורה: בחר אותם וגע בציר.</div>
     <div class="confirm" id="confirm" hidden>
       <button class="ok" id="okBtn" aria-label="אישור והנחת החלק"><svg class="i" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>אישור</button>
       <button id="rotSel"><svg class="i" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v5h-5"/></svg><span id="rotLbl">סובב</span></button>
@@ -236,7 +239,7 @@ function mkArch(n,hp,ry){const H=hp*PH,rx=n/2-1,s=new THREE.Shape();
   const l=[C(g)];studs(n,1,H).forEach(x=>l.push(C(x)));return {list:l,w:n,d:1,h:hp}}
 
 /* ---------- part library ---------- */
-const CATS=[['brick','לבנים'],['plate','פלטות'],['tile','אריחים'],['slope','משופעים'],['round','עגולים'],['technic','טכני'],['special','מיוחדים']];
+const CATS=[['ld','כל החלקים'],['brick','לבנים'],['plate','פלטות'],['tile','אריחים'],['slope','משופעים'],['round','עגולים'],['technic','טכני'],['special','מיוחדים']];
 const PARTS=[];const P=(id,cat,name,make)=>PARTS.push({id,cat,name,make});
 [[1,1],[1,2],[1,3],[1,4],[1,6],[1,8],[1,10],[1,12],[1,16],[2,2],[2,3],[2,4],[2,6],[2,8],[2,10],[2,12],[2,16],[4,4],[4,6],[4,10],[4,12]].forEach(([a,b])=>P(`b${a}x${b}`,'brick',`לבנה ${a}×${b}`,()=>mkBrick(b,a,3)));
 [[1,1,2],[1,2,2],[1,1,3],[1,2,3],[1,4,3],[1,1,5],[1,2,5],[1,6,5],[2,2,3],[2,4,3]].forEach(([a,b,c])=>P(`bt${a}x${b}x${c}`,'brick',`לבנה גבוהה ${a}×${b}×${c}`,()=>mkBrick(b,a,c*3)));
@@ -280,8 +283,8 @@ const PMAP={};PARTS.forEach(p=>PMAP[p.id]=p);
 const GEO={};function info(id){if(!GEO[id]){const r=PMAP[id].make();GEO[id]={geo:merge(r.list),w:r.w,d:r.d,h:r.h,conns:r.conns||[]}}return GEO[id]}
 
 /* ---------- materials ---------- */
-const darkMat=new THREE.MeshStandardMaterial({color:DARK,roughness:.6});
-const MATS={};function mat(ci){if(!MATS[ci]){const c=COLORS[ci];MATS[ci]=new THREE.MeshStandardMaterial({color:c.h,roughness:c.glass?.08:.33,metalness:0,transparent:!!c.glass,opacity:c.glass?.5:1})}return MATS[ci]}
+const darkMat=new THREE.MeshStandardMaterial({color:DARK,roughness:.6,side:THREE.DoubleSide});
+const MATS={};function mat(ci){if(!MATS[ci]){const c=COLORS[ci];MATS[ci]=new THREE.MeshStandardMaterial({side:THREE.DoubleSide,color:c.h,roughness:c.glass?.08:.33,metalness:0,transparent:!!c.glass,opacity:c.glass?.5:1})}return MATS[ci]}
 const paneMat=new THREE.MeshStandardMaterial({color:'#BFE6F0',transparent:true,opacity:.45,roughness:.05});
 const hlMat=new THREE.MeshBasicMaterial({color:0xF2F4F6,transparent:true,opacity:.55,depthTest:false,depthWrite:false});
 const hlRing=new THREE.MeshBasicMaterial({color:0xFFFFFF,transparent:true,opacity:.9,depthTest:false,depthWrite:false});
@@ -318,13 +321,13 @@ new ResizeObserver(resize).observe(stage);resize();
 const S={bricks:[],mode:'build',part:'b2x4',color:0,rot:0,undo:[],redo:[],nextId:1,cat:'brick',q:''};
 const meshes=new Map();let HM=new Map();
 const fp=(id,r)=>{const g=info(id);return (r%2)?{w:g.d,d:g.w}:{w:g.w,d:g.d}};
-function rebuildHM(){HM=new Map();for(const b of S.bricks){if(b.f)continue;const f=fp(b.p,b.r),t=b.y+info(b.p).h;for(let i=0;i<f.w;i++)for(let j=0;j<f.d;j++){const k=(b.x+i)+','+(b.z+j);if((HM.get(k)||0)<t)HM.set(k,t)}}}
+function rebuildHM(){HM=new Map();for(const b of S.bricks){if(!PMAP[b.p]&&/^ld:/.test(b.p))ldReg(b.p);if(b.f||!ready(b.p))continue;const f=fp(b.p,b.r),t=b.y+info(b.p).h;for(let i=0;i<f.w;i++)for(let j=0;j<f.d;j++){const k=(b.x+i)+','+(b.z+j);if((HM.get(k)||0)<t)HM.set(k,t)}}}
 function placement(cx,cz,id,r){const f=fp(id,r);let x=cx-Math.floor((f.w-1)/2),z=cz-Math.floor((f.d-1)/2);
   x=Math.max(-BOUND,Math.min(BOUND-f.w,x));z=Math.max(-BOUND,Math.min(BOUND-f.d,z));let y=0;
   for(let i=0;i<f.w;i++)for(let j=0;j<f.d;j++)y=Math.max(y,HM.get((x+i)+','+(z+j))||0);return {x,y,z}}
 function posMesh(m,b){if(b.f){m.position.set(b.px,b.py,b.pz);m.quaternion.set(b.q[0],b.q[1],b.q[2],b.q[3]);return}const f=fp(b.p,b.r);m.position.set(b.x+f.w/2,b.y*PH,b.z+f.d/2);m.rotation.y=b.r*Math.PI/2}
 function sync(){const keep=new Set();
-  for(const b of S.bricks){const key=(b.f?[b.p,b.c,'f',b.px,b.py,b.pz,...b.q]:[b.p,b.c,b.x,b.y,b.z,b.r]).join('|');keep.add(b.id);let m=meshes.get(b.id);
+  for(const b of S.bricks){if(!ready(b.p)){keep.add(b.id);ldEnsure(b.p).then(refresh,()=>{});continue}const key=(b.f?[b.p,b.c,'f',b.px,b.py,b.pz,...b.q]:[b.p,b.c,b.x,b.y,b.z,b.r]).join('|');keep.add(b.id);let m=meshes.get(b.id);
     if(m&&m.userData.key!==key){scene.remove(m);m=null}
     if(!m){m=new THREE.Mesh(info(b.p).geo,[mat(b.c),darkMat,paneMat]);m.castShadow=!COLORS[b.c].glass;m.receiveShadow=true;m.userData={bid:b.id,key};posMesh(m,b);scene.add(m);meshes.set(b.id,m)}}
   for(const [id,m] of meshes)if(!keep.has(id)){scene.remove(m);meshes.delete(id)}}
@@ -425,12 +428,12 @@ $('#handle').onclick=()=>{const s=$('#sheet');s.classList.toggle('closed');$('#h
 
 const tabs=$('#tabs');CATS.forEach(([id,n])=>{const b=document.createElement('button');b.className='tab';b.textContent=n;b.dataset.cat=id;b.onclick=()=>{S.cat=id;S.q='';$('#q').value='';renderParts()};tabs.appendChild(b)});
 const THUMBS={};
-function renderParts(){tabs.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-pressed',!S.q&&t.dataset.cat===S.cat));
+function renderParts(){tabs.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-pressed',(S.cat==='ld'||!S.q)&&t.dataset.cat===S.cat));if(S.cat==='ld'){renderLD();return}
   const q=S.q.trim().replace(/x/gi,'×'),list=q?PARTS.filter(p=>p.name.includes(q)):PARTS.filter(p=>p.cat===S.cat);const el=$('#parts');el.innerHTML='';
   if(!list.length){el.innerHTML='<div class="empty">לא נמצא חלק בשם הזה. נסה מילה אחרת, למשל "לבנה" או "ציר".</div>';return}
   list.forEach(p=>{const b=document.createElement('button');b.className='part';b.setAttribute('aria-pressed',p.id===S.part);b.innerHTML=`<img alt="" data-pid="${p.id}" src="${THUMBS[p.id]||'data:image/gif;base64,R0lGODlhAQABAAAAACw='}"><span>${p.name}</span>`;
     b.onclick=()=>selectPart(p.id);el.appendChild(b)})}
-function selectPart(id){S.part=id;renderParts();updateCur();if(sel){sel.kind==='grid'?showSel(sel):hideSel()}if(S.mode!=='build')document.querySelector('.mode[data-mode="build"]').click()}
+function selectPart(id){if(!ready(id)){toast('טוען חלק…');ldEnsure(id).then(()=>selectPart(id),()=>toast('לא הצלחתי לטעון את החלק הזה'));return}S.part=id;renderParts();updateCur();if(sel){sel.kind==='grid'?showSel(sel):hideSel()}if(S.mode!=='build')document.querySelector('.mode[data-mode="build"]').click()}
 $('#q').addEventListener('input',e=>{S.q=e.target.value;renderParts()});
 const colEl=$('#colors');COLORS.forEach((c,i)=>{const b=document.createElement('button');b.className='c'+(c.glass?' glass':'');b.style.background=c.h;if(c.glass)b.style.backgroundColor=c.h;b.title=c.n;b.setAttribute('aria-label',c.n);
   b.onclick=()=>{S.color=i;colEl.querySelectorAll('.c').forEach((x,j)=>x.setAttribute('aria-pressed',j===i));updateCur()};colEl.appendChild(b)});
@@ -438,14 +441,73 @@ function updateCur(){$('#curName').textContent=PMAP[S.part].name;$('#curColor').
   colEl.querySelectorAll('.c').forEach((x,j)=>x.setAttribute('aria-pressed',j===S.color))}
 
 /* thumbnails */
-function makeThumbs(){let tr;try{tr=new THREE.WebGLRenderer({antialias:true,alpha:true,preserveDrawingBuffer:true})}catch(e){return}
-  tr.setSize(128,128);const ts=new THREE.Scene();ts.add(new THREE.HemisphereLight(0xffffff,0x778899,.9));const dl=new THREE.DirectionalLight(0xffffff,.8);dl.position.set(5,9,7);ts.add(dl);
-  const tc=new THREE.PerspectiveCamera(30,1,.1,200);const tm=new THREE.MeshStandardMaterial({color:'#C9CFD7',roughness:.4});let i=0;
-  (function step(){for(let k=0;k<6&&i<PARTS.length;k++,i++){const p=PARTS[i],g=info(p.id).geo,m=new THREE.Mesh(g,[tm,darkMat,paneMat]);ts.add(m);
-      const bb=g.boundingBox,c=new THREE.Vector3(),s=new THREE.Vector3();bb.getCenter(c);bb.getSize(s);const rad=s.length()/2;
-      tc.position.copy(c).add(new THREE.Vector3(1,.85,1.25).normalize().multiplyScalar(rad/Math.sin(THREE.MathUtils.degToRad(15))*1.02));tc.lookAt(c);
-      tr.render(ts,tc);THUMBS[p.id]=tr.domElement.toDataURL();ts.remove(m);document.querySelectorAll(`img[data-pid="${p.id}"]`).forEach(im=>im.src=THUMBS[p.id])}
-    if(i<PARTS.length)setTimeout(step,16);else{tr.dispose();tr.forceContextLoss&&tr.forceContextLoss()}})()}
+const BLANK='data:image/gif;base64,R0lGODlhAQABAAAAACw=';
+let TR=null;
+function thumbR(){if(TR===null){try{const tr=new THREE.WebGLRenderer({antialias:true,alpha:true,preserveDrawingBuffer:true});tr.setSize(128,128);
+  const ts=new THREE.Scene();ts.add(new THREE.HemisphereLight(0xffffff,0x778899,.9));const dl=new THREE.DirectionalLight(0xffffff,.8);dl.position.set(5,9,7);ts.add(dl);
+  TR={tr,ts,tc:new THREE.PerspectiveCamera(30,1,.1,500),tm:new THREE.MeshStandardMaterial({color:'#C9CFD7',roughness:.4,side:THREE.DoubleSide})}}catch(e){TR=false}}return TR}
+function setThumb(id){const R=thumbR();if(!R||!GEO[id]&&/^ld:/.test(id))return;const g=info(id).geo,m=new THREE.Mesh(g,[R.tm,darkMat,paneMat]);R.ts.add(m);
+  const bb=g.boundingBox,c=new THREE.Vector3(),sz=new THREE.Vector3();bb.getCenter(c);bb.getSize(sz);const rad=Math.max(.5,sz.length()/2);
+  R.tc.position.copy(c).add(new THREE.Vector3(1,.85,1.25).normalize().multiplyScalar(rad/Math.sin(THREE.MathUtils.degToRad(15))*1.02));R.tc.lookAt(c);
+  R.tr.render(R.ts,R.tc);THUMBS[id]=R.tr.domElement.toDataURL();R.ts.remove(m);document.querySelectorAll(`img[data-pid="${id}"]`).forEach(im=>im.src=THUMBS[id])}
+function makeThumbs(){let i=0;(function step(){for(let k=0;k<6&&i<PARTS.length;k++,i++)setThumb(PARTS[i].id);if(i<PARTS.length)setTimeout(step,16)})()}
+
+/* ---------- LDraw full library (works on the website and in the app) ---------- */
+const LD_BASE=location.protocol==='file:'?'https://y0533124563-cpu.github.io/brick-studio/ldraw/':'ldraw/';
+const ready=id=>!!GEO[id]||!/^ld:/.test(id);
+let LDX=null,LDXp=null,ldGen=0;
+const HE=[['גלגל שיניים','gear'],['שיניים','gear'],['לבנים','brick'],['לבנה','brick'],['פלטה','plate'],['אריח','tile'],['משופע','slope'],['ציר','axle'],['גלגל','wheel'],['צמיג','tyre'],
+  ['קורה','beam'],['פין','pin'],['חלון','window'],['דלת','door'],['דמות','minifig'],['קשת','arch'],['גדר','fence'],['עגול','round'],['טכני','technic'],['מנוע','motor'],['חרוט','cone'],
+  ['כיפה','dome'],['קיר','panel'],['מדרגות','stairs'],['צמח','plant'],['פרח','flower'],['מכונית','car'],['מטוס','plane'],['סירה','boat'],['ציר','axle']];
+function ldKey(t){t=' '+String(t).toLowerCase().replace(/×/g,' x ')+' ';for(const [h,e] of HE)t=t.split(h).join(' '+e+' ');t=t.replace(/\s+/g,' ');
+  for(let i=0;i<2;i++)t=t.replace(/(\d+(?:\.\d+)?) x (\d+(?:\.\d+)?)/g,'$1x$2');return t.trim()}
+const ldLabel=e=>e.d+' · '+e.n;
+function ldReg(id){const n=id.slice(3),e=LDX&&LDX.find(x=>x.n===n);PMAP[id]={id,cat:'ld',name:e?ldLabel(e):'חלק '+n,ph:!e}}
+function ldIndex(){if(!LDXp)LDXp=fetch(LD_BASE+'index.json').then(r=>{if(!r.ok)throw new Error('no index');return r.json()}).then(arr=>{
+    LDX=arr.map(([n,d,c])=>({n,d,c,k:ldKey(n+' '+d+' '+c)}));
+    for(const id in PMAP)if(PMAP[id].ph){const e=LDX.find(x=>x.n===id.slice(3));if(e)PMAP[id]={id,cat:'ld',name:ldLabel(e)}}return LDX})
+  .catch(e=>{LDXp=null;throw e});return LDXp}
+const QUICK=['brick','plate','tile','slope','technic beam','axle','pin','gear','wheel','tyre','window','door','minifig','arch','panel','plant'];
+function renderLD(){const el=$('#parts'),gen=++ldGen;el.innerHTML='<div class="empty">טוען את רשימת כל החלקים…</div>';
+  ldIndex().then(X=>{if(gen!==ldGen)return;const q=ldKey(S.q);el.innerHTML='';
+    if(!q){el.innerHTML=`<div class="empty">${X.length.toLocaleString('he-IL')} חלקים מספריית LDraw. כתוב בחיפוש שם או מספר חלק, או בחר:</div>`;
+      QUICK.forEach(w=>{const b=document.createElement('button');b.className='tab';b.textContent=w;b.onclick=()=>{$('#q').value=w;S.q=w;renderParts()};el.appendChild(b)});return}
+    const toks=q.split(' ');let res=X.filter(e=>toks.every(t=>e.k.includes(t)));
+    res.sort((a,b)=>(b.n===q)-(a.n===q)||a.d.length-b.d.length);const total=res.length;res=res.slice(0,80);
+    if(!res.length){el.innerHTML='<div class="empty">לא נמצא. נסה באנגלית, למשל "brick 2 x 4", או מספר חלק כמו 3001.</div>';return}
+    res.forEach(e=>{const id='ld:'+e.n;if(!PMAP[id]||PMAP[id].ph)PMAP[id]={id,cat:'ld',name:ldLabel(e)};
+      const b=document.createElement('button');b.className='part ld';b.setAttribute('aria-pressed',id===S.part);
+      b.innerHTML=`<img alt="" data-pid="${id}" src="${THUMBS[id]||BLANK}"><span>${esc(e.d)}</span><small>${esc(e.n)}</small>`;b.onclick=()=>selectPart(id);el.appendChild(b)});
+    if(total>80){const m=document.createElement('div');m.className='empty';m.textContent=`ועוד ${total-80} חלקים. כתוב חיפוש מדויק יותר.`;el.appendChild(m)}
+    (async()=>{for(const e of res.slice(0,30)){if(gen!==ldGen)return;const id='ld:'+e.n;if(THUMBS[id])continue;try{await ldEnsure(id);setThumb(id)}catch(_){}}})()
+  },()=>{if(gen!==ldGen)return;el.innerHTML='<div class="empty">הספרייה המלאה עובדת באתר ובאפליקציה: y0533124563-cpu.github.io/brick-studio. כאן אפשר להשתמש בחלקים שבשאר הלשוניות.</div>'})}
+
+const ldFiles={},ldParsed={},ldBuilt={},_v=new THREE.Vector3();
+const ldNorm=n=>n.toLowerCase().replace(/\\/g,'/').trim();
+function ldParse(txt){const out=[];for(const raw of txt.split(/\r?\n/)){const t=raw.trim().split(/\s+/),k=t[0];
+    if(k==='1'&&t.length>=15)out.push({k:1,c:t[1],m:t.slice(2,14).map(Number),f:t.slice(14).join(' ')});
+    else if(k==='3'&&t.length>=11)out.push({k:3,c:t[1],v:t.slice(2,11).map(Number)});
+    else if(k==='4'&&t.length>=14)out.push({k:4,c:t[1],v:t.slice(2,14).map(Number)})}return out}
+async function ldText(name){const tries=name.startsWith('s/')?['parts/'+name]:/^(48|8)\//.test(name)?['p/'+name]:['p/'+name,'parts/'+name];
+  for(const t of tries){try{const r=await fetch(LD_BASE+t);if(r.ok)return await r.text()}catch(e){}}return null}
+function ldGet(name){name=ldNorm(name);if(!ldFiles[name])ldFiles[name]=ldText(name).then(txt=>{const lines=txt?ldParse(txt):[];ldParsed[name]=lines;
+    return Promise.all(lines.filter(l=>l.k===1).map(l=>ldGet(l.f)))});return ldFiles[name]}
+function ldFlat(name,M,col,pos,depth){const lines=ldParsed[name];if(!lines||depth>40)return;
+  for(const l of lines){const c=l.c==='16'?col:l.c;
+    if(l.k===1){const m=l.m;ldFlat(ldNorm(l.f),M.clone().multiply(new THREE.Matrix4().set(m[3],m[4],m[5],m[0],m[6],m[7],m[8],m[1],m[9],m[10],m[11],m[2],0,0,0,1)),c,pos,depth+1)}
+    else{const v=l.v,g=pos[c==='16'?0:1],P=[];for(let j=0;j<v.length;j+=3){_v.set(v[j],v[j+1],v[j+2]).applyMatrix4(M);P.push(_v.x,_v.y,_v.z)}
+      g.push(P[0],P[1],P[2],P[3],P[4],P[5],P[6],P[7],P[8]);if(v.length===12)g.push(P[0],P[1],P[2],P[6],P[7],P[8],P[9],P[10],P[11])}}}
+function ldEnsure(id){if(GEO[id])return Promise.resolve();
+  if(!ldBuilt[id])ldBuilt[id]=ldGet(id.slice(3)+'.dat').then(()=>{const file=ldNorm(id.slice(3)+'.dat'),pos=[[],[]];
+    ldFlat(file,new THREE.Matrix4().makeScale(.05,-.05,-.05),'16',pos,0); // 20 LDraw units = 1 stud; LDraw's Y points down
+    if(!pos[0].length&&!pos[1].length){delete ldBuilt[id];throw new Error('empty part')}
+    const g=new THREE.BufferGeometry(),all=pos[0].concat(pos[1]);g.setAttribute('position',new THREE.Float32BufferAttribute(all,3));
+    g.addGroup(0,pos[0].length/3,0);g.addGroup(pos[0].length/3,pos[1].length/3,1);g.computeBoundingBox();
+    const bb=g.boundingBox,x0=bb.min.x,x1=bb.max.x,y0=bb.min.y,y1=bb.max.y,z0=bb.min.z,z1=bb.max.z;
+    const h=Math.max(1,Math.round((y1<=.25?-y0:y1-y0)/PH)); // most parts have their top surface at the origin
+    g.translate(-(x0+x1)/2,-y0,-(z0+z1)/2);g.computeVertexNormals();g.computeBoundingBox();
+    GEO[id]={geo:g,w:Math.max(1,Math.round(x1-x0)),d:Math.max(1,Math.round(z1-z0)),h,conns:[]};if(!PMAP[id])ldReg(id)});
+  return ldBuilt[id]}
 
 /* ---------- panels ---------- */
 const scrim=$('#scrim'),panel=$('#panel');
@@ -456,7 +518,7 @@ const closeBtn='<button class="ib" data-close aria-label="סגירה"><svg class
 function readModels(){try{return JSON.parse(localStorage.getItem('bs:models')||'{}')}catch(e){return {}}}
 function writeModels(m){try{localStorage.setItem('bs:models',JSON.stringify(m));return true}catch(e){return false}}
 function encode(){return btoa(unescape(encodeURIComponent(JSON.stringify(S.bricks.map(b=>b.f?[b.p,b.c,'f',b.px,b.py,b.pz,...b.q]:[b.p,b.c,b.x,b.y,b.z,b.r])))))}
-function decode(t){const a=JSON.parse(decodeURIComponent(escape(atob(t.trim()))));return a.filter(r=>PMAP[r[0]]&&COLORS[r[1]]).map((r,i)=>r[2]==='f'?{id:i+1,p:r[0],c:r[1],f:1,px:r[3],py:r[4],pz:r[5],q:r.slice(6,10)}:{id:i+1,p:r[0],c:r[1],x:r[2],y:r[3],z:r[4],r:r[5]||0})}
+function decode(t){const a=JSON.parse(decodeURIComponent(escape(atob(t.trim()))));return a.filter(r=>(PMAP[r[0]]||/^ld:/.test(r[0]))&&COLORS[r[1]]).map((r,i)=>r[2]==='f'?{id:i+1,p:r[0],c:r[1],f:1,px:r[3],py:r[4],pz:r[5],q:r.slice(6,10)}:{id:i+1,p:r[0],c:r[1],x:r[2],y:r[3],z:r[4],r:r[5]||0})}
 function loadBricks(arr,msg){const prev=snap();S.bricks=arr;S.nextId=arr.reduce((a,b)=>Math.max(a,b.id),0)+1;commit(prev);hideSel();toast(msg)}
 
 function openSave(){const ms=readModels(),names=Object.keys(ms).sort((a,b)=>ms[b].t-ms[a].t);

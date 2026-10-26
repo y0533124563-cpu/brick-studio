@@ -24,6 +24,15 @@ jobs:
       - uses: actions/checkout@v4
       - name: Get 3D library
         run: bash scripts/get-libs.sh
+      - name: Reuse downloaded LDraw library
+        uses: actions/cache@v4
+        with:
+          path: ldraw-complete.zip
+          key: ldraw-complete-v1
+      - name: Get LDraw parts library
+        run: python3 scripts/get-ldraw.py ldraw-complete.zip
+      - name: Library size
+        run: du -sh web/ldraw && find web/ldraw -type f | wc -l
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
