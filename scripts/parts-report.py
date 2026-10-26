@@ -19,4 +19,4 @@ for info in z.infolist():
             hits[w].append(f"{m.group(1)} {desc}")
 for w, lst in hits.items():
     lst.sort(key=len)
-    print(f"::notice title={w} ({len(lst)})::" + " | ".join(lst[:60]))
+    print(f"::notice title={w} ({len(lst)})::" + " | ".join(lst[:40]))
