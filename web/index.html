@@ -462,7 +462,7 @@ new MutationObserver(applyTheme).observe(document.documentElement,{attributes:tr
 function resize(){const r=stage.getBoundingClientRect();renderer.setSize(r.width,r.height,false);camera.aspect=r.width/Math.max(1,r.height);camera.updateProjectionMatrix()}
 new ResizeObserver(resize).observe(stage);resize();
 let lastT=performance.now(),SIM=null;
-(function loop(t){controls.update();if(SIM){stepSim(Math.min(.05,((t||lastT)-lastT)/1000))}lastT=t||performance.now();renderer.render(scene,camera);requestAnimationFrame(loop)})();
+(function loop(t){controls.update();if(SIM){stepSim(Math.min(.05,((t||lastT)-lastT)/1000));followStep()}lastT=t||performance.now();renderer.render(scene,camera);requestAnimationFrame(loop)})();
 
 /* ---------- state ---------- */
 const S={bricks:[],mode:'build',part:'ld:3001',color:0,rot:0,undo:[],redo:[],nextId:1,cat:'all',q:''};
@@ -842,16 +842,23 @@ function buildMech(){const {W,joints}=buildJoints(),K=new Map(S.bricks.map(b=>[b
     if(found){c.crane=found;if(!c.whole)c.lo=-.6}}
   // a complete cylinder on its own: it stretches from its fixed end, and whatever is pinned to the other end moves with it
   for(const c of cyls){if(!c.whole||c.crane)continue;const one=new Set([c.id]),ends=[c.cen.clone().addScaledVector(c.A,-c.len/2),c.cen.clone().addScaledVector(c.A,c.len/2)];
-    const partner=e=>{for(const j of free){if(!touches(j,one)||j.c.distanceTo(e)>.9)continue;const r=across(j,one);if(r&&r.id!==c.id)return gOf(r.id)}return null};
-    const pa=ends.map(partner);let bi=pa[0]&&(pa[0].ground||!pa[1])?0:pa[1]&&(pa[1].ground||!pa[0])?1:(ends[0].y<=ends[1].y?0:1);
-    const P=ends[bi],u=ends[1-bi].clone().sub(P).normalize(),carry=pa[1-bi]&&!pa[1-bi].ground&&!pa[1-bi].D&&!pa[1-bi].ids.includes(c.id)?pa[1-bi]:null;
+    // everything hanging on an end: the pin in its hole and whatever that pin holds
+    const partner=e=>{const gs=[];for(const j of free){if(!touches(j,one)||j.c.distanceTo(e)>.9)continue;const o=j.a===c.id?j.b:j.a;gs.push(gOf(o));
+        if(isPin(o)){const k=free.find(x=>x!==j&&(x.a===o||x.b===o)&&(x.a===o?x.b:x.a)!==c.id);if(k)gs.push(gOf(k.a===o?k.b:k.a))}}
+      return gs.length?{gs,ground:gs.some(g=>g.ground)}:null};
+    const pa=ends.map(partner),gi=info(byId.get(c.id).p),mm=meshes.get(c.id);let rodEnd=-1;
+    if(gi.rod&&mm){mm.updateMatrixWorld();const rc=gi.rod.boundingBox.getCenter(new V3()).applyMatrix4(mm.matrixWorld);rodEnd=rc.distanceTo(ends[0])<rc.distanceTo(ends[1])?0:1}
+    // the fixed end: the one held by something standing on the base; otherwise the body end (the rod is the end that moves)
+    let bi=pa[0]&&pa[0].ground?0:pa[1]&&pa[1].ground?1:rodEnd>=0?1-rodEnd:pa[0]&&!pa[1]?0:pa[1]&&!pa[0]?1:(ends[0].y<=ends[1].y?0:1);
+    const far=pa[1-bi],cids=far&&!far.ground?[...new Set(far.gs.filter(g=>!g.D&&!g.ground).flatMap(g=>g.ids))].filter(i=>i!==c.id):[];
+    const P=ends[bi],u=ends[1-bi].clone().sub(P).normalize(),carry=cids.length?{ids:cids}:null;
     c.stretch={P,u,L0:c.len,carry}}
   for(const c of cyls){if(!c.whole)continue;const m=meshes.get(c.id),gi=info(byId.get(c.id).p),rm=m&&m.getObjectByName('rod');if(!rm||!gi.rod)continue;
     const bc=gi.body.boundingBox.getCenter(new V3()),rc=gi.rod.boundingBox.getCenter(new V3()),sz=gi.geo.boundingBox.getSize(new V3());
     const aL=sz.x>=sz.y&&sz.x>=sz.z?new V3(1,0,0):sz.y>=sz.z?new V3(0,1,0):new V3(0,0,1);aL.multiplyScalar(Math.sign(rc.clone().sub(bc).dot(aL))||1);
     const rs=gi.rod.boundingBox.getSize(new V3()),rodLen=Math.abs(rs.dot(aL));m.updateMatrixWorld();
     c.slide={m:rm,uL:aL,uW:aL.clone().transformDirection(m.matrixWorld)};c.stroke=gi.stroke||Math.max(.4,rodLen*.55)}
-  return {moving,cranks,cyls,jam,K}}
+  return {moving,cranks,cyls,jam,K,joints,isPin}}
 function sang(u,v,A){return Math.atan2(new V3().crossVectors(u,v).dot(A),u.dot(v))}
 function scaleAbout(P,u,k){const S=new M4().set(1+(k-1)*u.x*u.x,(k-1)*u.x*u.y,(k-1)*u.x*u.z,0,(k-1)*u.y*u.x,1+(k-1)*u.y*u.y,(k-1)*u.y*u.z,0,(k-1)*u.z*u.x,(k-1)*u.z*u.y,1+(k-1)*u.z*u.z,0,0,0,0,1);
   return new M4().makeTranslation(P.x,P.y,P.z).multiply(S).multiply(new M4().makeTranslation(-P.x,-P.y,-P.z))}
@@ -873,7 +880,12 @@ function inputFor(id){let v=0;for(const [k] of OUTS){const m=S.ctrl&&S.ctrl[k];i
 function startSim(){const M=buildMech();
   const movers=new Set();for(const g of M.moving)g.ids.forEach(i=>movers.add(i));for(const c of M.cranks){c.rod.ids.forEach(i=>movers.add(i));c.piston.ids.forEach(i=>movers.add(i))}for(const c of M.cyls){c.rod.ids.forEach(i=>movers.add(i));if(c.crane){c.crane.boom.ids.forEach(i=>movers.add(i));c.crane.body.ids.forEach(i=>movers.add(i))}if(c.stretch){movers.add(c.id);if(c.stretch.carry)c.stretch.carry.ids.forEach(i=>movers.add(i))}}
   const rest=new Map();for(const id of movers){const m=meshes.get(id);if(!m)continue;m.updateMatrix();rest.set(id,m.matrix.clone());m.matrixAutoUpdate=false}
-  SIM={...M,rest};return M}
+  const follow=[];
+  for(const b of S.bricks){if(movers.has(b.id)||!M.isPin(b.id)||!meshes.get(b.id))continue;
+    for(const j of M.joints){if(j.rigid||(j.a!==b.id&&j.b!==b.id))continue;const o=j.a===b.id?j.b:j.a;if(!movers.has(o))continue;const lm=meshes.get(o);if(!lm)continue;
+      let leader=lm;const rod=lm.getObjectByName('rod');if(rod){const bb=rod.geometry.boundingBox.clone().applyMatrix4(lm.matrixWorld).expandByScalar(.3);if(bb.containsPoint(j.c))leader=rod}
+      leader.updateMatrixWorld(true);const m=meshes.get(b.id);m.updateMatrix();follow.push({id:b.id,leader,inv:leader.matrixWorld.clone().invert(),rest:m.matrix.clone()});m.matrixAutoUpdate=false;rest.set(b.id,m.matrix.clone());break}}
+  SIM={...M,rest,follow};return M}
 const _T=new M4(),_R=new M4(),_B=new M4(),SPEED=Math.PI*2;
 function rotAbout(Pp,D,th){return new M4().makeTranslation(Pp.x,Pp.y,Pp.z).multiply(_R.makeRotationAxis(D,th)).multiply(_B.makeTranslation(-Pp.x,-Pp.y,-Pp.z))}
 function place3(ids,M){for(const id of ids){const m=meshes.get(id);if(!m||!SIM.rest.has(id))continue;m.matrix.multiplyMatrices(M,SIM.rest.get(id));m.matrixWorldNeedsUpdate=true}}
@@ -897,6 +909,7 @@ function stepSim(dt){readPad();const sp=new Map();const v=id=>{if(!sp.has(id))sp
       if(c.slide.uW.dot(k.u0)>0)place3(k.body.ids,Mc);else{const dir=R.clone().sub(k.B).normalize().multiplyScalar(d);place3(k.body.ids,new M4().makeTranslation(dir.x,dir.y,dir.z).multiply(Mc))}}
     else if(c.whole){place3(k.body.ids,Mc.clone().multiply(scaleAbout(k.B,k.u0,L/k.L0)))}
     else{const dir=R.clone().sub(k.B).normalize().multiplyScalar(L-k.L0);place3(k.body.ids,Mc);place3(c.rod.ids,new M4().makeTranslation(dir.x,dir.y,dir.z).multiply(Mc))}}}
+function followStep(){for(const f of SIM.follow||[]){const m=meshes.get(f.id);if(!m)continue;f.leader.updateMatrixWorld(true);m.matrix.multiplyMatrices(f.leader.matrixWorld,f.inv).multiply(f.rest);m.matrixWorldNeedsUpdate=true}}
 function stopSim(){if(!SIM)return;for(const c of SIM.cyls||[])if(c.slide)c.slide.m.position.set(0,0,0);for(const [id] of SIM.rest){const m=meshes.get(id);if(!m)continue;m.matrixAutoUpdate=true;m.updateMatrix();m.matrixWorldNeedsUpdate=true}SIM=null}
 
 /* ---------- simulation screen with a remote control ---------- */
