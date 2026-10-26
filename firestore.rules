@@ -5,6 +5,10 @@ service cloud.firestore {
     match /users/{userId}/projects/{projectId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
+    // projects shared for editing: anyone signed in who has the (long, secret) link can open and edit them
+    match /shared/{sid} {
+      allow read, write: if request.auth != null;
+    }
     // the user's account record (Pro status): the user can read it, only the server writes it
     match /users/{userId} {
       allow read: if request.auth != null && request.auth.uid == userId;
