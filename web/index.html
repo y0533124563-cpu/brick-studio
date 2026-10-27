@@ -333,7 +333,17 @@ body{background:linear-gradient(180deg,var(--bg) 0%,var(--bg-2) 100%)}
 .mvpad{grid-template-columns:repeat(3,36px)}.mvpad .sb{height:34px}.mv-acts{display:flex;flex-direction:column;gap:4px}.mv-acts .sb{height:34px}.mv-dot{width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 22%,transparent);flex:none}
 #app.preview .movebar,#app.simming .movebar{display:none!important}
 .movebar{top:auto;bottom:12px;width:min(520px,calc(100% - 24px));max-width:none}
-.mv-row{flex-wrap:nowrap}.mv-acts{flex-direction:row;flex-wrap:wrap;flex:1;min-width:0}.mv-acts .sb{flex:1 1 auto}
+.mv-row{flex-wrap:nowrap}
+.mv-tilt{gap:6px;flex-wrap:wrap}.mv-tilt .sb{height:34px;flex:1 1 auto}
+.deg{display:inline-flex;align-items:center;gap:2px;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:0 8px;height:34px}
+.deg input{width:52px;border:0;background:transparent;font:inherit;font-weight:700;font-size:16px;text-align:center;color:var(--ink);direction:ltr;outline:none}
+.deg:focus-within{border-color:var(--accent)}.deg span{font-weight:700;color:var(--muted)}
+.mv-help{margin:0;font-size:11.5px;color:var(--muted);text-align:center}
+.mv-tilt{flex-wrap:nowrap}.mv-tilt .sb{padding:0 7px;font-size:12.5px;min-width:0}.mv-tilt .sb svg{width:17px;height:17px}
+.mv-acts .sb{font-size:12.5px;padding:0 8px}
+#app:has(#movebar:not([hidden])) #confirm{top:12px;transform:none;flex-direction:row}
+#app:has(#movebar:not([hidden])) #confirm button{padding:8px 12px}
+@media (max-width:480px){.mv-help{display:none}.mv-t{font-size:12.5px}.mvpad{grid-template-columns:repeat(3,32px)}.mvpad .sb{height:30px}.mv-acts .sb,.mv-tilt .sb,.deg{height:30px}.movebar{gap:6px;padding:6px 8px}.deg input{width:40px}}.mv-acts{flex-direction:row;flex-wrap:wrap;flex:1;min-width:0}.mv-acts .sb{flex:1 1 auto}
 #app:has(#movebar:not([hidden])) .hint{display:none}
 #app:has(#movebar:not([hidden])) .cam,#app:has(#movebar:not([hidden])) .zoom{display:none}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
@@ -408,7 +418,12 @@ body{background:linear-gradient(180deg,var(--bg) 0%,var(--bg-2) 100%)}
         </div>
         <div class="mv-acts"><button class="sb" id="moveCopy"><svg class="i" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>שכפל</button>
           <button class="sb" id="moveMulti">בחירת כמה</button><button class="sb warn" id="moveCancel">השאר במקום</button></div>
-      </div></div>
+      </div>
+      <div class="mv-row mv-tilt"><label class="deg"><input id="mvDeg" type="text" inputmode="decimal" value="15" aria-label="מעלות"><span>°</span></label>
+        <button class="sb" data-tilt="side"><svg class="i" viewBox="0 0 24 24"><path d="M4 12a8 8 0 0 1 14-5.3"/><path d="M18 3v4h-4"/><rect x="9" y="11" width="6" height="9" rx="1" transform="rotate(-20 12 15)"/></svg>הטה לצד</button>
+        <button class="sb" data-tilt="fwd"><svg class="i" viewBox="0 0 24 24"><path d="M12 4a8 8 0 0 1 5.3 14"/><path d="M21 18h-4v-4"/><rect x="4" y="9" width="9" height="6" rx="1"/></svg>הטה קדימה</button>
+        <button class="sb" data-tilt="turn"><svg class="i" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v5h-5"/></svg>סובב</button></div>
+      <p class="mv-help">כתוב מספר מעלות. מספר במינוס מטה לכיוון השני.</p></div>
     <div class="selbar" id="selbar" hidden>
       <div class="selrow"><span class="cnt" id="selCount">0 נבחרו</span>
         <button class="sb" data-sa="conn">כל המחובר</button><button class="sb" data-sa="all">הכל</button><button class="sb" data-sa="none">נקה</button></div>
@@ -745,6 +760,13 @@ function pickUp(id){const idx=S.bricks.findIndex(q=>q.id===id);if(idx<0)return;c
 function heldAt(){if(sel&&ghost.visible)return {pos:ghost.position.clone(),q:ghost.quaternion.clone()};const o=new THREE.Object3D();posMesh(o,MOVE.b);return {pos:o.position.clone(),q:o.quaternion.clone()}}
 function nudgeHeld(k){if(!MOVE)return;const {fw,right}=camAxes(),v={f:fw,b:fw.clone().negate(),r:right,l:right.clone().negate(),u:new THREE.Vector3(0,PH,0),d:new THREE.Vector3(0,-PH,0)}[k];
   const h=heldAt();h.pos.add(v);if(h.pos.y<-1e-3){toast('אי אפשר לרדת מתחת למשטח');return}showSel({kind:'nudge',...h});if(sel.bad)toast('כאן הוא נכנס בתוך חלק אחר. המשך להזיז')}
+/* tilt the held part by any number of degrees (negative = the other way), around its own middle */
+function tiltHeld(axis){if(!MOVE)return;let deg=parseFloat(String($('#mvDeg').value).replace(',','.'));if(!isFinite(deg)||!deg){toast('כתוב מספר מעלות, למשל 15 או -15');return}
+  const {fw,right}=camAxes(),A=axis==='side'?fw:axis==='fwd'?right:new THREE.Vector3(0,1,0),R=new THREE.Quaternion().setFromAxisAngle(A,deg*Math.PI/180),h=heldAt();
+  const c=info(S.part).geo.boundingBox.getCenter(new THREE.Vector3()).applyQuaternion(h.q).add(h.pos);
+  h.pos.sub(c).applyQuaternion(R).add(c);h.q.premultiply(R);
+  const {mn}=qBox(S.part,h.q);if(h.pos.y+mn.y<0)h.pos.y-=h.pos.y+mn.y; // never below the plate
+  showSel({kind:'nudge',...h});toast((axis==='side'?'הוטה לצד':axis==='fwd'?'הוטה קדימה':'סובב')+' '+deg+'°. לחץ אישור כדי לשמור')}
 function copyHeld(){if(!MOVE||MOVE.copy)return;const m=MOVE,h=heldAt();S.bricks.splice(Math.min(m.idx,S.bricks.length),0,m.b);m.copy=true;m.prev=JSON.stringify(S.bricks);rebuildHM();sync();
   $('#moveVerb').textContent='משכפל את';h.pos.add(new THREE.Vector3(0,info(m.b.p).h*PH,0));showSel({kind:'nudge',...h});toast('העותק מוצג מעל. הזז אותו ולחץ אישור')}
 function endMove(){if(!MOVE)return;const k=MOVE.keep;MOVE=null;S.part=k.part;S.color=k.color;S.rot=k.rot;S.tq=k.tq||new THREE.Quaternion();$('#movebar').hidden=true;updateCur()}
@@ -793,6 +815,8 @@ $('#nextHole').onclick=()=>{if(sel&&sel.kind==='snap'){sel.ci=(sel.ci+1)%sel.C.l
 $('#okBtn').onclick=place;$('#cancelSel').onclick=()=>{if(MOVE)cancelMove();else hideSel()};
 $('#moveCancel').onclick=cancelMove;$('#moveCopy').onclick=copyHeld;
 document.querySelectorAll('[data-mv]').forEach(b=>b.onclick=()=>nudgeHeld(b.dataset.mv));
+document.querySelectorAll('[data-tilt]').forEach(b=>b.onclick=()=>tiltHeld(b.dataset.tilt));
+$('#mvDeg').addEventListener('keydown',e=>e.stopPropagation());
 $('#moveMulti').onclick=()=>{const id=MOVE&&MOVE.b.id;cancelMove();MULTI=true;if(id)S.sel.add(id);drawSel();toast('גע בעוד חלקים כדי לבחור כמה ביחד')};
 $('#undo').onclick=()=>{if(MOVE){cancelMove();return}if(!S.undo.length)return;S.redo.push(snap());restore(S.undo.pop());toast('בוטל')};
 $('#redo').onclick=()=>{if(!S.redo.length)return;S.undo.push(snap());restore(S.redo.pop());toast('הוחזר')};
