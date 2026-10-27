@@ -777,7 +777,7 @@ document.addEventListener('keydown',e=>{if(e.target.matches('input,textarea'))re
 $('#handle').onclick=()=>{const s=$('#sheet');s.classList.toggle('closed');$('#handle').setAttribute('aria-expanded',!s.classList.contains('closed'))};
 
 /* ---------- the profile menu: my settings, my projects, share for editing ---------- */
-const SITE='https://brick-studio.com/';
+const SITE='https://y0533124563-cpu.github.io/brick-studio/';
 const IC={set:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>',
   proj:'<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',share:'<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/>',
   out:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>',in:'<path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/>'};
@@ -920,7 +920,7 @@ function setThumb(id){const R=thumbR();if(!R||!GEO[id]&&/^ld:/.test(id))return;c
 function makeThumbs(){let i=0;(function step(){for(let k=0;k<6&&i<PARTS.length;k++,i++)setThumb(PARTS[i].id);if(i<PARTS.length)setTimeout(step,16)})()}
 
 /* ---------- LDraw full library (works on the website and in the app) ---------- */
-const LD_BASE=location.protocol==='file:'?'https://brick-studio.com/ldraw/':'ldraw/';
+const LD_BASE=location.protocol==='file:'?'https://y0533124563-cpu.github.io/brick-studio/ldraw/':'ldraw/';
 const ready=id=>!!GEO[id]||!/^ld:/.test(id);
 let LDX=null,LDXM=null,LDXp=null,ldGen=0;
 const HE=[['גלגל שיניים','gear'],['שיניים','gear'],['לבנים','brick'],['לבנה','brick'],['פלטה','plate'],['אריח','tile'],['משופע','slope'],['ציר','axle'],['גלגל','wheel'],['צמיג','tyre'],
@@ -958,7 +958,7 @@ function renderLD(){const el=$('#parts'),gen=++ldGen;el.innerHTML='<div class="e
     if(total>80){const m=document.createElement('div');m.className='empty';m.textContent=`ועוד ${total-80} חלקים. כתוב חיפוש מדויק יותר.`;el.appendChild(m)}
     (async()=>{for(const e of res.slice(0,30)){if(gen!==ldGen)return;const id='ld:'+e.n;if(THUMBS[id])continue;try{await ldEnsure(id);setThumb(id)}catch(_){}}})()
   },()=>{if(gen!==ldGen||LDFAIL)return;LDFAIL=true;S.cat='brick';buildTabs();if(!ready(S.part))S.part='b2x4';updateCur();renderParts();setTimeout(makeThumbs,60);
-    toast('הספרייה המלאה לא זמינה כאן. פתח את האתר: brick-studio.com')})}
+    toast('הספרייה המלאה לא זמינה כאן. פתח את האתר: y0533124563-cpu.github.io/brick-studio')})}
 
 const ldFiles={},ldParsed={},ldBuilt={},ldDesc={},_v=new THREE.Vector3();
 const ROD_RE=/(Piston Rod|Piston Head and Rod|Piston Assembly|Actuator.*Piston)/i,WHOLE_RE=/(Pneumatic Cylinder|Linear Actuator).*\((Retracted|Contracted|Extended)\)/i;
