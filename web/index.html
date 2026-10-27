@@ -913,14 +913,23 @@ function ldIndex(){if(!LDXp)LDXp=fetch(LD_BASE+'index.json').then(r=>{if(!r.ok)t
     LDX=arr.map(([n,d,c])=>({n,d,c,k:ldKey(n+' '+d+' '+c)}));LDXM=new Map(LDX.map(e=>[e.n,e]));
     for(const id in PMAP)if(PMAP[id].ph){const e=LDX.find(x=>x.n===id.slice(3));if(e)PMAP[id]={id,cat:'ld',name:ldLabel(e)}}return LDX})
   .catch(e=>{LDXp=null;throw e});return LDXp}
+/* numbers from building-instruction booklets (element IDs) -> part + colour */
+let ELp=null;function elIndex(){if(!ELp)ELp=fetch(LD_BASE+'elements.json').then(r=>r.ok?r.json():{}).catch(()=>{ELp=null;return {}});return ELp}
+const isElNum=q=>/^\d{6,8}$/.test(q);
 const QUICK=['brick','plate','tile','slope','technic beam','axle','pin','gear','wheel','tyre','window','door','minifig','arch','panel','plant'];
 function renderLD(){const el=$('#parts'),gen=++ldGen;el.innerHTML='<div class="empty">טוען את רשימת כל החלקים…</div>';
-  ldIndex().then(X=>{if(gen!==ldGen)return;const q=ldKey(S.q);el.innerHTML='';
+  ldIndex().then(async X=>{if(gen!==ldGen)return;const q=ldKey(S.q);let EL=null;if(isElNum(q)){EL=(await elIndex())[q]||null;if(gen!==ldGen)return}el.innerHTML='';
+    if(EL&&LDXM.get(EL[0])){const e=LDXM.get(EL[0]),id='ld:'+e.n,ck=EL[1]>=0&&COLORS['L'+EL[1]]?'L'+EL[1]:null;if(!PMAP[id]||PMAP[id].ph)PMAP[id]={id,cat:'ld',name:ldLabel(e)};
+      $('#partsCount').textContent='1';const b=document.createElement('button');b.className='part ld elhit';b.setAttribute('aria-pressed',id===S.part);
+      b.innerHTML=`<img alt="" data-pid="${id}" src="${THUMBS[id]||BLANK}"><span>${esc(cleanName(e.d))}</span><small>${esc(e.n)}${ck?' · '+esc(COLORS[ck].n):''}</small>`;
+      b.onclick=()=>{if(ck){S.color=ck;colEl.querySelectorAll(".c").forEach(x=>x.setAttribute("aria-pressed",false))}selectPart(id);updateCur();toast('נבחר: '+cleanName(e.d)+(ck?', '+COLORS[ck].n:''))};el.appendChild(b);
+      const m=document.createElement('div');m.className='empty';m.innerHTML=`<b>${esc(q)}</b> הוא מספר מהחוברת. זה החלק ${esc(e.n)}${ck?' בצבע '+esc(COLORS[ck].n):''}. לחץ עליו כדי לבחור גם את הצבע.`;el.appendChild(m);
+      (async()=>{try{await ldEnsure(id);setThumb(id)}catch(_){}})();return}
     if(!q&&S.cat==='all'){$('#partsCount').textContent=X.length.toLocaleString('he-IL');el.innerHTML=`<div class="empty"><b>${X.length.toLocaleString('he-IL')} חלקים</b> בספרייה המלאה. כתוב בחיפוש שם או מספר חלק, או בחר. חיבורים: LDCad Shadow Library (CC BY-SA 4.0).</div>`;
       QUICK.forEach(w=>{const b=document.createElement('button');b.className='tab';b.textContent=w;b.onclick=()=>{$('#q').value=w;S.q=w;renderParts()};el.appendChild(b)});return}
     const toks=q.split(' ');let res=X.filter(e=>inCat(e,S.cat)&&toks.every(t=>e.k.includes(t)));
     res.sort((a,b)=>(b.n===q)-(a.n===q)||a.d.length-b.d.length);const total=res.length;res=res.slice(0,80);$('#partsCount').textContent=total.toLocaleString('he-IL');
-    if(!res.length){el.innerHTML='<div class="empty">לא נמצא. נסה באנגלית, למשל "brick 2 x 4", או מספר חלק כמו 3001.</div>';return}
+    if(!res.length){el.innerHTML=isElNum(q)?'<div class="empty">המספר הזה מהחוברת עוד לא מוכר. נסה לכתוב את שם החלק באנגלית, למשל "plate 2 x 4".</div>':'<div class="empty">לא נמצא. נסה באנגלית, למשל "brick 2 x 4", או מספר חלק כמו 3001, או המספר מהחוברת כמו 6099714.</div>';return}
     res.forEach(e=>{const id='ld:'+e.n;if(!PMAP[id]||PMAP[id].ph)PMAP[id]={id,cat:'ld',name:ldLabel(e)};
       const b=document.createElement('button');b.className='part ld';b.setAttribute('aria-pressed',id===S.part);
       b.innerHTML=`<img alt="" data-pid="${id}" src="${THUMBS[id]||BLANK}"><span>${esc(cleanName(e.d))}</span><small>${esc(e.n)}</small>`;b.onclick=()=>selectPart(id);el.appendChild(b)});
@@ -1512,7 +1521,7 @@ const hadAny=migrate();
 if(!hadAny&&!Object.keys(local.read()).length&&!FB){ // first visit: a sample project to look at
   openProject({id:newId(),name:'בית לדוגמה',data:'[]'});$('#home').hidden=false;ldSample().then(()=>saveNow()).then(()=>renderHome())}
 renderHome();initFB();loadLDColors();
-$('#q').placeholder='חיפוש חלק: שם או מספר, למשל brick 2 x 4, 3001, גלגל';renderParts();updateCur();
+$('#q').placeholder='חיפוש: שם, מספר חלק, או המספר מהחוברת (למשל 6099714)';renderParts();updateCur();
 })();
 </script>
 

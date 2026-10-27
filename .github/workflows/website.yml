@@ -35,6 +35,8 @@ jobs:
         run: git clone --depth 1 https://github.com/RolandMelkert/LDCadShadowLibrary shadow
       - name: Build connection points for every part
         run: python3 scripts/build-snaps.py web/ldraw shadow
+      - name: Booklet numbers (element IDs) to parts
+        run: python3 scripts/get-elements.py web/ldraw
       - name: Library size
         run: |
           echo "::notice title=Library::$(du -sh web/ldraw | cut -f1) total, $(find web/ldraw/parts -maxdepth 1 -name '*.dat' | wc -l) part files, $(python3 -c "import json;print(len(json.load(open('web/ldraw/index.json'))))") in catalogue, $(ls web/ldraw/snap | wc -l) with connection data"
