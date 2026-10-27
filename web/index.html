@@ -326,6 +326,11 @@ body{background:linear-gradient(180deg,var(--bg) 0%,var(--bg-2) 100%)}
 .wd.isinf .wdv i{display:none}.wd.isinf .wdv b{display:block}.wd.isinf input{opacity:.45}
 /* removed by request: the folder button and the floating rotate button (rotation stays on the confirm panel and the R key) */
 #saveBtn,.fabs{display:none!important}
+.movebar{position:absolute;top:12px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;max-width:calc(100% - 140px);
+  background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:6px 6px 6px 10px;padding-inline-start:12px;box-shadow:var(--shadow-lg);z-index:4}
+.mv-t{font-size:13.5px;line-height:1.3}.mv-dot{width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 22%,transparent);flex:none}
+#app.preview .movebar,#app.simming .movebar{display:none!important}
+@media (max-width:480px){.movebar{left:12px;right:84px;transform:none;max-width:none}}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 .home-body,.bar,#sheet{animation:fadeIn .4s ease both}
 @media (prefers-reduced-motion: reduce){*{transition:none!important}}
@@ -388,6 +393,8 @@ body{background:linear-gradient(180deg,var(--bg) 0%,var(--bg-2) 100%)}
     <div class="fabs">
       <button class="fab" id="rotBtn" aria-label="סובב חלק"><svg class="i" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v5h-5"/></svg>סובב</button>
     </div>
+    <div class="movebar" id="movebar" hidden><span class="mv-dot"></span><span class="mv-t">מזיז את <b id="moveName"></b>. גע במקום החדש</span>
+      <button class="sb" id="moveMulti">בחירת כמה</button><button class="sb warn" id="moveCancel">השאר במקום</button></div>
     <div class="selbar" id="selbar" hidden>
       <div class="selrow"><span class="cnt" id="selCount">0 נבחרו</span>
         <button class="sb" data-sa="conn">כל המחובר</button><button class="sb" data-sa="all">הכל</button><button class="sb" data-sa="none">נקה</button></div>
@@ -628,7 +635,8 @@ function sync(){const keep=new Set();
     if(m&&m.userData.key!==key){scene.remove(m);m=null}
     if(!m){const gi=info(b.p);m=new THREE.Mesh(gi.body||gi.geo,[mat(b.c),darkMat,paneMat]);if(gi.rod){const r=new THREE.Mesh(gi.rod,m.material);r.name='rod';r.castShadow=true;r.add(new THREE.LineSegments(rodEdges(b.p),outlineMat));m.add(r)}m.castShadow=!(COLORS[b.c]||{}).glass;{const e=new THREE.LineSegments(edgesFor(b.p),outlineMat);e.name='edge';m.add(e)}m.receiveShadow=true;m.userData={bid:b.id,key};posMesh(m,b);scene.add(m);meshes.set(b.id,m)}}
   for(const [id,m] of meshes)if(!keep.has(id)){scene.remove(m);meshes.delete(id)}}
-const snap=()=>JSON.stringify(S.bricks);
+let MOVE=null,MULTI=false; // MOVE: a part picked up in select mode, waiting to be put somewhere new
+const snap=()=>{if(!MOVE)return JSON.stringify(S.bricks);const L=S.bricks.slice();L.splice(Math.min(MOVE.idx,L.length),0,MOVE.b);return JSON.stringify(L)};
 function restore(json){S.bricks=JSON.parse(json);S.nextId=S.bricks.reduce((a,b)=>Math.max(a,b.id),0)+1;refresh()}
 function commit(prev){S.undo.push(prev);if(S.undo.length>300)S.undo.shift();S.redo=[];refresh()}
 function refresh(){if(SIM&&!SIMUI.on)stopSim();if(INS)closeInstr();rebuildHM();sync();scheduleSave();drawSel();$('#count').textContent=S.bricks.length+' חלקים';$('#undo').disabled=!S.undo.length;$('#redo').disabled=!S.redo.length;
@@ -704,11 +712,21 @@ function pick(e){const r=renderer.domElement.getBoundingClientRect();ndc.set(((e
   const n=h.face.normal.clone().transformDirection(h.object.matrixWorld);let x,z;
   if(h.point.y>=top-.02||n.y>.5){x=Math.floor(h.point.x);z=Math.floor(h.point.z)}else{x=Math.floor(h.point.x+n.x*.5);z=Math.floor(h.point.z+n.z*.5)}
   return {cell:{x,z},bid:b.id,mesh:h.object,point:h.point}}
-function place(){if(!sel)return;if(sel.bad){toast('אי אפשר להניח חלק בתוך חלק אחר');return}const prev=snap(),r4=v=>Math.round(v*1e4)/1e4;
+function place(){if(!sel)return;if(sel.bad){toast('אי אפשר להניח חלק בתוך חלק אחר');return}const mv=MOVE,prev=mv?mv.prev:snap(),r4=v=>Math.round(v*1e4)/1e4;if(mv)S.nextId=Math.max(S.nextId,mv.b.id+1);
+  const nid=mv?mv.b.id:null;
   if(sel.kind==='grid'&&tilted()){const t=tiltPlacement(sel.cell);S.bricks.push({id:S.nextId++,p:S.part,c:S.color,f:1,px:r4(t.pos.x),py:r4(t.pos.y),pz:r4(t.pos.z),q:[t.q.x,t.q.y,t.q.z,t.q.w].map(r4)})}
   else if(sel.kind==='grid'){const p=placement(sel.cell.x,sel.cell.z,S.part,S.rot);S.bricks.push({id:S.nextId++,p:S.part,c:S.color,r:S.rot,...p})}
   else{const x=sel.kind==='snap'?snapXf(sel):freeXf(sel);S.bricks.push({id:S.nextId++,p:S.part,c:S.color,f:1,px:r4(x.pos.x),py:r4(x.pos.y),pz:r4(x.pos.z),q:[x.q.x,x.q.y,x.q.z,x.q.w].map(r4)})}
-  hideSel();commit(prev);toast('חובר: '+PMAP[S.part].name)}
+  if(mv){const nb=S.bricks[S.bricks.length-1];nb.id=nid;S.bricks.pop();S.bricks.splice(Math.min(mv.idx,S.bricks.length),0,nb);S.nextId--;S.nextId=Math.max(S.nextId,S.bricks.reduce((a,b)=>Math.max(a,b.id),0)+1)}
+  const nm=PMAP[S.part].name;if(mv)endMove();hideSel();commit(prev);toast((mv?'הועבר: ':'חובר: ')+nm)}
+/* select mode: tap a part to pick it up, then tap a place, brick, axle or hole to move it there (like adding a new part) */
+function pickUp(id){const idx=S.bricks.findIndex(q=>q.id===id);if(idx<0)return;const b=S.bricks[idx],prev=snap();
+  if(!ready(b.p)){toast('החלק עוד נטען');return}
+  MOVE={b,idx,prev,keep:{part:S.part,color:S.color,rot:S.rot,tq:S.tq}};S.bricks.splice(idx,1);
+  S.part=b.p;S.color=b.c;S.rot=b.r||0;S.tq=new THREE.Quaternion();rebuildHM();sync();drawSel();updateCur();
+  $('#moveName').textContent=PMAP[b.p]?PMAP[b.p].name:'חלק';$('#movebar').hidden=false;toast('גע במקום, בלבנה, בציר או בחור שאליו להעביר')}
+function endMove(){if(!MOVE)return;const k=MOVE.keep;MOVE=null;S.part=k.part;S.color=k.color;S.rot=k.rot;S.tq=k.tq||new THREE.Quaternion();$('#movebar').hidden=true;updateCur()}
+function cancelMove(){if(!MOVE)return;const m=MOVE;hideSel();S.bricks.splice(Math.min(m.idx,S.bricks.length),0,m.b);endMove();rebuildHM();sync();drawSel();toast('החלק נשאר במקומו')}
 function tapBuild(h){const own=info(S.part).conns,tb=h.bid&&brickById(h.bid);
   if(/^ld:/.test(S.part)||(tb&&/^ld:/.test(tb.p))){if(snapTap(h))return;if(/^ld:/.test(S.part)){showSel({kind:'grid',cell:h.cell});toast('לא נמצא כאן חיבור מתאים, החלק יונח על המשבצות');return}}
   if(h.bid){const b=brickById(h.bid),tc=info(b.p).conns;
@@ -729,7 +747,9 @@ cv.addEventListener('pointerdown',e=>{pointers++;usingTouch=e.pointerType!=='mou
 cv.addEventListener('pointerup',e=>{pointers=Math.max(0,pointers-1);if(!down)return;const moved=Math.hypot(e.clientX-down.x,e.clientY-down.y),dt=performance.now()-down.t;down=null;if(moved<9&&dt<450)tap(e)});
 cv.addEventListener('pointercancel',()=>{pointers=0;down=null});
 function tap(e){if(SIMUI.on){if(SIMUI.edit&&SIMUI.sel){const h=pick(e);if(h&&h.bid){const t=targetsList().find(x=>x.id===h.bid);if(t)assign(SIMUI.sel,t.id);else toast('זה לא מנוע או צילינדר')}}return}if(SIM){stopSim();return}if(INS)return;const h=pick(e);$('#hint').hidden=true;
-  if(S.mode==='select'){if(h&&h.bid){S.sel.has(h.bid)?S.sel.delete(h.bid):S.sel.add(h.bid)}else S.sel.clear();drawSel();return}
+  if(S.mode==='select'){if(MOVE){if(h)tapBuild(h);return}
+    if(h&&h.bid&&!MULTI&&!S.sel.size){pickUp(h.bid);return}
+    if(h&&h.bid){S.sel.has(h.bid)?S.sel.delete(h.bid):S.sel.add(h.bid)}else S.sel.clear();if(!S.sel.size)MULTI=false;drawSel();return}
   if(S.mode==='build'){if(!ready(S.part)){toast('החלק עוד נטען, נסה שוב בעוד רגע');return}if(h)tapBuild(h);return}
   if(!h||!h.bid)return;const prev=snap();
   if(S.mode==='erase'){const b=S.bricks.find(q=>q.id===h.bid);S.bricks=S.bricks.filter(q=>q.id!==h.bid);commit(prev);toast('נמחק: '+PMAP[b.p].name)}
@@ -737,8 +757,8 @@ function tap(e){if(SIMUI.on){if(SIMUI.edit&&SIMUI.sel){const h=pick(e);if(h&&h.b
 
 /* ---------- UI ---------- */
 let tt;function toast(t){const el=$('#toast');el.textContent=t;el.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>el.classList.remove('show'),1500)}
-document.querySelectorAll('.mode').forEach(b=>b.onclick=()=>{if(SIM&&!SIMUI.on)stopSim();S.mode=b.dataset.mode;document.querySelectorAll('.mode').forEach(x=>x.setAttribute('aria-pressed',x===b));
-  if(S.mode!=='build')hideSel();$('#rotBtn').hidden=S.mode!=='build';drawSel();toast({build:'מצב בנייה',paint:'גע בחלק כדי לצבוע אותו',erase:'גע בחלק כדי למחוק אותו',select:'גע בחלקים כדי לבחור אותם. נגיעה נוספת מבטלת'}[S.mode])});
+document.querySelectorAll('.mode').forEach(b=>b.onclick=()=>{if(SIM&&!SIMUI.on)stopSim();cancelMove();MULTI=false;S.mode=b.dataset.mode;document.querySelectorAll('.mode').forEach(x=>x.setAttribute('aria-pressed',x===b));
+  if(S.mode!=='build')hideSel();$('#rotBtn').hidden=S.mode!=='build';drawSel();toast({build:'מצב בנייה',paint:'גע בחלק כדי לצבוע אותו',erase:'גע בחלק כדי למחוק אותו',select:'גע בחלק כדי להזיז אותו למקום אחר'}[S.mode])});
 $('#rotBtn').onclick=$('#rotSel').onclick=()=>{
   if(sel&&sel.kind==='snap'){sel.rot=(sel.rot+1)%4;showSel(sel);toast('סיבוב '+sel.rot*90+'°');return}
   if(sel&&sel.kind==='insert'){const M=(info(S.part).conns[sel.mi].len-1)/2;let s=sel.s+.5;if(s>M+1e-6)s=-M;sel.s=s;showSel(sel);toast('הוזז לאורך החור');return}
@@ -748,10 +768,12 @@ $('#slideBtn').onclick=()=>{if(!sel||sel.kind!=='snap')return;const [lo,hi]=slid
 $('#flipBtn').onclick=()=>{if(!sel||sel.kind!=='snap')return;sel.flip=!sel.flip;sel.off=defOff(sel);showSel(sel);toast('הוכנס מהצד השני')};
 $('#nextHole').onclick=()=>{if(sel&&sel.kind==='snap'){sel.ci=(sel.ci+1)%sel.C.length;sel.off=defOff(sel);showSel(sel);toast('חיבור '+(sel.ci+1)+' מתוך '+sel.C.length);return}if(sel&&sel.kind==='mount'){sel.hi=sel.ok[(sel.ok.indexOf(sel.hi)+1)%sel.ok.length];showSel(sel);toast('חור '+(sel.ok.indexOf(sel.hi)+1)+' מתוך '+sel.ok.length)}};
 $('#okBtn').onclick=place;$('#cancelSel').onclick=hideSel;
-$('#undo').onclick=()=>{if(!S.undo.length)return;S.redo.push(snap());restore(S.undo.pop());toast('בוטל')};
+$('#moveCancel').onclick=cancelMove;
+$('#moveMulti').onclick=()=>{const id=MOVE&&MOVE.b.id;cancelMove();MULTI=true;if(id)S.sel.add(id);drawSel();toast('גע בעוד חלקים כדי לבחור כמה ביחד')};
+$('#undo').onclick=()=>{if(MOVE){cancelMove();return}if(!S.undo.length)return;S.redo.push(snap());restore(S.undo.pop());toast('בוטל')};
 $('#redo').onclick=()=>{if(!S.redo.length)return;S.undo.push(snap());restore(S.redo.pop());toast('הוחזר')};
 document.addEventListener('keydown',e=>{if(e.target.matches('input,textarea'))return;const k=e.key.toLowerCase();
-  if((e.ctrlKey||e.metaKey)&&k==='z'){e.preventDefault();(e.shiftKey?$('#redo'):$('#undo')).click()}else if(k==='r'||k==='ק'){$('#rotBtn').click()}else if(k==='escape')hideSel();else if(k==='enter'&&sel){e.preventDefault();place()}});
+  if((e.ctrlKey||e.metaKey)&&k==='z'){e.preventDefault();(e.shiftKey?$('#redo'):$('#undo')).click()}else if(k==='r'||k==='ק'){$('#rotBtn').click()}else if(k==='escape'){if(sel)hideSel();else cancelMove()}else if(k==='enter'&&sel){e.preventDefault();place()}});
 $('#handle').onclick=()=>{const s=$('#sheet');s.classList.toggle('closed');$('#handle').setAttribute('aria-expanded',!s.classList.contains('closed'))};
 
 /* ---------- the profile menu: my settings, my projects, share for editing ---------- */
