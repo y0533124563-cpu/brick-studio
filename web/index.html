@@ -328,9 +328,14 @@ body{background:linear-gradient(180deg,var(--bg) 0%,var(--bg-2) 100%)}
 #saveBtn,.fabs{display:none!important}
 .movebar{position:absolute;top:12px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;max-width:calc(100% - 140px);
   background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:6px 6px 6px 10px;padding-inline-start:12px;box-shadow:var(--shadow-lg);z-index:4}
-.mv-t{font-size:13.5px;line-height:1.3}.mv-dot{width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 22%,transparent);flex:none}
+.mv-t{font-size:13.5px;line-height:1.3}
+.movebar{flex-direction:column;align-items:stretch;padding:8px 10px}.mv-row{display:flex;align-items:center;gap:8px;justify-content:center;flex-wrap:wrap}
+.mvpad{grid-template-columns:repeat(3,36px)}.mvpad .sb{height:34px}.mv-acts{display:flex;flex-direction:column;gap:4px}.mv-acts .sb{height:34px}.mv-dot{width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 22%,transparent);flex:none}
 #app.preview .movebar,#app.simming .movebar{display:none!important}
-@media (max-width:480px){.movebar{left:12px;right:84px;transform:none;max-width:none}}
+.movebar{top:auto;bottom:12px;width:min(520px,calc(100% - 24px));max-width:none}
+.mv-row{flex-wrap:nowrap}.mv-acts{flex-direction:row;flex-wrap:wrap;flex:1;min-width:0}.mv-acts .sb{flex:1 1 auto}
+#app:has(#movebar:not([hidden])) .hint{display:none}
+#app:has(#movebar:not([hidden])) .cam,#app:has(#movebar:not([hidden])) .zoom{display:none}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 .home-body,.bar,#sheet{animation:fadeIn .4s ease both}
 @media (prefers-reduced-motion: reduce){*{transition:none!important}}
@@ -393,8 +398,17 @@ body{background:linear-gradient(180deg,var(--bg) 0%,var(--bg-2) 100%)}
     <div class="fabs">
       <button class="fab" id="rotBtn" aria-label="סובב חלק"><svg class="i" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v5h-5"/></svg>סובב</button>
     </div>
-    <div class="movebar" id="movebar" hidden><span class="mv-dot"></span><span class="mv-t">מזיז את <b id="moveName"></b>. גע במקום החדש</span>
-      <button class="sb" id="moveMulti">בחירת כמה</button><button class="sb warn" id="moveCancel">השאר במקום</button></div>
+    <div class="movebar" id="movebar" hidden>
+      <div class="mv-row"><span class="mv-dot"></span><span class="mv-t"><span id="moveVerb">מזיז את</span> <b id="moveName"></b>. גע במקום החדש או השתמש בחיצים</span></div>
+      <div class="mv-row">
+        <div class="pad mvpad">
+          <span></span><button class="sb" data-mv="f" aria-label="הזז רחוק"><svg class="i" viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></svg></button><button class="sb" data-mv="u" aria-label="הרם" title="הרם"><svg class="i" viewBox="0 0 24 24"><path d="M5 15l7-7 7 7"/></svg></button>
+          <button class="sb" data-mv="l" aria-label="הזז שמאלה"><svg class="i" viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></button><button class="sb" data-mv="b" aria-label="הזז קרוב"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M6 13l6 6 6-6"/></svg></button><button class="sb" data-mv="r" aria-label="הזז ימינה"><svg class="i" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+          <span></span><span></span><button class="sb" data-mv="d" aria-label="הורד" title="הורד"><svg class="i" viewBox="0 0 24 24"><path d="M5 9l7 7 7-7"/></svg></button>
+        </div>
+        <div class="mv-acts"><button class="sb" id="moveCopy"><svg class="i" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>שכפל</button>
+          <button class="sb" id="moveMulti">בחירת כמה</button><button class="sb warn" id="moveCancel">השאר במקום</button></div>
+      </div></div>
     <div class="selbar" id="selbar" hidden>
       <div class="selrow"><span class="cnt" id="selCount">0 נבחרו</span>
         <button class="sb" data-sa="conn">כל המחובר</button><button class="sb" data-sa="all">הכל</button><button class="sb" data-sa="none">נקה</button></div>
@@ -636,7 +650,7 @@ function sync(){const keep=new Set();
     if(!m){const gi=info(b.p);m=new THREE.Mesh(gi.body||gi.geo,[mat(b.c),darkMat,paneMat]);if(gi.rod){const r=new THREE.Mesh(gi.rod,m.material);r.name='rod';r.castShadow=true;r.add(new THREE.LineSegments(rodEdges(b.p),outlineMat));m.add(r)}m.castShadow=!(COLORS[b.c]||{}).glass;{const e=new THREE.LineSegments(edgesFor(b.p),outlineMat);e.name='edge';m.add(e)}m.receiveShadow=true;m.userData={bid:b.id,key};posMesh(m,b);scene.add(m);meshes.set(b.id,m)}}
   for(const [id,m] of meshes)if(!keep.has(id)){scene.remove(m);meshes.delete(id)}}
 let MOVE=null,MULTI=false; // MOVE: a part picked up in select mode, waiting to be put somewhere new
-const snap=()=>{if(!MOVE)return JSON.stringify(S.bricks);const L=S.bricks.slice();L.splice(Math.min(MOVE.idx,L.length),0,MOVE.b);return JSON.stringify(L)};
+const snap=()=>{if(!MOVE||MOVE.copy)return JSON.stringify(S.bricks);const L=S.bricks.slice();L.splice(Math.min(MOVE.idx,L.length),0,MOVE.b);return JSON.stringify(L)};
 function restore(json){S.bricks=JSON.parse(json);S.nextId=S.bricks.reduce((a,b)=>Math.max(a,b.id),0)+1;refresh()}
 function commit(prev){S.undo.push(prev);if(S.undo.length>300)S.undo.shift();S.redo=[];refresh()}
 function refresh(){if(SIM&&!SIMUI.on)stopSim();if(INS)closeInstr();rebuildHM();sync();scheduleSave();drawSel();$('#count').textContent=S.bricks.length+' חלקים';$('#undo').disabled=!S.undo.length;$('#redo').disabled=!S.redo.length;
@@ -680,6 +694,7 @@ function showGhost(id,pos,q){const g=info(id).geo;ghost.geometry=g;ghost.positio
   if(ghostLinesFor!==id){if(ghostLines){ghost.remove(ghostLines);ghostLines.geometry.dispose()}ghostLines=new THREE.LineSegments(new THREE.EdgesGeometry(g,30),ghostEdge);ghostLinesFor=id;ghost.add(ghostLines)}
   ghostMat.color.set(bad?'#E0453A':COLORS[S.color].glass?'#7fd3df':COLORS[S.color].h);ghost.visible=true;if(bad)toast('החלק נכנס לתוך חלק אחר. בחר מקום אחר או סובב אותו')}
 function showSel(s){sel=s;clearHL();$('#tiltA').hidden=$('#tiltB').hidden=true;ghost.visible=false;$('#rotBtn').hidden=true;const rl=$('#rotLbl'),nh=$('#nextHole');$('#slideBtn').hidden=true;$('#flipBtn').hidden=true;$('#nextLbl').textContent=s.kind==='snap'?'חיבור הבא':'חור הבא';
+  if(s.kind==='nudge'){showGhost(S.part,s.pos,s.q);rl.textContent='סובב';nh.hidden=true;$('#confirm').hidden=false;return}
   if(s.kind==='snap'){const x=snapXf(s);showGhost(S.part,x.pos,x.q);
     for(const t of engaged(s,x)){const r=Math.max(...t.secs.map(q=>q[1]))*.05,L=Math.max(t.L,.2),mid=t.S.clone().addScaledVector(t.D,L/2);
       addHL(new THREE.CylinderGeometry(r+.04,r+.04,L,20),hlMat,mid,t.D,AXV.y,20);addHL(new THREE.RingGeometry(r+.02,r+.14,28),hlRing,t.S,t.D,AXV.z,21)}
@@ -716,17 +731,24 @@ function place(){if(!sel)return;if(sel.bad){toast('אי אפשר להניח חל
   const nid=mv?mv.b.id:null;
   if(sel.kind==='grid'&&tilted()){const t=tiltPlacement(sel.cell);S.bricks.push({id:S.nextId++,p:S.part,c:S.color,f:1,px:r4(t.pos.x),py:r4(t.pos.y),pz:r4(t.pos.z),q:[t.q.x,t.q.y,t.q.z,t.q.w].map(r4)})}
   else if(sel.kind==='grid'){const p=placement(sel.cell.x,sel.cell.z,S.part,S.rot);S.bricks.push({id:S.nextId++,p:S.part,c:S.color,r:S.rot,...p})}
+  else if(sel.kind==='nudge'){const x=sel;S.bricks.push({id:S.nextId++,p:S.part,c:S.color,f:1,px:r4(x.pos.x),py:r4(x.pos.y),pz:r4(x.pos.z),q:[x.q.x,x.q.y,x.q.z,x.q.w].map(r4)})}
   else{const x=sel.kind==='snap'?snapXf(sel):freeXf(sel);S.bricks.push({id:S.nextId++,p:S.part,c:S.color,f:1,px:r4(x.pos.x),py:r4(x.pos.y),pz:r4(x.pos.z),q:[x.q.x,x.q.y,x.q.z,x.q.w].map(r4)})}
-  if(mv){const nb=S.bricks[S.bricks.length-1];nb.id=nid;S.bricks.pop();S.bricks.splice(Math.min(mv.idx,S.bricks.length),0,nb);S.nextId--;S.nextId=Math.max(S.nextId,S.bricks.reduce((a,b)=>Math.max(a,b.id),0)+1)}
-  const nm=PMAP[S.part].name;if(mv)endMove();hideSel();commit(prev);toast((mv?'הועבר: ':'חובר: ')+nm)}
+  if(mv&&!mv.copy){const nb=S.bricks[S.bricks.length-1];nb.id=nid;S.bricks.pop();S.bricks.splice(Math.min(mv.idx,S.bricks.length),0,nb);S.nextId--;S.nextId=Math.max(S.nextId,S.bricks.reduce((a,b)=>Math.max(a,b.id),0)+1)}
+  const nm=PMAP[S.part].name;if(mv)endMove();hideSel();commit(prev);toast((mv?(mv.copy?'שוכפל: ':'הועבר: '):'חובר: ')+nm)}
 /* select mode: tap a part to pick it up, then tap a place, brick, axle or hole to move it there (like adding a new part) */
 function pickUp(id){const idx=S.bricks.findIndex(q=>q.id===id);if(idx<0)return;const b=S.bricks[idx],prev=snap();
   if(!ready(b.p)){toast('החלק עוד נטען');return}
   MOVE={b,idx,prev,keep:{part:S.part,color:S.color,rot:S.rot,tq:S.tq}};S.bricks.splice(idx,1);
   S.part=b.p;S.color=b.c;S.rot=b.r||0;S.tq=new THREE.Quaternion();rebuildHM();sync();drawSel();updateCur();
-  $('#moveName').textContent=PMAP[b.p]?PMAP[b.p].name:'חלק';$('#movebar').hidden=false;toast('גע במקום, בלבנה, בציר או בחור שאליו להעביר')}
+  $('#moveName').textContent=PMAP[b.p]?PMAP[b.p].name:'חלק';$('#moveVerb').textContent='מזיז את';$('#movebar').hidden=false;showSel({kind:'nudge',...heldAt()});
+  toast('גע במקום החדש או הזז בחיצים, ואז לחץ אישור')}
+function heldAt(){if(sel&&ghost.visible)return {pos:ghost.position.clone(),q:ghost.quaternion.clone()};const o=new THREE.Object3D();posMesh(o,MOVE.b);return {pos:o.position.clone(),q:o.quaternion.clone()}}
+function nudgeHeld(k){if(!MOVE)return;const {fw,right}=camAxes(),v={f:fw,b:fw.clone().negate(),r:right,l:right.clone().negate(),u:new THREE.Vector3(0,PH,0),d:new THREE.Vector3(0,-PH,0)}[k];
+  const h=heldAt();h.pos.add(v);if(h.pos.y<-1e-3){toast('אי אפשר לרדת מתחת למשטח');return}showSel({kind:'nudge',...h});if(sel.bad)toast('כאן הוא נכנס בתוך חלק אחר. המשך להזיז')}
+function copyHeld(){if(!MOVE||MOVE.copy)return;const m=MOVE,h=heldAt();S.bricks.splice(Math.min(m.idx,S.bricks.length),0,m.b);m.copy=true;m.prev=JSON.stringify(S.bricks);rebuildHM();sync();
+  $('#moveVerb').textContent='משכפל את';h.pos.add(new THREE.Vector3(0,info(m.b.p).h*PH,0));showSel({kind:'nudge',...h});toast('העותק מוצג מעל. הזז אותו ולחץ אישור')}
 function endMove(){if(!MOVE)return;const k=MOVE.keep;MOVE=null;S.part=k.part;S.color=k.color;S.rot=k.rot;S.tq=k.tq||new THREE.Quaternion();$('#movebar').hidden=true;updateCur()}
-function cancelMove(){if(!MOVE)return;const m=MOVE;hideSel();S.bricks.splice(Math.min(m.idx,S.bricks.length),0,m.b);endMove();rebuildHM();sync();drawSel();toast('החלק נשאר במקומו')}
+function cancelMove(){if(!MOVE)return;const m=MOVE;hideSel();if(!m.copy)S.bricks.splice(Math.min(m.idx,S.bricks.length),0,m.b);endMove();rebuildHM();sync();drawSel();toast('החלק נשאר במקומו')}
 function tapBuild(h){const own=info(S.part).conns,tb=h.bid&&brickById(h.bid);
   if(/^ld:/.test(S.part)||(tb&&/^ld:/.test(tb.p))){if(snapTap(h))return;if(/^ld:/.test(S.part)){showSel({kind:'grid',cell:h.cell});toast('לא נמצא כאן חיבור מתאים, החלק יונח על המשבצות');return}}
   if(h.bid){const b=brickById(h.bid),tc=info(b.p).conns;
@@ -760,6 +782,7 @@ let tt;function toast(t){const el=$('#toast');el.textContent=t;el.classList.add(
 document.querySelectorAll('.mode').forEach(b=>b.onclick=()=>{if(SIM&&!SIMUI.on)stopSim();cancelMove();MULTI=false;S.mode=b.dataset.mode;document.querySelectorAll('.mode').forEach(x=>x.setAttribute('aria-pressed',x===b));
   if(S.mode!=='build')hideSel();$('#rotBtn').hidden=S.mode!=='build';drawSel();toast({build:'מצב בנייה',paint:'גע בחלק כדי לצבוע אותו',erase:'גע בחלק כדי למחוק אותו',select:'גע בחלק כדי להזיז אותו למקום אחר'}[S.mode])});
 $('#rotBtn').onclick=$('#rotSel').onclick=()=>{
+  if(sel&&sel.kind==='nudge'){sel.q.premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),Math.PI/2));showSel(sel);toast('סובב ב-90°. לחץ אישור כדי לשמור');return}
   if(sel&&sel.kind==='snap'){sel.rot=(sel.rot+1)%4;showSel(sel);toast('סיבוב '+sel.rot*90+'°');return}
   if(sel&&sel.kind==='insert'){const M=(info(S.part).conns[sel.mi].len-1)/2;let s=sel.s+.5;if(s>M+1e-6)s=-M;sel.s=s;showSel(sel);toast('הוזז לאורך החור');return}
   if(sel&&sel.kind==='mount'){sel.phi=(sel.phi+1)%4;showSel(sel);toast('סיבוב סביב הציר '+sel.phi*90+'°');return}
@@ -767,8 +790,9 @@ $('#rotBtn').onclick=$('#rotSel').onclick=()=>{
 $('#slideBtn').onclick=()=>{if(!sel||sel.kind!=='snap')return;const [lo,hi]=slideRange(sel);sel.off+=.5;if(sel.off>hi+1e-6)sel.off=lo;showSel(sel);toast('הוזז לאורך החיבור')};
 $('#flipBtn').onclick=()=>{if(!sel||sel.kind!=='snap')return;sel.flip=!sel.flip;sel.off=defOff(sel);showSel(sel);toast('הוכנס מהצד השני')};
 $('#nextHole').onclick=()=>{if(sel&&sel.kind==='snap'){sel.ci=(sel.ci+1)%sel.C.length;sel.off=defOff(sel);showSel(sel);toast('חיבור '+(sel.ci+1)+' מתוך '+sel.C.length);return}if(sel&&sel.kind==='mount'){sel.hi=sel.ok[(sel.ok.indexOf(sel.hi)+1)%sel.ok.length];showSel(sel);toast('חור '+(sel.ok.indexOf(sel.hi)+1)+' מתוך '+sel.ok.length)}};
-$('#okBtn').onclick=place;$('#cancelSel').onclick=hideSel;
-$('#moveCancel').onclick=cancelMove;
+$('#okBtn').onclick=place;$('#cancelSel').onclick=()=>{if(MOVE)cancelMove();else hideSel()};
+$('#moveCancel').onclick=cancelMove;$('#moveCopy').onclick=copyHeld;
+document.querySelectorAll('[data-mv]').forEach(b=>b.onclick=()=>nudgeHeld(b.dataset.mv));
 $('#moveMulti').onclick=()=>{const id=MOVE&&MOVE.b.id;cancelMove();MULTI=true;if(id)S.sel.add(id);drawSel();toast('גע בעוד חלקים כדי לבחור כמה ביחד')};
 $('#undo').onclick=()=>{if(MOVE){cancelMove();return}if(!S.undo.length)return;S.redo.push(snap());restore(S.undo.pop());toast('בוטל')};
 $('#redo').onclick=()=>{if(!S.redo.length)return;S.undo.push(snap());restore(S.redo.pop());toast('הוחזר')};
@@ -1351,6 +1375,7 @@ $('#selbar').addEventListener('click',e=>{const btn=e.target.closest('[data-sa]'
   else if(a==='del'){if(!btn.dataset.sure){btn.dataset.sure=1;btn.textContent='בטוח?';setTimeout(()=>{delete btn.dataset.sure;btn.innerHTML='<svg class="i" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>מחק'},2500);return}
     const prev=snap(),n=S.sel.size;S.bricks=S.bricks.filter(b=>!S.sel.has(b.id));S.sel.clear();commit(prev);toast(n+' חלקים נמחקו. אפשר לבטל עם החץ למעלה')}
   else if(a==='all'){S.sel=new Set(S.bricks.map(b=>b.id));drawSel()}else if(a==='none'){S.sel.clear();drawSel()}else if(a==='conn')connectedSel()});
+document.addEventListener('keydown',e=>{if(MOVE&&!e.target.matches('input,textarea')){const k={ArrowUp:'f',ArrowDown:'b',ArrowLeft:'l',ArrowRight:'r',PageUp:'u',PageDown:'d'}[e.key];if(k){e.preventDefault();nudgeHeld(k)}return}});
 document.addEventListener('keydown',e=>{if(S.mode!=='select'||!S.sel.size||e.target.matches('input,textarea'))return;const {fw,right}=camAxes(),k=e.key;
   const map={ArrowUp:()=>moveSel(fw,0),ArrowDown:()=>moveSel(fw.clone().negate(),0),ArrowRight:()=>moveSel(right,0),ArrowLeft:()=>moveSel(right.clone().negate(),0),PageUp:()=>moveSel(new THREE.Vector3(),1),PageDown:()=>moveSel(new THREE.Vector3(),-1),Delete:()=>$('[data-sa="del"]').click()};
   if(map[k]){e.preventDefault();map[k]()}});
