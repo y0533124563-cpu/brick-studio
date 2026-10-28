@@ -1,0 +1,31 @@
+name: Speed check
+
+on:
+  workflow_dispatch:
+
+jobs:
+  perf:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/get-libs.sh
+      - uses: actions/cache@v4
+        with:
+          path: ldraw-complete.zip
+          key: ldraw-complete-v1
+      - run: python3 scripts/get-ldraw.py ldraw-complete.zip
+      - run: git clone --depth 1 https://github.com/RolandMelkert/LDCadShadowLibrary shadow
+      - run: python3 scripts/build-snaps.py web/ldraw shadow > /dev/null
+      - name: Local mode (no sign-in) for the test
+        run: echo "window.FIREBASE_CONFIG=null;" > web/config.js
+      - run: pip install playwright && python3 -m playwright install --with-deps chromium
+      - name: Speed check
+        run: |
+          (cd web && python3 -m http.server 8080 > /dev/null 2>&1 &)
+          sleep 2
+          python3 scripts/perf.py http://localhost:8080/index.html
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: perf
+          path: perf.png
