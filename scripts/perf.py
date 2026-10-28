@@ -5,7 +5,11 @@ import sys, json, time
 from playwright.sync_api import sync_playwright
 URL = sys.argv[1]
 QUERIES = ['3001', 'technic beam 7', '32524', '3703', 'gear 24', 'axle 4', '6558', '3894', 'technic brick 1 x 16', 'wheel', '2780', '32062']
-def note(t, m): print(f'::notice title={t}::{m}', flush=True)
+LINES = []
+def note(t, m): LINES.append(f'{t}: {m}')
+def flush():
+    for i in range(0, len(LINES), 8):
+        print('::notice title=perf %d::' % (i // 8) + '%0A'.join(LINES[i:i + 8]).replace('::', ' '), flush=True)
 with sync_playwright() as p:
     b = p.chromium.launch(args=['--use-gl=swiftshader', '--enable-unsafe-swiftshader'])
     ctx = b.new_context(viewport={'width': 412, 'height': 860}, device_scale_factor=2, is_mobile=True, has_touch=True)
@@ -13,7 +17,8 @@ with sync_playwright() as p:
     errs = []; pg.on('pageerror', lambda e: errs.append(str(e)))
     pg.add_init_script("window.__lt=[];new PerformanceObserver(l=>{for(const e of l.getEntries())window.__lt.push([e.startTime,e.duration])}).observe({type:'longtask',buffered:true});")
     cdp = ctx.new_cdp_session(pg); cdp.send('Emulation.setCPUThrottlingRate', {'rate': 4})
-    t0 = time.time(); pg.goto(URL); pg.wait_for_timeout(6000)
+    cdp.send('Profiler.enable'); cdp.send('Profiler.setSamplingInterval', {'interval': 500})
+    t0 = time.time(); pg.goto(URL); pg.wait_for_timeout(6000); cdp.send('Profiler.start')
     def window(label, fn):
         a = pg.evaluate('performance.now()'); fn(); z = pg.evaluate('performance.now()')
         lt = pg.evaluate(f'window.__lt.filter(e=>e[0]>={a}&&e[0]<={z})')
@@ -52,4 +57,25 @@ with sync_playwright() as p:
     n = pg.evaluate("document.querySelector('#count').textContent")
     heap = pg.evaluate("performance.memory?Math.round(performance.memory.usedJSHeapSize/1e6):-1")
     note('summary', f'{n}, heap {heap}MB, errors: {errs[:3]}')
-    pg.screenshot(path='perf.png'); b.close()
+    prof = cdp.send('Profiler.stop')['profile']
+    nodes = {n['id']: n for n in prof['nodes']}; dt = prof.get('timeDeltas', []); self_t = {}
+    for sid, d in zip(prof.get('samples', []), dt):
+        n = nodes[sid]['callFrame']; k = (n['functionName'] or '(anon)') + ':' + str(n.get('lineNumber', 0) + 1) + (' ' + n['url'].split('/')[-1] if n.get('url') else '')
+        self_t[k] = self_t.get(k, 0) + d
+    tot = sum(self_t.values()) or 1
+    # also inclusive time per function of our page
+    parent = {}
+    for n in prof['nodes']:
+        for c in n.get('children', []): parent[c] = n['id']
+    incl = {}
+    for sid, d in zip(prof.get('samples', []), dt):
+        seen = set(); x = sid
+        while x is not None:
+            cf = nodes[x]['callFrame']
+            if 'index.html' in cf.get('url', ''):
+                k = (cf['functionName'] or '(anon)') + ':' + str(cf.get('lineNumber', 0) + 1)
+                if k not in seen: incl[k] = incl.get(k, 0) + d; seen.add(k)
+            x = parent.get(x)
+    for k, v in sorted(self_t.items(), key=lambda kv: -kv[1])[:16]: note('self', f'{v/1e6:.1f}s {100*v/tot:.0f}% {k}')
+    for k, v in sorted(incl.items(), key=lambda kv: -kv[1])[:24]: note('incl', f'{v/1e6:.1f}s {k}')
+    flush(); pg.screenshot(path='perf.png'); b.close()
