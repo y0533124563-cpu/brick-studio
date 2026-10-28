@@ -654,7 +654,7 @@ function kickScene(){shadowDirty=true;kick(450)}
 controls.addEventListener('change',()=>kick(200));
 ['pointerdown','pointerup','click','keydown','wheel','touchend'].forEach(ev=>document.addEventListener(ev,()=>kickScene(),{passive:true,capture:true}));
 document.addEventListener('pointermove',e=>{if(e.buttons||e.pointerType==='touch')kick(200)},{passive:true});
-document.addEventListener('visibilitychange',()=>{if(!document.hidden)kickScene()});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)kickScene();else if(typeof needsPic==='function'&&needsPic())saveNow(true)});
 (function loop(t){const now=performance.now();if(controls.update())kick(200);followPlate();
   if(SIM){stepSim(Math.min(.05,((t||lastT)-lastT)/1000));followStep();shadowDirty=true;kick(100)}lastT=t||now;
   if(now<dirtyUntil&&!document.hidden){if(shadowDirty){renderer.shadowMap.needsUpdate=true;shadowDirty=false}renderer.render(scene,camera)}
@@ -871,7 +871,7 @@ async function openMyProjects(){
   panel.innerHTML=`<h2>הפרויקטים שלי ${closeBtn}</h2><div class="plist" id="plist"><div class="note">טוען…</div></div>
     <div class="field"><button class="btn" id="mpNew">פרויקט חדש</button><button class="btn ghost" id="mpAll">כל הפרויקטים</button></div>`;
   scrim.hidden=false;$('#mpNew').onclick=()=>{closePanel();newProject()};$('#mpAll').onclick=()=>{closePanel();goHome()};
-  if(S.proj&&snap()!==S.proj.saved)await saveNow();
+  if(needsPic())await saveNow(true);
   let list;try{list=await listProjects()}catch(e){$('#plist').innerHTML='<div class="note">לא הצלחתי לטעון. בדוק את החיבור לאינטרנט.</div>';return}
   const el=$('#plist');if(!el)return;el.innerHTML=list.length?'':'<div class="note">עוד אין פרויקטים.</div>';
   list.forEach(p=>{const b=document.createElement('button');b.className='pi'+(S.proj&&S.proj.id===p.id?' on':'');
@@ -952,6 +952,13 @@ function buildTabs(){tabs.innerHTML='';(LDFAIL?CATS:LCATS).forEach(([id,n])=>{co
   b.onclick=()=>{S.cat=id;S.q='';$('#q').value='';renderParts()};tabs.appendChild(b)})}
 buildTabs();
 const THUMBS={};
+let thumbQ=[],thumbBusy=false,thumbIO=null;
+function watchThumbs(el,gen){if(thumbIO)thumbIO.disconnect();thumbQ=[];
+  thumbIO=new IntersectionObserver(es=>{for(const x of es)if(x.isIntersecting){const id=x.target.dataset.pid;thumbIO.unobserve(x.target);if(!THUMBS[id])thumbQ.push([id,gen])}runThumbs()},{root:el,rootMargin:'0px 120px'});
+  el.querySelectorAll('img[data-pid]').forEach(im=>{if(!THUMBS[im.dataset.pid])thumbIO.observe(im)})}
+async function runThumbs(){if(thumbBusy)return;thumbBusy=true;
+  while(thumbQ.length){const [id,gen]=thumbQ.shift();if(gen!==ldGen||THUMBS[id])continue;try{await ldEnsure(id);await new Promise(r=>setTimeout(r,40));if(gen===ldGen)setThumb(id)}catch(_){}await new Promise(r=>setTimeout(r,40))}
+  thumbBusy=false}
 function renderParts(){tabs.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-pressed',(!LDFAIL||!S.q)&&t.dataset.cat===S.cat));if(!LDFAIL){renderLD();return}
   const q=S.q.trim().replace(/x/gi,'×'),list=q?PARTS.filter(p=>p.name.includes(q)):PARTS.filter(p=>p.cat===S.cat);const el=$('#parts');el.innerHTML='';
   if(!list.length){el.innerHTML='<div class="empty">לא נמצא חלק בשם הזה. נסה מילה אחרת, למשל "לבנה" או "ציר".</div>';return}
@@ -1014,7 +1021,7 @@ function renderLD(){const el=$('#parts'),gen=++ldGen;el.innerHTML='<div class="e
       const b=document.createElement('button');b.className='part ld';b.setAttribute('aria-pressed',id===S.part);
       b.innerHTML=`<img alt="" data-pid="${id}" src="${THUMBS[id]||BLANK}"><span>${esc(cleanName(e.d))}</span><small>${esc(e.n)}</small>`;b.onclick=()=>selectPart(id);el.appendChild(b)});
     if(total>80){const m=document.createElement('div');m.className='empty';m.textContent=`ועוד ${total-80} חלקים. כתוב חיפוש מדויק יותר.`;el.appendChild(m)}
-    (async()=>{for(const e of res.slice(0,30)){if(gen!==ldGen)return;const id='ld:'+e.n;if(THUMBS[id])continue;try{await ldEnsure(id);await new Promise(r=>setTimeout(r,25));if(gen!==ldGen)return;setThumb(id)}catch(_){}await new Promise(r=>setTimeout(r,25))}})()
+    watchThumbs(el,gen)
   },()=>{if(gen!==ldGen||LDFAIL)return;LDFAIL=true;S.cat='brick';buildTabs();if(!ready(S.part))S.part='b2x4';updateCur();renderParts();setTimeout(makeThumbs,60);
     toast('הספרייה המלאה לא זמינה כאן. פתח את האתר: y0533124563-cpu.github.io/brick-studio')})}
 
@@ -1526,12 +1533,13 @@ function snapThumb(){try{const gv=ghost.visible,hv=hl.visible;ghost.visible=fals
   cx.fillStyle=gr;cx.fillRect(0,0,240,180);cx.drawImage(src,(sw-w)/2,(sh-h)/2,w,h,0,0,240,180);ghost.visible=gv;hl.visible=hv;return c.toDataURL('image/jpeg',.72)}catch(e){return ''}}
 let saveT=null;
 function scheduleSave(){if(!S.proj||snap()===S.proj.saved)return;clearTimeout(saveT);saveT=setTimeout(saveNow,1200)}
-async function saveNow(){clearTimeout(saveT);if(!S.proj)return;const data=snap(),p=S.proj;
-  try{const rec={name:p.name,updated:Date.now(),count:S.bricks.length,thumb:snapThumb(),data,ctrl:JSON.stringify(S.ctrl||{}),plate:S.plate};
+async function saveNow(withThumb){clearTimeout(saveT);if(!S.proj)return;const data=snap(),p=S.proj;
+  if(withThumb||!p.thumb){p.thumb=snapThumb();p.thumbFor=data}
+  try{const rec={name:p.name,updated:Date.now(),count:S.bricks.length,thumb:p.thumb||'',data,ctrl:JSON.stringify(S.ctrl||{}),plate:S.plate};
     if(p.sid&&USER&&fbDb){await sharedDoc(p.sid).set({...rec,by:USER.uid},{merge:true});const {data:_,ctrl:__,...meta}=rec;await cloud().doc(p.id).set({...meta,sid:p.sid},{merge:true})}
     else await putProject(p.id,rec);p.saved=data}
   catch(e){toast(USER?'השמירה נכשלה. בדוק את החיבור לאינטרנט':'השמירה נכשלה, הזיכרון במכשיר מלא')}}
-function openProject(p){if(SIMUI.on)exitSim();setPlate(plateWD(p.plate));setTimeout(camHome,0);if(sharedUnsub){sharedUnsub();sharedUnsub=null}S.proj={id:p.id,name:p.name,saved:p.data||'[]',sid:p.sid||null};try{S.ctrl=p.ctrl?JSON.parse(p.ctrl):{}}catch(e){S.ctrl={}}S.bricks=JSON.parse(p.data||'[]');S.nextId=S.bricks.reduce((a,b)=>Math.max(a,b.id),0)+1;
+function openProject(p){if(SIMUI.on)exitSim();setPlate(plateWD(p.plate));setTimeout(camHome,0);if(sharedUnsub){sharedUnsub();sharedUnsub=null}S.proj={id:p.id,name:p.name,saved:p.data||'[]',sid:p.sid||null,thumb:p.thumb||'',thumbFor:p.data||'[]'};try{S.ctrl=p.ctrl?JSON.parse(p.ctrl):{}}catch(e){S.ctrl={}}S.bricks=JSON.parse(p.data||'[]');S.nextId=S.bricks.reduce((a,b)=>Math.max(a,b.id),0)+1;
   S.undo=[];S.redo=[];hideSel();refresh();$('#projName').textContent=p.name;$('#home').hidden=true;setTimeout(resize,0)}
 function plateInput(cur,btn){const p=plateWD(cur);return `<div class="wd"><label><small>רוחב</small><input id="pW" type="number" inputmode="numeric" min="${PMIN}" max="${PMAX}" value="${p.w}"></label>
   <span class="x">×</span><label><small>אורך</small><input id="pD" type="number" inputmode="numeric" min="${PMIN}" max="${PMAX}" value="${p.d}"></label>
@@ -1548,7 +1556,8 @@ async function newProject(){const list=await listProjects().catch(()=>[]);
     <h3>גודל המשטח</h3>${plateInput({w:32,d:32})}<p class="note">אפשר לשנות את הגודל גם אחר כך, בכפתור ההגדרות שבתוך הפרויקט.</p><button class="btn big" id="npGo">צור פרויקט</button>`;
   scrim.hidden=false;wirePlatePrev();
   $('#npGo').onclick=async()=>{const name=$('#npName').value.trim()||('פרויקט '+(list.length+1)),size=readPlate();closePanel();openProject({id:newId(),name,data:'[]',plate:size});await saveNow();toast('פרויקט חדש נוצר')}}
-async function goHome(){if(S.proj&&snap()!==S.proj.saved)await saveNow();if(sharedUnsub){sharedUnsub();sharedUnsub=null}$('#home').hidden=false;renderHome()}
+const needsPic=()=>S.proj&&(snap()!==S.proj.saved||snap()!==S.proj.thumbFor);
+async function goHome(){if(needsPic())await saveNow(true);if(sharedUnsub){sharedUnsub();sharedUnsub=null}$('#home').hidden=false;renderHome()}
 async function signIn(){if(!fbAuth){toast('ההתחברות עם Google עוד לא הוגדרה');return}
   if(/; wv\)/.test(navigator.userAgent)){toast('באפליקציה ההתחברות עוד לא זמינה. התחבר באתר בדפדפן');return}
   const pr=new firebase.auth.GoogleAuthProvider();
