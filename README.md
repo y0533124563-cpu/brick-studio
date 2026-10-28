@@ -12,3 +12,5 @@
 נקודות החיבור של החלקים (בליטות, חורים, צירים ופינים) מחושבות מ-LDCad Shadow Library של Roland Melkert ותורמים (github.com/RolandMelkert/LDCadShadowLibrary), ברישיון CC BY-SA 4.0. קבצי החיבורים שנוצרים ממנה (`ldraw/snap`) משותפים באותו רישיון.
 
 LEGO® הוא סימן מסחרי של קבוצת LEGO, שאינה נותנת חסות או אישור לפרויקט זה.
+
+- Physics: [cannon.js](https://github.com/schteppe/cannon.js) 0.6.2 (MIT license).

@@ -11,3 +11,5 @@ FB=https://cdn.jsdelivr.net/npm/firebase@10.12.2
 curl -fsSL "$FB/firebase-app-compat.js" -o web/lib/firebase-app-compat.js
 curl -fsSL "$FB/firebase-auth-compat.js" -o web/lib/firebase-auth-compat.js
 curl -fsSL "$FB/firebase-firestore-compat.js" -o web/lib/firebase-firestore-compat.js
+# physics (gravity) in the simulation
+curl -fsSL "https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js" -o web/lib/cannon.min.js

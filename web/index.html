@@ -358,7 +358,23 @@ body{background:linear-gradient(180deg,var(--bg) 0%,var(--bg-2) 100%)}
   padding:10px max(12px,env(safe-area-inset-left,0px)) calc(10px + env(safe-area-inset-bottom,0px));animation:fadeIn .2s ease both}
 #dock .movebar>*,#dock .selbar>*{width:100%;max-width:760px;margin-inline:auto}
 #app:has(#dock>:not([hidden])) #sheet{display:none}
-#app.preview #dock,#app.simming #dock{display:none!important}
+#app.preview #dock{display:none!important}
+#app.simming #dock>.movebar,#app.simming #dock>.selbar{display:none!important}
+#simbar{display:none!important}
+.simexit{position:absolute;top:12px;left:calc(12px + env(safe-area-inset-left,0px));z-index:8;display:inline-flex;align-items:center;gap:6px;border:0;border-radius:16px;
+  padding:12px 22px 12px 16px;font-size:18px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--accent) 0%,var(--accent-deep) 100%);box-shadow:0 8px 24px color-mix(in srgb,var(--accent) 40%,transparent)}
+.simexit svg{width:22px;height:22px;stroke-width:2.6}
+.simfoot{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;direction:ltr;background:var(--surface);border-top:1px solid var(--line);border-radius:24px 24px 0 0;
+  box-shadow:0 -8px 32px rgba(0,0,0,.08);padding:10px max(12px,env(safe-area-inset-left,0px)) calc(10px + env(safe-area-inset-bottom,0px))}
+.sf-side{display:flex;align-items:center;gap:8px;min-width:0}.sf-left{justify-content:flex-start}.sf-right{justify-content:flex-start;direction:rtl}
+.sf-left .btn{display:inline-flex;align-items:center;gap:6px;padding:10px 18px;font-size:16px}.sf-left .btn svg{width:20px;height:20px}
+.simfoot:not(.editing) .sf-left{visibility:hidden}
+#simOk:disabled,#simUndo:disabled{opacity:.45;box-shadow:none;cursor:default}
+.simseg{min-width:230px;direction:rtl}.simseg button{font-size:16px;padding:10px 18px}
+.simseg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+@media (max-width:560px){.simfoot{grid-template-columns:1fr 1fr;grid-template-areas:"seg seg" "left right"}.simseg{grid-area:seg;min-width:0}.sf-left{grid-area:left}.sf-right{grid-area:right}
+  .simexit{font-size:16px;padding:10px 16px 10px 12px}}
+@keyframes fadeIn{
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 .home-body,.bar,#sheet{animation:fadeIn .4s ease both}
 @media (prefers-reduced-motion: reduce){*{transition:none!important}}
@@ -456,11 +472,16 @@ body{background:linear-gradient(180deg,var(--bg) 0%,var(--bg-2) 100%)}
     <div class="instr" id="instr" hidden></div>
     <div class="simbar" id="simbar" hidden><span class="simchip">הדמיה</span><span class="simchip pad" id="padChip" hidden>שלט מחובר</span><button class="sb" id="editBtn">עריכה</button><button class="sb" id="exitSim">יציאה</button></div>
     <div class="remote" id="remote" hidden></div>
+    <button class="simexit" id="simExit" hidden><svg class="i" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg>יציאה</button>
     <div class="toast" id="toast"></div>
   </main>
   <div class="umenu" id="umenu" hidden role="menu"></div>
 
-  <section id="dock"></section>
+  <section id="dock"><div class="simfoot" id="simfoot" hidden>
+    <div class="sf-side sf-left"><button class="btn" id="simOk"><svg class="i" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>אישור</button><button class="btn ghost" id="simUndo">ביטול</button></div>
+    <div class="seg simseg" role="group" aria-label="מצב"><button data-sm="test" aria-pressed="true">בדיקה</button><button data-sm="edit" aria-pressed="false">עריכה</button></div>
+    <div class="sf-side sf-right"><label class="infsw" title="כוח משיכה: חלקים שלא מחוברים לשום דבר נופלים"><input type="checkbox" id="physChk"><span class="sw2"></span><span>פיזיקה</span></label><span class="simchip pad" id="padChip2" hidden>שלט מחובר</span></div>
+  </div></section>
   <section id="sheet">
     <div class="sheet-in">
       <button class="handle" id="handle" aria-expanded="true">
@@ -676,7 +697,7 @@ controls.addEventListener('change',()=>kick(200));
 document.addEventListener('pointermove',e=>{if(e.buttons||e.pointerType==='touch')kick(200)},{passive:true});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)kickScene();else if(typeof needsPic==='function'&&needsPic())saveNow(true)});
 (function loop(t){const now=performance.now();if(controls.update())kick(200);followPlate();
-  if(SIM){stepSim(Math.min(.05,((t||lastT)-lastT)/1000));followStep();shadowDirty=true;kick(100)}lastT=t||now;
+  if(SIM){const sdt=Math.min(.05,((t||lastT)-lastT)/1000);stepSim(sdt);followStep();if(PHYS)physStep(sdt);shadowDirty=true;kick(100)}lastT=t||now;
   if(now<dirtyUntil&&!document.hidden){if(shadowDirty){renderer.shadowMap.needsUpdate=true;shadowDirty=false}dbgT('draw',()=>renderer.render(scene,camera))}
   requestAnimationFrame(loop)})();
 
@@ -1273,7 +1294,7 @@ function buildMech(){const {W,joints}=buildJoints(),K=new Map(S.bricks.map(b=>[b
     const aL=sz.x>=sz.y&&sz.x>=sz.z?new V3(1,0,0):sz.y>=sz.z?new V3(0,1,0):new V3(0,0,1);aL.multiplyScalar(Math.sign(rc.clone().sub(bc).dot(aL))||1);
     const rs=gi.rod.boundingBox.getSize(new V3()),rodLen=Math.abs(rs.dot(aL));m.updateMatrixWorld();
     c.slide={m:rm,uL:aL,uW:aL.clone().transformDirection(m.matrixWorld)};c.stroke=gi.stroke||Math.max(.4,rodLen*.55)}
-  return {moving,cranks,cyls,jam,K,joints,isPin}}
+  return {moving,cranks,cyls,jam,K,joints,isPin,groups:[...groups.values()]}}
 function sang(u,v,A){return Math.atan2(new V3().crossVectors(u,v).dot(A),u.dot(v))}
 function scaleAbout(P,u,k){const S=new M4().set(1+(k-1)*u.x*u.x,(k-1)*u.x*u.y,(k-1)*u.x*u.z,0,(k-1)*u.y*u.x,1+(k-1)*u.y*u.y,(k-1)*u.y*u.z,0,(k-1)*u.z*u.x,(k-1)*u.z*u.y,1+(k-1)*u.z*u.z,0,0,0,0,1);
   return new M4().makeTranslation(P.x,P.y,P.z).multiply(S).multiply(new M4().makeTranslation(-P.x,-P.y,-P.z))}
@@ -1284,7 +1305,7 @@ const IN={},PADIN={};OUTS.forEach(([k])=>{IN[k]=0;PADIN[k]=0});let padName='';
 const val=k=>Math.abs(IN[k])>=Math.abs(PADIN[k])?IN[k]:PADIN[k];
 /* a real game controller (Bluetooth or USB) through the browser's standard mapping */
 function readPad(){const pads=navigator.getGamepads?navigator.getGamepads():[];let g=null;for(const p of pads)if(p&&p.connected){g=p;break}
-  const name=g?(g.id||'שלט'):'';if(name!==padName){padName=name;const c=$('#padChip');if(c){c.hidden=!g}if(g)toast('שלט משחק חובר')}
+  const name=g?(g.id||'שלט'):'';if(name!==padName){padName=name;const c=$('#padChip'),c2=$('#padChip2');if(c){c.hidden=!g}if(c2){c2.hidden=!g}if(g)toast('שלט משחק חובר')}
   if(!g){for(const k in PADIN)PADIN[k]=0;return}const ax=i=>{const v=g.axes[i]||0;return Math.abs(v)<.15?0:v},bt=i=>g.buttons[i]?(g.buttons[i].value||(g.buttons[i].pressed?1:0)):0;
   PADIN.lsx=ax(0);PADIN.lsy=-ax(1);PADIN.rsx=ax(2);PADIN.rsy=-ax(3);PADIN.dpy=bt(12)-bt(13);PADIN.dpx=bt(15)-bt(14);
   PADIN.b1=bt(0);PADIN.b2=bt(1);PADIN.b3=bt(2);PADIN.b4=bt(3);PADIN.lb=bt(4);PADIN.rb=bt(5);PADIN.lt=bt(6);PADIN.rt=bt(7)}
@@ -1325,7 +1346,7 @@ function stepSim(dt){readPad();const sp=new Map();const v=id=>{if(!sp.has(id))sp
     else if(c.whole){place3(k.body.ids,Mc.clone().multiply(scaleAbout(k.B,k.u0,L/k.L0)))}
     else{const dir=R.clone().sub(k.B).normalize().multiplyScalar(L-k.L0);place3(k.body.ids,Mc);place3(c.rod.ids,new M4().makeTranslation(dir.x,dir.y,dir.z).multiply(Mc))}}}
 function followStep(){for(const f of SIM.follow||[]){const m=meshes.get(f.id);if(!m)continue;f.leader.updateMatrixWorld(true);m.matrix.multiplyMatrices(f.leader.matrixWorld,f.inv).multiply(f.rest);m.matrixWorldNeedsUpdate=true}}
-function stopSim(){if(!SIM)return;for(const c of SIM.cyls||[])if(c.slide)c.slide.m.position.set(0,0,0);for(const [id] of SIM.rest){const m=meshes.get(id);if(!m)continue;m.matrixAutoUpdate=true;m.updateMatrix();m.matrixWorldNeedsUpdate=true}SIM=null}
+function stopSim(){if(!SIM)return;physOff();for(const c of SIM.cyls||[])if(c.slide)c.slide.m.position.set(0,0,0);for(const [id] of SIM.rest){const m=meshes.get(id);if(!m)continue;m.matrixAutoUpdate=true;m.updateMatrix();m.matrixWorldNeedsUpdate=true}SIM=null}
 
 /* ---------- simulation screen with a remote control ---------- */
 function enterSim(){if(!isPro()){openPro();return}if(!LDXM){toast('טוען את רשימת החלקים, נסה שוב בעוד רגע');ldIndex().catch(()=>{});return}
@@ -1333,11 +1354,11 @@ function enterSim(){if(!isPro()){openPro();return}if(!LDXM){toast('טוען את
   const T=targetsList(),ids=new Set(T.map(t=>t.id));for(const k in S.ctrl)if(!ids.has(S.ctrl[k].id))delete S.ctrl[k];
   {const old={jy:'lsy',jx:'lsx',b1:'dpy',b2:'rsy',s1:'rsx'};for(const k in old)if(S.ctrl[k]){S.ctrl[old[k]]=S.ctrl[k];delete S.ctrl[k]}}
   if(!Object.keys(S.ctrl).length){const order=['lsy','rsx','rsy','lsx','dpy','dpx'];T.forEach((t,i)=>{if(order[i])S.ctrl[order[i]]={id:t.id,inv:false}})}
-  const M=startSim();SIMUI.on=true;SIMUI.edit=false;SIMUI.sel=null;$('#app').classList.add('simming');$('#simbar').hidden=false;$('#remote').hidden=false;renderRemote();setTimeout(()=>{resize();placeRemote()},0);
+  const M=startSim();SIMUI.on=true;SIMUI.edit=false;SIMUI.sel=null;SIMUI.dirty=false;SIMUI.backup=JSON.stringify(S.ctrl||{});$('#simExit').hidden=false;$('#simfoot').hidden=false;$('#simfoot').classList.remove('editing');$('#physChk').checked=false;$('#physChk').disabled=false;document.querySelectorAll('[data-sm]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.sm==='test'));$('#app').classList.add('simming');$('#simbar').hidden=false;$('#remote').hidden=false;renderRemote();setTimeout(()=>{resize();placeRemote()},0);
   if(!T.length)toast('אין בדגם מנועים או צילינדרים. אפשר לצאת, להוסיף אותם ולחזור');
   else if(M.jam.size)toast('חלק מהמנועים תקועים: חלק שמסתובב מחובר לחלק שעומד על המשטח');
   else if(!M.moving.length&&!M.cyls.length)toast('המנוע לא מחובר לציר. הכנס ציר לחור של המנוע');}
-function exitSim(){stopSim();SIMUI.on=false;SIMUI.edit=false;for(const k in IN)IN[k]=0;clearSimHL();$('#app').classList.remove('simming');$('#simbar').hidden=true;$('#remote').hidden=true;setTimeout(resize,0)}
+function exitSim(){stopSim();$('#simExit').hidden=true;$('#simfoot').hidden=true;SIMUI.on=false;SIMUI.edit=false;for(const k in IN)IN[k]=0;clearSimHL();$('#app').classList.remove('simming');$('#simbar').hidden=true;$('#remote').hidden=true;setTimeout(resize,0)}
 const simEdge=new THREE.LineBasicMaterial({color:0xE11D48,transparent:true,opacity:1,depthTest:false});
 function clearSimHL(){for(const m of meshes.values()){const o=m.getObjectByName('simhl');if(o)m.remove(o)}}
 function simHL(id){clearSimHL();const m=meshes.get(id),b=brickById(id);if(!m||!b)return;const l=new THREE.LineSegments(edgesFor(b.p),simEdge);l.name='simhl';l.renderOrder=30;m.add(l)}
@@ -1363,7 +1384,7 @@ function assignBox(){const k=SIMUI.sel,m=S.ctrl[k],T=targetsList(),name=OUTS.fin
     <span class="rnote">חבר אל (או גע במנוע/צילינדר בדגם):</span>
     <div class="tgts">${T.length?T.map(t=>`<button class="tgt${m&&m.id===t.id?' on':''}" data-tgt="${t.id}"><span>${esc(t.name)}</span><small>${esc(t.sub)}</small></button>`).join(''):'<span class="rnote">אין בדגם מנועים או צילינדרים.</span>'}</div>
     <div class="abox-foot"><label class="inv"><input type="checkbox" id="invChk" ${m&&m.inv?'checked':''} ${m?'':'disabled'}> הפוך כיוון</label>${m?'<button class="mini warn" data-tgt="none">נתק</button>':''}</div></div>`}
-function assign(k,id){if(id===null)delete S.ctrl[k];else S.ctrl[k]={id,inv:(S.ctrl[k]&&S.ctrl[k].id===id)?S.ctrl[k].inv:false};if(id)simHL(id);else clearSimHL();renderRemote();saveCtrl()}
+function assign(k,id){if(id===null)delete S.ctrl[k];else S.ctrl[k]={id,inv:(S.ctrl[k]&&S.ctrl[k].id===id)?S.ctrl[k].inv:false};if(id)simHL(id);else clearSimHL();renderRemote();markCtrl()}
 function saveCtrl(){if(S.proj)saveNow()}
 function pickOut(k){SIMUI.sel=k;const m=S.ctrl[k];m?simHL(m.id):clearSimHL();renderRemote()}
 function wireRemote(){const r=$('#remote'),E=SIMUI.edit;
@@ -1372,7 +1393,7 @@ function wireRemote(){const r=$('#remote'),E=SIMUI.edit;
     r.querySelectorAll('[data-ax]').forEach(b=>b.onclick=()=>pickOut(b.dataset.ax));
     r.querySelectorAll('[data-tgt]').forEach(b=>b.onclick=()=>assign(SIMUI.sel,b.dataset.tgt==='none'?null:+b.dataset.tgt));
     const c=r.querySelector('[data-close-a]');if(c)c.onclick=()=>{SIMUI.sel=null;clearSimHL();renderRemote()};
-    const inv=$('#invChk');if(inv)inv.onchange=()=>{if(S.ctrl[SIMUI.sel]){S.ctrl[SIMUI.sel].inv=inv.checked;renderRemote();saveCtrl()}};return}
+    const inv=$('#invChk');if(inv)inv.onchange=()=>{if(S.ctrl[SIMUI.sel]){S.ctrl[SIMUI.sel].inv=inv.checked;renderRemote();markCtrl()}};return}
   r.querySelectorAll('[data-hold]').forEach(b=>{const k=b.dataset.hold,v=+b.dataset.v,up=()=>{if(IN[k]===v)IN[k]=0;b.classList.remove('down')};
     b.addEventListener('pointerdown',e=>{e.preventDefault();b.setPointerCapture(e.pointerId);IN[k]=v;b.classList.add('down')});b.addEventListener('pointerup',up);b.addEventListener('pointercancel',up)});
   r.querySelectorAll('[data-stick]').forEach(st=>{const knob=st.querySelector('.knob'),p=st.dataset.stick;let id=null;
@@ -1394,7 +1415,60 @@ function wireDrag(){const r=$('#remote');let d=null;
   r.addEventListener('dblclick',e=>{if(e.target.closest('#grip')){try{localStorage.removeItem('bs:remotePos')}catch(err){}placeRemote()}})}
 wireDrag();window.addEventListener('resize',()=>{if(SIMUI.on)placeRemote()});
 window.addEventListener('gamepadconnected',()=>{if(SIMUI.on){readPad();renderRemote()}});
-$('#editBtn').onclick=()=>{SIMUI.edit=!SIMUI.edit;SIMUI.sel=null;for(const k in IN)IN[k]=0;clearSimHL();renderRemote()};
+$('#editBtn').onclick=()=>setSimMode(SIMUI.edit?'test':'edit');
+function markCtrl(){SIMUI.dirty=JSON.stringify(S.ctrl||{})!==SIMUI.backup;$('#simOk').disabled=!SIMUI.dirty;$('#simUndo').disabled=!SIMUI.dirty}
+function setSimMode(m){if(!SIMUI.on)return;const edit=m==='edit';if(edit===SIMUI.edit)return;
+  if(!edit&&SIMUI.dirty){toast('לחץ "אישור" כדי לשמור את השינויים, או "ביטול"');return}
+  if(edit){physOff();$('#physChk').checked=false;SIMUI.backup=JSON.stringify(S.ctrl||{});SIMUI.dirty=false}
+  SIMUI.edit=edit;SIMUI.sel=null;for(const k in IN)IN[k]=0;clearSimHL();renderRemote();markCtrl();
+  $('#simfoot').classList.toggle('editing',edit);document.querySelectorAll('[data-sm]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.sm===m));
+  $('#physChk').disabled=edit;toast(edit?'עריכה: גע בכפתור בשלט ואז במנוע או בצילינדר. בסוף לחץ "אישור"':'בדיקה: הפעל את הדגם עם השלט')}
+document.querySelectorAll('[data-sm]').forEach(b=>b.onclick=()=>setSimMode(b.dataset.sm));
+$('#simOk').onclick=()=>{if(!SIMUI.dirty)return;saveCtrl();SIMUI.backup=JSON.stringify(S.ctrl||{});markCtrl();toast('השינויים נשמרו')};
+$('#simUndo').onclick=()=>{try{S.ctrl=JSON.parse(SIMUI.backup||'{}')}catch(e){}SIMUI.sel=null;clearSimHL();renderRemote();markCtrl();toast('השינויים בוטלו')};
+$('#simExit').onclick=()=>{if(SIMUI.dirty){try{S.ctrl=JSON.parse(SIMUI.backup||'{}')}catch(e){}SIMUI.dirty=false}exitSim()};
+$('#physChk').onchange=e=>{e.target.checked?physOn():(physOff(),toast('הפיזיקה כבויה, הכל חזר למקום'))};
+
+/* ---------- physics (gravity): parts that are not held by anything fall, land and tip over ---------- */
+const CANNON_URL='lib/cannon.min.js';
+let PHYS=null;
+function loadCannon(){if(window.CANNON)return Promise.resolve();return new Promise((res,rej)=>{const sc=document.createElement('script');sc.src=CANNON_URL;sc.onload=res;sc.onerror=rej;document.head.appendChild(sc)})}
+async function physOn(){if(!SIM||PHYS)return;try{await loadCannon()}catch(e){$('#physChk').checked=false;toast('לא הצלחתי לטעון את הפיזיקה. בדוק את החיבור לאינטרנט');return}
+  if(!SIM||!$('#physChk').checked)return;const C=window.CANNON,world=new C.World();world.gravity.set(0,-60,0);world.broadphase=new C.SAPBroadphase(world);world.solver.iterations=12;world.allowSleep=true;
+  world.defaultContactMaterial.friction=.5;world.defaultContactMaterial.restitution=.05;
+  const plate=new C.Body({mass:0});if(PLATE_INF){plate.addShape(new C.Plane());plate.quaternion.setFromAxisAngle(new C.Vec3(1,0,0),-Math.PI/2)}
+  else{plate.addShape(new C.Box(new C.Vec3((X1-X0)/2,.5,(Z1-Z0)/2)));plate.position.set((X0+X1)/2,-.5,(Z0+Z1)/2)}world.addBody(plate);
+  const movers=new Set(SIM.rest.keys()),bodies=[],byPart=new Map(),M4c=()=>new THREE.Matrix4();
+  for(const g of SIM.groups||[]){const ids=g.ids.filter(id=>meshes.get(id));if(!ids.length)continue;
+    const kin=ids.some(id=>movers.has(id)),stat=!kin&&g.ground,type=kin?'k':stat?'s':'d';
+    const m0=meshes.get(ids[0]);m0.updateMatrixWorld(true);const B0=m0.matrixWorld.clone(),iB0=B0.clone().invert(),p=new THREE.Vector3(),q=new THREE.Quaternion(),sc=new THREE.Vector3();B0.decompose(p,q,sc);
+    const body=new C.Body({mass:type==='d'?1:0,type:type==='k'?C.Body.KINEMATIC:type==='s'?C.Body.STATIC:C.Body.DYNAMIC,allowSleep:true,linearDamping:.05,angularDamping:.1});
+    body.position.set(p.x,p.y,p.z);body.quaternion.set(q.x,q.y,q.z,q.w);let mass=0;const parts=[];
+    for(const id of ids){const m=meshes.get(id),gi=info(brickById(id).p),bb=(gi.body||gi.geo).boundingBox;m.updateMatrixWorld(true);
+      const rel=iB0.clone().multiply(m.matrixWorld),rp=new THREE.Vector3(),rq=new THREE.Quaternion();rel.decompose(rp,rq,sc);
+      const size=bb.getSize(new THREE.Vector3()),c=bb.getCenter(new THREE.Vector3()).applyMatrix4(rel);
+      const h=new C.Vec3(Math.max(.06,size.x/2-.08),Math.max(.06,size.y/2-.05),Math.max(.06,size.z/2-.08));
+      body.addShape(new C.Box(h),new C.Vec3(c.x,c.y,c.z),new C.Quaternion(rq.x,rq.y,rq.z,rq.w));mass+=Math.max(.05,size.x*size.y*size.z);
+      parts.push({id,m,rest:m.matrix.clone(),auto:m.matrixAutoUpdate,rel:iB0.clone().multiply(m.matrixWorld)});byPart.set(id,null)}
+    if(type==='d'){body.mass=mass;body.updateMassProperties()}
+    world.addBody(body);const rec={body,type,parts,B0,iB0,m0,last:p.clone()};bodies.push(rec);for(const pt of parts)byPart.set(pt.id,rec)}
+  // hinges: parts joined by a pin or a round hole keep turning on that axle instead of falling apart
+  for(const j of SIM.joints||[]){if(j.rigid)continue;const A=byPart.get(j.a),Bq=byPart.get(j.b);if(!A||!Bq||A===Bq||(A.type!=='d'&&Bq.type!=='d'))continue;
+    const loc=(r,v)=>{const w=v.clone();r.m0.updateMatrixWorld(true);return w.applyMatrix4(r.iB0)},ax=(r,d)=>d.clone().transformDirection(r.iB0);
+    const pa=loc(A,j.c),pb=loc(Bq,j.c),da=ax(A,j.f.D),db=ax(Bq,j.f.D);
+    world.addConstraint(new C.HingeConstraint(A.body,Bq.body,{pivotA:new C.Vec3(pa.x,pa.y,pa.z),axisA:new C.Vec3(da.x,da.y,da.z),pivotB:new C.Vec3(pb.x,pb.y,pb.z),axisB:new C.Vec3(db.x,db.y,db.z),collideConnected:false}))}
+  for(const r of bodies)if(r.type==='d')for(const pt of r.parts)pt.m.matrixAutoUpdate=false;
+  PHYS={world,bodies};const n=bodies.filter(r=>r.type==='d').length;
+  toast(n?'פיזיקה פועלת: '+n+(n===1?' חלק חופשי נופל':' קבוצות חלקים חופשיות נופלות'):'פיזיקה פועלת. כל החלקים מחוברים, אז שום דבר לא נופל')}
+const _PB=new THREE.Matrix4(),_PQ=new THREE.Quaternion(),_PP=new THREE.Vector3(),_PS=new THREE.Vector3(1,1,1);
+function physStep(dt){if(!PHYS||!dt)return;
+  for(const r of PHYS.bodies)if(r.type==='k'){r.m0.updateMatrixWorld(true);r.m0.matrixWorld.decompose(_PP,_PQ,_PS);const b=r.body;
+    b.velocity.set((_PP.x-b.position.x)/dt,(_PP.y-b.position.y)/dt,(_PP.z-b.position.z)/dt);b.position.set(_PP.x,_PP.y,_PP.z);b.quaternion.set(_PQ.x,_PQ.y,_PQ.z,_PQ.w);b.wakeUp&&b.wakeUp()}
+  PHYS.world.step(1/60,dt,4);
+  for(const r of PHYS.bodies){if(r.type!=='d')continue;const b=r.body;if(b.position.y<-60){b.sleep&&b.sleep();continue}
+    _PB.compose(_PP.set(b.position.x,b.position.y,b.position.z),_PQ.set(b.quaternion.x,b.quaternion.y,b.quaternion.z,b.quaternion.w),_PS.set(1,1,1));
+    for(const pt of r.parts){pt.m.matrix.multiplyMatrices(_PB,pt.rel);pt.m.matrixWorldNeedsUpdate=true}}}
+function physOff(){if(!PHYS)return;for(const r of PHYS.bodies)if(r.type==='d')for(const pt of r.parts){pt.m.matrix.copy(pt.rest);pt.m.matrixAutoUpdate=pt.auto;if(pt.auto)pt.m.updateMatrix();pt.m.matrixWorldNeedsUpdate=true}PHYS=null;kickScene()}
 $('#exitSim').onclick=exitSim;
 function openPro(){const head=`<h2><span>סטודיו לבנים <span class="pro-badge">פרו</span></span> ${closeBtn}</h2>`;
   const list=`<ul class="pro-list"><li>מנועים מסתובבים ומסובבים את הציר שמחובר אליהם</li><li>גלגלי שיניים מעבירים את התנועה לפי מספר השיניים</li><li>בוכנות של מנוע טכניק עולות ויורדות עם גל הארכובה</li></ul>`;
@@ -1667,7 +1741,7 @@ if(DBG){const box=document.createElement('div');box.id='dbg';box.dir='ltr';docum
   let lastDraw=0;setInterval(()=>{const now=performance.now(),lt=DBG.lt,lt10=lt.filter(e=>e[0]>now-10000),d=(DBG.t.draw||{n:0}).n,fps=d-lastDraw;lastDraw=d;
     const top=Object.entries(DBG.t).sort((a,b)=>b[1].s-a[1].s).slice(0,9).map(([k,v])=>`${k}: ${(v.s/1000).toFixed(1)}s total, ${v.n}x, max ${Math.round(v.m)}ms`);
     const cv=renderer.domElement,info=renderer.info.render;
-    box.textContent=[`SPEED CHECK  v${'3.9'}  up ${Math.round((now-DBG.t0)/1000)}s`,`draws/sec: ${fps}  triangles: ${info.triangles.toLocaleString()}  parts: ${S.bricks.length}`,
+    box.textContent=[`SPEED CHECK  v${'4.0'}  up ${Math.round((now-DBG.t0)/1000)}s`,`draws/sec: ${fps}  triangles: ${info.triangles.toLocaleString()}  parts: ${S.bricks.length}`,
       `canvas ${cv.width}x${cv.height}  dpr ${devicePixelRatio}  plate ${JSON.stringify(S.plate)}`,`gpu: ${gl||'?'}`,
       `freezes last 10s: ${lt10.length}, longest ${Math.round(Math.max(0,...lt10.map(e=>e[1])))}ms | all: ${lt.length}, longest ${Math.round(Math.max(0,...lt.map(e=>e[1])))}ms`,
       ...top,DBG.err?'errors: '+DBG.err.join(' | '):''].join('\n')},1000)}
