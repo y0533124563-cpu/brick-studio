@@ -629,7 +629,8 @@ Object.assign(sun.shadow.camera,{left:-20,right:20,top:20,bottom:-20,near:1,far:
 
 const baseMat=new THREE.MeshStandardMaterial({color:'#7FA98A',roughness:.5});
 /* the base plate: its size (studs per side) belongs to each project and can be changed */
-const sg=new THREE.CylinderGeometry(SR,SR,SHt,12);let base=null,studIM=null;
+const sg=(()=>{const side=new THREE.CylinderGeometry(SR,SR,SHt,10,1,true),top=new THREE.CircleGeometry(SR,10);top.rotateX(-Math.PI/2);top.translate(0,SHt/2,0); // plate studs: no hidden bottom, fewer sides
+  try{return THREE.BufferGeometryUtils.mergeBufferGeometries([side,top])||new THREE.CylinderGeometry(SR,SR,SHt,12)}catch(e){return new THREE.CylinderGeometry(SR,SR,SHt,12)}})();let base=null,studIM=null;
 const PMIN=4,PMAX=128;
 function plateWD(p){if(p&&typeof p==='object')return {w:+p.w||32,d:+p.d||32,inf:!!p.inf};const n=+p||32;return {w:n,d:n,inf:false}} // old projects stored one number
 const INF_W=72;let PLATE_INF=false,infAt=null; // an unlimited plate: a big patch of studs that follows the camera
@@ -677,8 +678,13 @@ function placement(cx,cz,id,r){const f=fp(id,r);let x=cx-Math.floor((f.w-1)/2),z
   for(let i=0;i<f.w;i++)for(let j=0;j<f.d;j++)y=Math.max(y,HM.get((x+i)+','+(z+j))||0);return {x,y,z}}
 function posMesh(m,b){if(b.f){m.position.set(b.px,b.py,b.pz);m.quaternion.set(b.q[0],b.q[1],b.q[2],b.q[3]);return}const f=fp(b.p,b.r);m.position.set(b.x+f.w/2,b.y*PH,b.z+f.d/2);m.rotation.y=b.r*Math.PI/2}
 function sync(...a){return dbgT('sync',()=>_sync(...a))}
+/* parts still loading: wait for each one ONCE, and redraw once for all that finished (not once per part per part) */
+const PENDING=new Set(),FAILED=new Set();let softT=0;
+function waitPart(id){if(PENDING.has(id)||FAILED.has(id))return;PENDING.add(id);
+  ldEnsure(id).then(()=>{PENDING.delete(id);softRefresh()},()=>{PENDING.delete(id);FAILED.add(id)})}
+function softRefresh(){if(softT)return;softT=setTimeout(()=>{softT=0;rebuildHM();sync();drawSel()},40)}
 function _sync(){kickScene();const keep=new Set();
-  for(const b of S.bricks){if(!ready(b.p)){keep.add(b.id);ldEnsure(b.p).then(refresh,()=>{});continue}const key=(b.f?[b.p,b.c,'f',b.px,b.py,b.pz,...b.q]:[b.p,b.c,b.x,b.y,b.z,b.r]).join('|');keep.add(b.id);let m=meshes.get(b.id);
+  for(const b of S.bricks){if(!ready(b.p)){keep.add(b.id);waitPart(b.p);continue}const key=(b.f?[b.p,b.c,'f',b.px,b.py,b.pz,...b.q]:[b.p,b.c,b.x,b.y,b.z,b.r]).join('|');keep.add(b.id);let m=meshes.get(b.id);
     if(m&&m.userData.key!==key){scene.remove(m);m=null}
     if(!m){const gi=info(b.p);m=new THREE.Mesh(gi.body||gi.geo,[mat(b.c),darkMat,paneMat]);if(gi.rod){const r=new THREE.Mesh(gi.rod,m.material);r.name='rod';r.castShadow=true;r.add(new THREE.LineSegments(rodEdges(b.p),outlineMat));m.add(r)}m.castShadow=!(COLORS[b.c]||{}).glass;{const e=new THREE.LineSegments(edgesFor(b.p),outlineMat);e.name='edge';m.add(e)}m.receiveShadow=true;m.userData={bid:b.id,key};posMesh(m,b);scene.add(m);meshes.set(b.id,m)}}
   for(const [id,m] of meshes)if(!keep.has(id)){scene.remove(m);meshes.delete(id)}}
@@ -1635,7 +1641,7 @@ if(DBG){const box=document.createElement('div');box.id='dbg';box.dir='ltr';docum
   let lastDraw=0;setInterval(()=>{const now=performance.now(),lt=DBG.lt,lt10=lt.filter(e=>e[0]>now-10000),d=(DBG.t.draw||{n:0}).n,fps=d-lastDraw;lastDraw=d;
     const top=Object.entries(DBG.t).sort((a,b)=>b[1].s-a[1].s).slice(0,9).map(([k,v])=>`${k}: ${(v.s/1000).toFixed(1)}s total, ${v.n}x, max ${Math.round(v.m)}ms`);
     const cv=renderer.domElement,info=renderer.info.render;
-    box.textContent=[`SPEED CHECK  v${'3.4'}  up ${Math.round((now-DBG.t0)/1000)}s`,`draws/sec: ${fps}  triangles: ${info.triangles.toLocaleString()}  parts: ${S.bricks.length}`,
+    box.textContent=[`SPEED CHECK  v${'3.5'}  up ${Math.round((now-DBG.t0)/1000)}s`,`draws/sec: ${fps}  triangles: ${info.triangles.toLocaleString()}  parts: ${S.bricks.length}`,
       `canvas ${cv.width}x${cv.height}  dpr ${devicePixelRatio}  plate ${JSON.stringify(S.plate)}`,`gpu: ${gl||'?'}`,
       `freezes last 10s: ${lt10.length}, longest ${Math.round(Math.max(0,...lt10.map(e=>e[1])))}ms | all: ${lt.length}, longest ${Math.round(Math.max(0,...lt.map(e=>e[1])))}ms`,
       ...top,DBG.err?'errors: '+DBG.err.join(' | '):''].join('\n')},1000)}
