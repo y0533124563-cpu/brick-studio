@@ -346,6 +346,7 @@ body{background:linear-gradient(180deg,var(--bg) 0%,var(--bg-2) 100%)}
 @media (max-width:480px){.mv-help{display:none}.mv-t{font-size:12.5px}.mvpad{grid-template-columns:repeat(3,32px)}.mvpad .sb{height:30px}.mv-acts .sb,.mv-tilt .sb,.deg{height:30px}.movebar{gap:6px;padding:6px 8px}.deg input{width:40px}}.mv-acts{flex-direction:row;flex-wrap:wrap;flex:1;min-width:0}.mv-acts .sb{flex:1 1 auto}
 #app:has(#movebar:not([hidden])) .hint{display:none}
 #app:has(#movebar:not([hidden])) .cam,#app:has(#movebar:not([hidden])) .zoom{display:none}
+#dbg{position:fixed;left:6px;bottom:6px;z-index:99;max-width:calc(100vw - 12px);background:rgba(0,0,0,.82);color:#7CFC9A;font:11px/1.35 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;padding:8px 10px;border-radius:10px;pointer-events:none}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 .home-body,.bar,#sheet{animation:fadeIn .4s ease both}
 @media (prefers-reduced-motion: reduce){*{transition:none!important}}
@@ -487,6 +488,11 @@ body{background:linear-gradient(180deg,var(--bg) 0%,var(--bg-2) 100%)}
 <script src="lib/BufferGeometryUtils.js"></script>
 <script>
 var dirtyUntil=0,shadowDirty=true;
+/* speed check mode: open the site with ?debug at the end of the address */
+var DBG=/[?&]debug/.test(location.search)?{t:{},lt:[],t0:performance.now(),add(k,ms){const e=this.t[k]||(this.t[k]={n:0,s:0,m:0});e.n++;e.s+=ms;if(ms>e.m)e.m=ms}}:null;
+function dbgT(k,f){if(!DBG)return f();const t=performance.now();try{return f()}finally{DBG.add(k,performance.now()-t)}}
+if(DBG){try{new PerformanceObserver(l=>{for(const e of l.getEntries())DBG.lt.push([e.startTime,e.duration])}).observe({type:'longtask',buffered:true})}catch(e){}
+  window.addEventListener('error',e=>{DBG.err=(DBG.err||[]).concat(String(e.message)).slice(-3)});window.addEventListener('unhandledrejection',e=>{DBG.err=(DBG.err||[]).concat(String(e.reason&&e.reason.message||e.reason)).slice(-3)})}
 (function(){
 const PH=0.4, SR=0.3, SHt=0.17, DARK='#2B3038';let X0=-16,X1=16,Z0=-16,Z1=16;
 const $=s=>document.querySelector(s);
@@ -657,19 +663,21 @@ document.addEventListener('pointermove',e=>{if(e.buttons||e.pointerType==='touch
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)kickScene();else if(typeof needsPic==='function'&&needsPic())saveNow(true)});
 (function loop(t){const now=performance.now();if(controls.update())kick(200);followPlate();
   if(SIM){stepSim(Math.min(.05,((t||lastT)-lastT)/1000));followStep();shadowDirty=true;kick(100)}lastT=t||now;
-  if(now<dirtyUntil&&!document.hidden){if(shadowDirty){renderer.shadowMap.needsUpdate=true;shadowDirty=false}renderer.render(scene,camera)}
+  if(now<dirtyUntil&&!document.hidden){if(shadowDirty){renderer.shadowMap.needsUpdate=true;shadowDirty=false}dbgT('draw',()=>renderer.render(scene,camera))}
   requestAnimationFrame(loop)})();
 
 /* ---------- state ---------- */
 const S={bricks:[],mode:'build',part:'ld:3001',color:0,rot:0,undo:[],redo:[],nextId:1,cat:'all',q:''};
 const meshes=new Map();let HM=new Map();setPlate(32);
 const fp=(id,r)=>{const g=info(id);return (r%2)?{w:g.d,d:g.w}:{w:g.w,d:g.d}};
-function rebuildHM(){HM=new Map();for(const b of S.bricks){if(!PMAP[b.p]&&/^ld:/.test(b.p))ldReg(b.p);if(b.f||!ready(b.p))continue;const f=fp(b.p,b.r),t=b.y+info(b.p).h;for(let i=0;i<f.w;i++)for(let j=0;j<f.d;j++){const k=(b.x+i)+','+(b.z+j);if((HM.get(k)||0)<t)HM.set(k,t)}}}
+function rebuildHM(...a){return dbgT('rebuildHM',()=>_rebuildHM(...a))}
+function _rebuildHM(){HM=new Map();for(const b of S.bricks){if(!PMAP[b.p]&&/^ld:/.test(b.p))ldReg(b.p);if(b.f||!ready(b.p))continue;const f=fp(b.p,b.r),t=b.y+info(b.p).h;for(let i=0;i<f.w;i++)for(let j=0;j<f.d;j++){const k=(b.x+i)+','+(b.z+j);if((HM.get(k)||0)<t)HM.set(k,t)}}}
 function placement(cx,cz,id,r){const f=fp(id,r);let x=cx-Math.floor((f.w-1)/2),z=cz-Math.floor((f.d-1)/2);
   x=Math.max(X0,Math.min(X1-f.w,x));z=Math.max(Z0,Math.min(Z1-f.d,z));let y=0;
   for(let i=0;i<f.w;i++)for(let j=0;j<f.d;j++)y=Math.max(y,HM.get((x+i)+','+(z+j))||0);return {x,y,z}}
 function posMesh(m,b){if(b.f){m.position.set(b.px,b.py,b.pz);m.quaternion.set(b.q[0],b.q[1],b.q[2],b.q[3]);return}const f=fp(b.p,b.r);m.position.set(b.x+f.w/2,b.y*PH,b.z+f.d/2);m.rotation.y=b.r*Math.PI/2}
-function sync(){kickScene();const keep=new Set();
+function sync(...a){return dbgT('sync',()=>_sync(...a))}
+function _sync(){kickScene();const keep=new Set();
   for(const b of S.bricks){if(!ready(b.p)){keep.add(b.id);ldEnsure(b.p).then(refresh,()=>{});continue}const key=(b.f?[b.p,b.c,'f',b.px,b.py,b.pz,...b.q]:[b.p,b.c,b.x,b.y,b.z,b.r]).join('|');keep.add(b.id);let m=meshes.get(b.id);
     if(m&&m.userData.key!==key){scene.remove(m);m=null}
     if(!m){const gi=info(b.p);m=new THREE.Mesh(gi.body||gi.geo,[mat(b.c),darkMat,paneMat]);if(gi.rod){const r=new THREE.Mesh(gi.rod,m.material);r.name='rod';r.castShadow=true;r.add(new THREE.LineSegments(rodEdges(b.p),outlineMat));m.add(r)}m.castShadow=!(COLORS[b.c]||{}).glass;{const e=new THREE.LineSegments(edgesFor(b.p),outlineMat);e.name='edge';m.add(e)}m.receiveShadow=true;m.userData={bid:b.id,key};posMesh(m,b);scene.add(m);meshes.set(b.id,m)}}
@@ -678,7 +686,8 @@ let MOVE=null,MULTI=false; // MOVE: a part picked up in select mode, waiting to 
 const snap=()=>{if(!MOVE||MOVE.copy)return JSON.stringify(S.bricks);const L=S.bricks.slice();L.splice(Math.min(MOVE.idx,L.length),0,MOVE.b);return JSON.stringify(L)};
 function restore(json){S.bricks=JSON.parse(json);S.nextId=S.bricks.reduce((a,b)=>Math.max(a,b.id),0)+1;refresh()}
 function commit(prev){S.undo.push(prev);if(S.undo.length>300)S.undo.shift();S.redo=[];refresh()}
-function refresh(){if(SIM&&!SIMUI.on)stopSim();if(INS)closeInstr();rebuildHM();sync();scheduleSave();drawSel();$('#count').textContent=S.bricks.length+' חלקים';$('#undo').disabled=!S.undo.length;$('#redo').disabled=!S.redo.length;
+function refresh(...a){return dbgT('refresh',()=>_refresh(...a))}
+function _refresh(){if(SIM&&!SIMUI.on)stopSim();if(INS)closeInstr();rebuildHM();sync();scheduleSave();drawSel();$('#count').textContent=S.bricks.length+' חלקים';$('#undo').disabled=!S.undo.length;$('#redo').disabled=!S.redo.length;
   try{localStorage.setItem('bs:current',snap())}catch(e){} if(sel){if(sel.kind!=='grid'&&sel.bid&&!brickById(sel.bid))hideSel();else showSel(sel)}}
 const brickById=id=>S.bricks.find(q=>q.id===id);
 
@@ -709,7 +718,8 @@ let ghostLines=null,ghostLinesFor=null;
 const isPinPart=id=>{if(/^(pin|con|ax)\d/.test(id))return true;const e=/^ld:/.test(id)&&LDXM&&LDXM.get(id.slice(3));return !!e&&/Technic (Axle )?Pin\b|Technic Axle\b|Technic Bush/i.test(e.d)};
 function needsCheck(s){if(!s||isPinPart(S.part))return false;if(s.kind==='insert'||s.kind==='mount')return false;
   if(s.kind==='snap'){const h=snapsFor(S.part)[s.C[s.ci]],t=s.t;return h.caps==='one'&&t.caps==='one'&&shp(h.secs[0][0])!=='A'&&shp(t.secs[0][0])!=='A'&&Math.abs(h.secs[0][1]-6)<.4}return true}
-function collides(pos,q){const {mn,mx}=qBox(S.part,q),b=new THREE.Box3(mn.add(pos),mx.add(pos));b.min.x+=.12;b.min.z+=.12;b.max.x-=.12;b.max.z-=.12;b.min.y+=.06;b.max.y-=.26;
+function collides(...a){return dbgT('collides',()=>_collides(...a))}
+function _collides(pos,q){const {mn,mx}=qBox(S.part,q),b=new THREE.Box3(mn.add(pos),mx.add(pos));b.min.x+=.12;b.min.z+=.12;b.max.x-=.12;b.max.z-=.12;b.min.y+=.06;b.max.y-=.26;
   if(b.max.y<b.min.y)b.max.y=b.min.y+.02;if(b.min.y<-.03)return true; // into the base plate
   for(const bb of S.bricks){const m=meshes.get(bb.id);if(!m||isPinPart(bb.p))continue;const g=info(bb.p);const w=(g.body||g.geo).boundingBox.clone().applyMatrix4(m.matrixWorld);
     w.min.x+=.05;w.min.z+=.05;w.max.x-=.05;w.max.z-=.05;w.max.y-=.2;if(b.intersectsBox(w))return true}return false}
@@ -718,7 +728,8 @@ function showGhost(id,pos,q){const g=info(id).geo;ghost.geometry=g;ghost.positio
   const bad=needsCheck(sel)&&collides(pos,q);if(sel)sel.bad=bad;$('#okBtn').disabled=bad;
   if(ghostLinesFor!==id){if(ghostLines){ghost.remove(ghostLines);ghostLines.geometry.dispose()}ghostLines=new THREE.LineSegments(new THREE.EdgesGeometry(g,30),ghostEdge);ghostLinesFor=id;ghost.add(ghostLines)}
   ghostMat.color.set(bad?'#E0453A':COLORS[S.color].glass?'#7fd3df':COLORS[S.color].h);ghost.visible=true;if(bad)toast('החלק נכנס לתוך חלק אחר. בחר מקום אחר או סובב אותו')}
-function showSel(s){sel=s;clearHL();$('#tiltA').hidden=$('#tiltB').hidden=true;ghost.visible=false;$('#rotBtn').hidden=true;const rl=$('#rotLbl'),nh=$('#nextHole');$('#slideBtn').hidden=true;$('#flipBtn').hidden=true;$('#nextLbl').textContent=s.kind==='snap'?'חיבור הבא':'חור הבא';
+function showSel(...a){return dbgT('showSel',()=>_showSel(...a))}
+function _showSel(s){sel=s;clearHL();$('#tiltA').hidden=$('#tiltB').hidden=true;ghost.visible=false;$('#rotBtn').hidden=true;const rl=$('#rotLbl'),nh=$('#nextHole');$('#slideBtn').hidden=true;$('#flipBtn').hidden=true;$('#nextLbl').textContent=s.kind==='snap'?'חיבור הבא':'חור הבא';
   if(s.kind==='nudge'){showGhost(S.part,s.pos,s.q);rl.textContent='סובב';nh.hidden=true;$('#confirm').hidden=false;return}
   if(s.kind==='snap'){const x=snapXf(s);showGhost(S.part,x.pos,x.q);
     for(const t of engaged(s,x)){const r=Math.max(...t.secs.map(q=>q[1]))*.05,L=Math.max(t.L,.2),mid=t.S.clone().addScaledVector(t.D,L/2);
@@ -781,7 +792,8 @@ function copyHeld(){if(!MOVE||MOVE.copy)return;const m=MOVE,h=heldAt();S.bricks.
   $('#moveVerb').textContent='משכפל את';h.pos.add(new THREE.Vector3(0,info(m.b.p).h*PH,0));showSel({kind:'nudge',...h});toast('העותק מוצג מעל. הזז אותו ולחץ אישור')}
 function endMove(){if(!MOVE)return;const k=MOVE.keep;MOVE=null;S.part=k.part;S.color=k.color;S.rot=k.rot;S.tq=k.tq||new THREE.Quaternion();$('#movebar').hidden=true;updateCur()}
 function cancelMove(){if(!MOVE)return;const m=MOVE;hideSel();if(!m.copy)S.bricks.splice(Math.min(m.idx,S.bricks.length),0,m.b);endMove();rebuildHM();sync();drawSel();toast('החלק נשאר במקומו')}
-function tapBuild(h){const own=info(S.part).conns,tb=h.bid&&brickById(h.bid);
+function tapBuild(...a){return dbgT('tapBuild',()=>_tapBuild(...a))}
+function _tapBuild(h){const own=info(S.part).conns,tb=h.bid&&brickById(h.bid);
   if(/^ld:/.test(S.part)||(tb&&/^ld:/.test(tb.p))){if(snapTap(h))return;if(/^ld:/.test(S.part)){showSel({kind:'grid',cell:h.cell});toast('לא נמצא כאן חיבור מתאים, החלק יונח על המשבצות');return}}
   if(h.bid){const b=brickById(h.bid),tc=info(b.p).conns;
     if(tc.length&&own.length){const lp=h.mesh.worldToLocal(h.point.clone()),mi=own.findIndex(isMale);
@@ -978,7 +990,8 @@ let TR=null;
 function thumbR(){if(TR===null){try{const tr=new THREE.WebGLRenderer({antialias:true,alpha:true,preserveDrawingBuffer:true});tr.setSize(128,128);
   const ts=new THREE.Scene();ts.add(new THREE.HemisphereLight(0xffffff,0x778899,.9));const dl=new THREE.DirectionalLight(0xffffff,.8);dl.position.set(5,9,7);ts.add(dl);
   TR={tr,ts,tc:new THREE.PerspectiveCamera(30,1,.1,500),tm:new THREE.MeshStandardMaterial({color:'#C9CFD7',roughness:.4,side:THREE.DoubleSide})}}catch(e){TR=false}}return TR}
-function setThumb(id){const R=thumbR();if(!R||!GEO[id]&&/^ld:/.test(id))return;const g=info(id).geo,m=new THREE.Mesh(g,[R.tm,darkMat,paneMat]);R.ts.add(m);
+function setThumb(...a){return dbgT('setThumb',()=>_setThumb(...a))}
+function _setThumb(id){const R=thumbR();if(!R||!GEO[id]&&/^ld:/.test(id))return;const g=info(id).geo,m=new THREE.Mesh(g,[R.tm,darkMat,paneMat]);R.ts.add(m);
   const bb=g.boundingBox,c=new THREE.Vector3(),sz=new THREE.Vector3();bb.getCenter(c);bb.getSize(sz);const rad=Math.max(.5,sz.length()/2);
   R.tc.position.copy(c).add(new THREE.Vector3(1,.85,1.25).normalize().multiplyScalar(rad/Math.sin(THREE.MathUtils.degToRad(15))*1.02));R.tc.lookAt(c);
   R.tr.render(R.ts,R.tc);THUMBS[id]=R.tr.domElement.toDataURL();R.ts.remove(m);document.querySelectorAll(`img[data-pid="${id}"]`).forEach(im=>im.src=THUMBS[id])}
@@ -997,14 +1010,15 @@ const cleanName=t=>String(t).replace(/\bLEGO\b\s*/gi,'').replace(/\s{2,}/g,' ').
 const ldLabel=e=>cleanName(e.d)+' · '+e.n;
 function ldReg(id){const n=id.slice(3),e=LDX&&LDX.find(x=>x.n===n);PMAP[id]={id,cat:'ld',name:e?ldLabel(e):'חלק '+n,ph:!e};if(!e)ldIndex().then(()=>updateCur(),()=>{})}
 function ldIndex(){if(!LDXp)LDXp=fetch(LD_BASE+'index.json').then(r=>{if(!r.ok)throw new Error('no index');return r.json()}).then(arr=>{
-    LDX=arr.map(([n,d,c])=>({n,d,c,k:ldKey(n+' '+d+' '+c)}));LDXM=new Map(LDX.map(e=>[e.n,e]));
+    dbgT('index',()=>{LDX=arr.map(([n,d,c])=>({n,d,c,k:ldKey(n+' '+d+' '+c)}))});LDXM=new Map(LDX.map(e=>[e.n,e]));
     for(const id in PMAP)if(PMAP[id].ph){const e=LDX.find(x=>x.n===id.slice(3));if(e)PMAP[id]={id,cat:'ld',name:ldLabel(e)}}return LDX})
   .catch(e=>{LDXp=null;throw e});return LDXp}
 /* numbers from building-instruction booklets (element IDs) -> part + colour */
 let ELp=null;function elIndex(){if(!ELp)ELp=fetch(LD_BASE+'elements.json').then(r=>r.ok?r.json():{}).catch(()=>{ELp=null;return {}});return ELp}
 const isElNum=q=>/^\d{6,8}$/.test(q);
 const QUICK=['brick','plate','tile','slope','technic beam','axle','pin','gear','wheel','tyre','window','door','minifig','arch','panel','plant'];
-function renderLD(){const el=$('#parts'),gen=++ldGen;el.innerHTML='<div class="empty">טוען את רשימת כל החלקים…</div>';
+function renderLD(...a){return dbgT('renderLD',()=>_renderLD(...a))}
+function _renderLD(){const el=$('#parts'),gen=++ldGen;el.innerHTML='<div class="empty">טוען את רשימת כל החלקים…</div>';
   ldIndex().then(async X=>{if(gen!==ldGen)return;const q=ldKey(S.q);let EL=null;if(isElNum(q)){EL=(await elIndex())[q]||null;if(gen!==ldGen)return}el.innerHTML='';
     if(EL&&LDXM.get(EL[0])){const e=LDXM.get(EL[0]),id='ld:'+e.n,ck=EL[1]>=0&&COLORS['L'+EL[1]]?'L'+EL[1]:null;if(!PMAP[id]||PMAP[id].ph)PMAP[id]={id,cat:'ld',name:ldLabel(e)};
       $('#partsCount').textContent='1';const b=document.createElement('button');b.className='part ld elhit';b.setAttribute('aria-pressed',id===S.part);
@@ -1044,7 +1058,7 @@ function ldFlat(name,M,col,pos,depth,rodPos){const lines=ldParsed[name];if(!line
 function ldEnsure(id){if(GEO[id])return Promise.resolve();
   if(!ldBuilt[id])ldBuilt[id]=(async()=>{const num=id.slice(3);await ldGet(num+'.dat');const file=ldNorm(num+'.dat'),pos=[[],[]];
     const split=WHOLE_RE.test(ldDesc[file]||''),rodPos=split?[[],[]]:null;
-    ldFlat(file,new THREE.Matrix4().makeScale(.05,-.05,-.05),'16',pos,0,rodPos); // 20 LDraw units = 1 stud; LDraw's Y points down
+    dbgT('part-build',()=>ldFlat(file,new THREE.Matrix4().makeScale(.05,-.05,-.05),'16',pos,0,rodPos)); // 20 LDraw units = 1 stud; LDraw's Y points down
     let rodOnly=null;if(rodPos&&(rodPos[0].length||rodPos[1].length)&&(pos[0].length||pos[1].length)){rodOnly=rodPos;}else if(rodPos){pos[0].push(...rodPos[0]);pos[1].push(...rodPos[1])}
     const bodyArr=rodOnly?[pos[0].slice(),pos[1].slice()]:null;if(rodOnly){pos[0].push(...rodOnly[0]);pos[1].push(...rodOnly[1])}
     if(!pos[0].length&&!pos[1].length){delete ldBuilt[id];throw new Error('empty part')}
@@ -1101,7 +1115,8 @@ function snapXf(s){const h=snapsFor(S.part)[s.C[s.ci]],t=s.t,V=THREE.Vector3;
 function slideRange(s){const h=snapsFor(S.part)[s.C[s.ci]];if(!(h.slide&&s.t.slide))return [0,0];let lo=-h.L+.5,hi=s.t.L-.5;if(lo>hi)lo=hi=0;return [lo,hi]}
 function defOff(s,hit){const [lo,hi]=slideRange(s);if(lo===hi)return lo;const x=snapXf({...s,off:0}),h=x.h;
   const proj=hit?hit.clone().sub(x.anchor).dot(x.Dt):(s.t.L-h.L)/2;return Math.max(lo,Math.min(hi,Math.round((proj-h.L/2)*2)/2))}
-function snapTap(h){const H=snapsFor(S.part);if(!H.length)return false;let T;
+function snapTap(...a){return dbgT('snapTap',()=>_snapTap(...a))}
+function _snapTap(h){const H=snapsFor(S.part);if(!H.length)return false;let T;
   if(h.bid){const b=brickById(h.bid);if(!ready(b.p))return false;T=wSnaps(b)}else T=[baseSnap(h.cell.x,h.cell.z)];
   const cand=T.map(t=>({t,d:segDist(h.point,t)})).filter(o=>o.d<.75).sort((a,b)=>a.d-b.d);
   const g=info(S.part),ctr=new THREE.Vector3(0,g.h*PH/2,0);
@@ -1114,7 +1129,8 @@ function snapTap(h){const H=snapsFor(S.part);if(!H.length)return false;let T;
       if(!first)first={sl,o,hs:H[C[ci]]};if(!collideSel(sl)){choose(sl,o,H[C[ci]]);return true}}}
   if(first){choose(first.sl,first.o,first.hs);return true}
   return false}
-function engaged(s,x){ // which target connections line up once the part sits there (all get marked)
+function engaged(...a){return dbgT('engaged',()=>_engaged(...a))}
+function _engaged(s,x){ // which target connections line up once the part sits there (all get marked)
   const out=[];const W=new THREE.Matrix4().compose(x.pos,x.q,new THREE.Vector3(1,1,1));
   const held=snapsFor(S.part).map(h=>({...h,S:h.S.clone().applyMatrix4(W),D:h.D.clone().applyQuaternion(x.q)}));
   if(s.t.base){for(const h of held)if(h.g==='F'&&h.D.y>.95&&Math.abs(h.S.y)<.06){const cx=Math.floor(h.S.x),cz=Math.floor(h.S.z);
@@ -1385,7 +1401,8 @@ function tiltSel(axis){const L=selBricks();if(!L.length)return;const prev=snap()
 /* ---------- select, move, rotate, duplicate ---------- */
 S.sel=new Set();const r4=v=>Math.round(v*1e4)/1e4;
 const selEdge=new THREE.LineBasicMaterial({color:0xE11D48,transparent:true,opacity:1,depthTest:false});
-function drawSel(){for(const m of meshes.values()){const o=m.getObjectByName('selhl');if(o)m.remove(o)}
+function drawSel(...a){return dbgT('drawSel',()=>_drawSel(...a))}
+function _drawSel(){for(const m of meshes.values()){const o=m.getObjectByName('selhl');if(o)m.remove(o)}
   for(const id of [...S.sel]){const m=meshes.get(id),b=brickById(id);if(!m||!b){S.sel.delete(id);continue}const l=new THREE.LineSegments(edgesFor(b.p),selEdge);l.name='selhl';l.renderOrder=30;m.add(l)}
   $('#selbar').hidden=!(S.mode==='select'&&S.sel.size);$('#selCount').textContent=S.sel.size===1?'חלק אחד נבחר':S.sel.size+' חלקים נבחרו'}
 const selBricks=()=>S.bricks.filter(b=>S.sel.has(b.id));
@@ -1527,7 +1544,8 @@ async function listProjects(){if(USER){const q=await cloud().orderBy('updated','
 async function putProject(id,rec){if(USER)await cloud().doc(id).set(rec);else{const o=local.read();o[id]={id,...rec};if(!local.write(o))throw new Error('storage full')}}
 async function patchProject(id,fields){if(USER)await cloud().doc(id).update(fields);else{const o=local.read();if(o[id]){Object.assign(o[id],fields);local.write(o)}}}
 async function removeProject(id){if(USER)await cloud().doc(id).delete();else{const o=local.read();delete o[id];local.write(o)}}
-function snapThumb(){try{const gv=ghost.visible,hv=hl.visible;ghost.visible=false;hl.visible=false;renderer.render(scene,camera);
+function snapThumb(...a){return dbgT('snapThumb',()=>_snapThumb(...a))}
+function _snapThumb(){try{const gv=ghost.visible,hv=hl.visible;ghost.visible=false;hl.visible=false;renderer.render(scene,camera);
   const src=renderer.domElement,c=document.createElement('canvas');c.width=240;c.height=180;const sw=src.width,sh=src.height;let w=sw,h=sw*.75;if(h>sh){h=sh;w=sh/.75}
   const cx=c.getContext('2d'),cs=getComputedStyle(document.documentElement),gr=cx.createRadialGradient(120,90,10,120,90,150);gr.addColorStop(0,cs.getPropertyValue('--scene-hi').trim()||'#fff');gr.addColorStop(1,cs.getPropertyValue('--scene').trim()||'#EDE9E3');
   cx.fillStyle=gr;cx.fillRect(0,0,240,180);cx.drawImage(src,(sw-w)/2,(sh-h)/2,w,h,0,0,240,180);ghost.visible=gv;hl.visible=hv;return c.toDataURL('image/jpeg',.72)}catch(e){return ''}}
@@ -1612,6 +1630,15 @@ if(!hadAny&&!Object.keys(local.read()).length&&!FB){ // first visit: a sample pr
   openProject({id:newId(),name:'בית לדוגמה',data:'[]'});$('#home').hidden=false;ldSample().then(()=>saveNow()).then(()=>renderHome())}
 renderHome();initFB();loadLDColors();
 $('#q').placeholder='חיפוש: שם, מספר חלק, או המספר מהחוברת (למשל 6099714)';renderParts();updateCur();
+if(DBG){const box=document.createElement('div');box.id='dbg';box.dir='ltr';document.body.appendChild(box);let gl=null;
+  try{const c=renderer.getContext(),x=c.getExtension('WEBGL_debug_renderer_info');gl=x?c.getParameter(x.UNMASKED_RENDERER_WEBGL):c.getParameter(c.RENDERER)}catch(e){}
+  let lastDraw=0;setInterval(()=>{const now=performance.now(),lt=DBG.lt,lt10=lt.filter(e=>e[0]>now-10000),d=(DBG.t.draw||{n:0}).n,fps=d-lastDraw;lastDraw=d;
+    const top=Object.entries(DBG.t).sort((a,b)=>b[1].s-a[1].s).slice(0,9).map(([k,v])=>`${k}: ${(v.s/1000).toFixed(1)}s total, ${v.n}x, max ${Math.round(v.m)}ms`);
+    const cv=renderer.domElement,info=renderer.info.render;
+    box.textContent=[`SPEED CHECK  v${'3.4'}  up ${Math.round((now-DBG.t0)/1000)}s`,`draws/sec: ${fps}  triangles: ${info.triangles.toLocaleString()}  parts: ${S.bricks.length}`,
+      `canvas ${cv.width}x${cv.height}  dpr ${devicePixelRatio}  plate ${JSON.stringify(S.plate)}`,`gpu: ${gl||'?'}`,
+      `freezes last 10s: ${lt10.length}, longest ${Math.round(Math.max(0,...lt10.map(e=>e[1])))}ms | all: ${lt.length}, longest ${Math.round(Math.max(0,...lt.map(e=>e[1])))}ms`,
+      ...top,DBG.err?'errors: '+DBG.err.join(' | '):''].join('\n')},1000)}
 })();
 </script>
 
