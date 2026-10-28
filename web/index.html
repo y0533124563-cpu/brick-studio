@@ -339,6 +339,7 @@ body{background:linear-gradient(180deg,var(--bg) 0%,var(--bg-2) 100%)}
 .deg input{width:52px;border:0;background:transparent;font:inherit;font-weight:700;font-size:16px;text-align:center;color:var(--ink);direction:ltr;outline:none}
 .deg:focus-within{border-color:var(--accent)}.deg span{font-weight:700;color:var(--muted)}
 .movebar.adding #moveCopy,.movebar.adding #moveMulti,.movebar.adding #moveCancel{display:none}
+#moveCancel{display:none!important} /* the ביטול button at the top already does this */
 .mv-help{margin:0;font-size:11.5px;color:var(--muted);text-align:center}
 .mv-tilt{flex-wrap:nowrap}.mv-tilt .sb{padding:0 7px;font-size:12.5px;min-width:0}.mv-tilt .sb svg{width:17px;height:17px}
 .mv-acts .sb{font-size:12.5px;padding:0 8px}
@@ -350,6 +351,8 @@ body{background:linear-gradient(180deg,var(--bg) 0%,var(--bg-2) 100%)}
 #dbg{position:fixed;left:6px;bottom:6px;z-index:99;max-width:calc(100vw - 12px);background:rgba(0,0,0,.82);color:#7CFC9A;font:11px/1.35 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;padding:8px 10px;border-radius:10px;pointer-events:none}
 /* bottom dock: replaces the parts panel while a bar is open */
 #dock{z-index:5;min-width:0}
+/* while the bottom bar is open, its rotate/tilt buttons are the only ones (no copies at the top) */
+#app:has(#movebar:not([hidden])) #rotSel,#app:has(#movebar:not([hidden])) #tiltA,#app:has(#movebar:not([hidden])) #tiltB{display:none!important}
 #dock .movebar,#dock .selbar{position:static;transform:none;left:auto;right:auto;top:auto;bottom:auto;width:auto;max-width:none;margin:0;
   border-radius:24px 24px 0 0;border:0;border-top:1px solid var(--line);box-shadow:0 -8px 32px rgba(0,0,0,.08);background:var(--surface);
   padding:10px max(12px,env(safe-area-inset-left,0px)) calc(10px + env(safe-area-inset-bottom,0px));animation:fadeIn .2s ease both}
@@ -806,7 +809,9 @@ function heldAt(){if(sel&&ghost.visible||!MOVE)return {pos:ghost.position.clone(
 function nudgeHeld(k){if(!adjusting())return;const {fw,right}=camAxes(),v={f:fw,b:fw.clone().negate(),r:right,l:right.clone().negate(),u:new THREE.Vector3(0,PH,0),d:new THREE.Vector3(0,-PH,0)}[k];
   const h=heldAt();h.pos.add(v);if(h.pos.y<-1e-3){toast('אי אפשר לרדת מתחת למשטח');return}showSel({kind:'nudge',...h});if(sel.bad)toast('כאן הוא נכנס בתוך חלק אחר. המשך להזיז')}
 /* tilt the held part by any number of degrees (negative = the other way), around its own middle */
-function tiltHeld(axis){if(!adjusting())return;let deg=parseFloat(String($('#mvDeg').value).replace(',','.'));if(!isFinite(deg)||!deg){toast('כתוב מספר מעלות, למשל 15 או -15');return}
+function tiltHeld(axis){if(!adjusting())return;
+  // a part clicked onto a real connection turns around that connection (so it stays connected)
+  if(axis==='turn'&&sel&&['snap','insert','mount'].includes(sel.kind)){$('#rotSel').click();return}let deg=parseFloat(String($('#mvDeg').value).replace(',','.'));if(!isFinite(deg)||!deg){toast('כתוב מספר מעלות, למשל 15 או -15');return}
   const {fw,right}=camAxes(),A=axis==='side'?fw:axis==='fwd'?right:new THREE.Vector3(0,1,0),R=new THREE.Quaternion().setFromAxisAngle(A,deg*Math.PI/180),h=heldAt();
   const c=info(S.part).geo.boundingBox.getCenter(new THREE.Vector3()).applyQuaternion(h.q).add(h.pos);
   h.pos.sub(c).applyQuaternion(R).add(c);h.q.premultiply(R);
@@ -1662,7 +1667,7 @@ if(DBG){const box=document.createElement('div');box.id='dbg';box.dir='ltr';docum
   let lastDraw=0;setInterval(()=>{const now=performance.now(),lt=DBG.lt,lt10=lt.filter(e=>e[0]>now-10000),d=(DBG.t.draw||{n:0}).n,fps=d-lastDraw;lastDraw=d;
     const top=Object.entries(DBG.t).sort((a,b)=>b[1].s-a[1].s).slice(0,9).map(([k,v])=>`${k}: ${(v.s/1000).toFixed(1)}s total, ${v.n}x, max ${Math.round(v.m)}ms`);
     const cv=renderer.domElement,info=renderer.info.render;
-    box.textContent=[`SPEED CHECK  v${'3.8'}  up ${Math.round((now-DBG.t0)/1000)}s`,`draws/sec: ${fps}  triangles: ${info.triangles.toLocaleString()}  parts: ${S.bricks.length}`,
+    box.textContent=[`SPEED CHECK  v${'3.9'}  up ${Math.round((now-DBG.t0)/1000)}s`,`draws/sec: ${fps}  triangles: ${info.triangles.toLocaleString()}  parts: ${S.bricks.length}`,
       `canvas ${cv.width}x${cv.height}  dpr ${devicePixelRatio}  plate ${JSON.stringify(S.plate)}`,`gpu: ${gl||'?'}`,
       `freezes last 10s: ${lt10.length}, longest ${Math.round(Math.max(0,...lt10.map(e=>e[1])))}ms | all: ${lt.length}, longest ${Math.round(Math.max(0,...lt.map(e=>e[1])))}ms`,
       ...top,DBG.err?'errors: '+DBG.err.join(' | '):''].join('\n')},1000)}
