@@ -338,6 +338,7 @@ body{background:linear-gradient(180deg,var(--bg) 0%,var(--bg-2) 100%)}
 .deg{display:inline-flex;align-items:center;gap:2px;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:0 8px;height:34px}
 .deg input{width:52px;border:0;background:transparent;font:inherit;font-weight:700;font-size:16px;text-align:center;color:var(--ink);direction:ltr;outline:none}
 .deg:focus-within{border-color:var(--accent)}.deg span{font-weight:700;color:var(--muted)}
+.movebar.adding #moveCopy,.movebar.adding #moveMulti,.movebar.adding #moveCancel{display:none}
 .mv-help{margin:0;font-size:11.5px;color:var(--muted);text-align:center}
 .mv-tilt{flex-wrap:nowrap}.mv-tilt .sb{padding:0 7px;font-size:12.5px;min-width:0}.mv-tilt .sb svg{width:17px;height:17px}
 .mv-acts .sb{font-size:12.5px;padding:0 8px}
@@ -738,7 +739,11 @@ function showGhost(id,pos,q){const g=info(id).geo;ghost.geometry=g;ghost.positio
   const bad=needsCheck(sel)&&collides(pos,q);if(sel)sel.bad=bad;$('#okBtn').disabled=bad;
   if(ghostLinesFor!==id){if(ghostLines){ghost.remove(ghostLines);ghostLines.geometry.dispose()}ghostLines=new THREE.LineSegments(new THREE.EdgesGeometry(g,30),ghostEdge);ghostLinesFor=id;ghost.add(ghostLines)}
   ghostMat.color.set(bad?'#E0453A':COLORS[S.color].glass?'#7fd3df':COLORS[S.color].h);ghost.visible=true;if(bad)toast('החלק נכנס לתוך חלק אחר. בחר מקום אחר או סובב אותו')}
-function showSel(...a){return dbgT('showSel',()=>_showSel(...a))}
+function showSel(...a){const r=dbgT('showSel',()=>_showSel(...a));updateBar();return r}
+/* the arrows / tilt / rotate bar: shown while moving a part, and also while placing a new part */
+const adjusting=()=>!!MOVE||(S.mode==='build'&&!!sel);
+function updateBar(){const bar=$('#movebar');if(!bar)return;const add=!MOVE&&S.mode==='build'&&!!sel;bar.classList.toggle('adding',add);
+  if(add){$('#moveVerb').textContent='מוסיף את';$('#moveName').textContent=PMAP[S.part]?PMAP[S.part].name:'חלק'}bar.hidden=!(MOVE||add)}
 function _showSel(s){sel=s;clearHL();$('#tiltA').hidden=$('#tiltB').hidden=true;ghost.visible=false;$('#rotBtn').hidden=true;const rl=$('#rotLbl'),nh=$('#nextHole');$('#slideBtn').hidden=true;$('#flipBtn').hidden=true;$('#nextLbl').textContent=s.kind==='snap'?'חיבור הבא':'חור הבא';
   if(s.kind==='nudge'){showGhost(S.part,s.pos,s.q);rl.textContent='סובב';nh.hidden=true;$('#confirm').hidden=false;return}
   if(s.kind==='snap'){const x=snapXf(s);showGhost(S.part,x.pos,x.q);
@@ -763,7 +768,7 @@ function _showSel(s){sel=s;clearHL();$('#tiltA').hidden=$('#tiltB').hidden=true;
     const g=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(cx+dx*.5,y,cz+dz*.5),new THREE.Vector3(cx+px*.35,y,cz+pz*.35),new THREE.Vector3(cx-px*.35,y,cz-pz*.35)]);
     const ar=new THREE.Mesh(g,new THREE.MeshBasicMaterial({color:0xffffff,side:THREE.DoubleSide,depthTest:false,transparent:true,opacity:.95}));ar.renderOrder=22;hl.add(ar)}
   $('#confirm').hidden=false}
-function hideSel(){sel=null;clearHL();ghost.visible=false;$('#rotBtn').hidden=S.mode!=='build';$('#confirm').hidden=true}
+function hideSel(){sel=null;clearHL();ghost.visible=false;$('#rotBtn').hidden=S.mode!=='build';$('#confirm').hidden=true;updateBar()}
 const ray=new THREE.Raycaster(),ndc=new THREE.Vector2();
 function pick(e){const r=renderer.domElement.getBoundingClientRect();ndc.set(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1);ray.setFromCamera(ndc,camera);
   const rods=[];for(const m of meshes.values()){const r=m.getObjectByName('rod');if(r)rods.push(r)}
@@ -788,11 +793,11 @@ function pickUp(id){const idx=S.bricks.findIndex(q=>q.id===id);if(idx<0)return;c
   S.part=b.p;S.color=b.c;S.rot=b.r||0;S.tq=new THREE.Quaternion();rebuildHM();sync();drawSel();updateCur();
   $('#moveName').textContent=PMAP[b.p]?PMAP[b.p].name:'חלק';$('#moveVerb').textContent='מזיז את';$('#movebar').hidden=false;showSel({kind:'nudge',...heldAt()});
   toast('גע במקום החדש או הזז בחיצים, ואז לחץ אישור')}
-function heldAt(){if(sel&&ghost.visible)return {pos:ghost.position.clone(),q:ghost.quaternion.clone()};const o=new THREE.Object3D();posMesh(o,MOVE.b);return {pos:o.position.clone(),q:o.quaternion.clone()}}
-function nudgeHeld(k){if(!MOVE)return;const {fw,right}=camAxes(),v={f:fw,b:fw.clone().negate(),r:right,l:right.clone().negate(),u:new THREE.Vector3(0,PH,0),d:new THREE.Vector3(0,-PH,0)}[k];
+function heldAt(){if(sel&&ghost.visible||!MOVE)return {pos:ghost.position.clone(),q:ghost.quaternion.clone()};const o=new THREE.Object3D();posMesh(o,MOVE.b);return {pos:o.position.clone(),q:o.quaternion.clone()}}
+function nudgeHeld(k){if(!adjusting())return;const {fw,right}=camAxes(),v={f:fw,b:fw.clone().negate(),r:right,l:right.clone().negate(),u:new THREE.Vector3(0,PH,0),d:new THREE.Vector3(0,-PH,0)}[k];
   const h=heldAt();h.pos.add(v);if(h.pos.y<-1e-3){toast('אי אפשר לרדת מתחת למשטח');return}showSel({kind:'nudge',...h});if(sel.bad)toast('כאן הוא נכנס בתוך חלק אחר. המשך להזיז')}
 /* tilt the held part by any number of degrees (negative = the other way), around its own middle */
-function tiltHeld(axis){if(!MOVE)return;let deg=parseFloat(String($('#mvDeg').value).replace(',','.'));if(!isFinite(deg)||!deg){toast('כתוב מספר מעלות, למשל 15 או -15');return}
+function tiltHeld(axis){if(!adjusting())return;let deg=parseFloat(String($('#mvDeg').value).replace(',','.'));if(!isFinite(deg)||!deg){toast('כתוב מספר מעלות, למשל 15 או -15');return}
   const {fw,right}=camAxes(),A=axis==='side'?fw:axis==='fwd'?right:new THREE.Vector3(0,1,0),R=new THREE.Quaternion().setFromAxisAngle(A,deg*Math.PI/180),h=heldAt();
   const c=info(S.part).geo.boundingBox.getCenter(new THREE.Vector3()).applyQuaternion(h.q).add(h.pos);
   h.pos.sub(c).applyQuaternion(R).add(c);h.q.premultiply(R);
@@ -800,7 +805,7 @@ function tiltHeld(axis){if(!MOVE)return;let deg=parseFloat(String($('#mvDeg').va
   showSel({kind:'nudge',...h});toast((axis==='side'?'הוטה לצד':axis==='fwd'?'הוטה קדימה':'סובב')+' '+deg+'°. לחץ אישור כדי לשמור')}
 function copyHeld(){if(!MOVE||MOVE.copy)return;const m=MOVE,h=heldAt();S.bricks.splice(Math.min(m.idx,S.bricks.length),0,m.b);m.copy=true;m.prev=JSON.stringify(S.bricks);rebuildHM();sync();
   $('#moveVerb').textContent='משכפל את';h.pos.add(new THREE.Vector3(0,info(m.b.p).h*PH,0));showSel({kind:'nudge',...h});toast('העותק מוצג מעל. הזז אותו ולחץ אישור')}
-function endMove(){if(!MOVE)return;const k=MOVE.keep;MOVE=null;S.part=k.part;S.color=k.color;S.rot=k.rot;S.tq=k.tq||new THREE.Quaternion();$('#movebar').hidden=true;updateCur()}
+function endMove(){if(!MOVE)return;const k=MOVE.keep;MOVE=null;S.part=k.part;S.color=k.color;S.rot=k.rot;S.tq=k.tq||new THREE.Quaternion();updateBar();updateCur()}
 function cancelMove(){if(!MOVE)return;const m=MOVE;hideSel();if(!m.copy)S.bricks.splice(Math.min(m.idx,S.bricks.length),0,m.b);endMove();rebuildHM();sync();drawSel();toast('החלק נשאר במקומו')}
 function tapBuild(...a){return dbgT('tapBuild',()=>_tapBuild(...a))}
 function _tapBuild(h){const own=info(S.part).conns,tb=h.bid&&brickById(h.bid);
@@ -1443,7 +1448,7 @@ $('#selbar').addEventListener('click',e=>{const btn=e.target.closest('[data-sa]'
   else if(a==='del'){if(!btn.dataset.sure){btn.dataset.sure=1;btn.textContent='בטוח?';setTimeout(()=>{delete btn.dataset.sure;btn.innerHTML='<svg class="i" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>מחק'},2500);return}
     const prev=snap(),n=S.sel.size;S.bricks=S.bricks.filter(b=>!S.sel.has(b.id));S.sel.clear();commit(prev);toast(n+' חלקים נמחקו. אפשר לבטל עם החץ למעלה')}
   else if(a==='all'){S.sel=new Set(S.bricks.map(b=>b.id));drawSel()}else if(a==='none'){S.sel.clear();drawSel()}else if(a==='conn')connectedSel()});
-document.addEventListener('keydown',e=>{if(MOVE&&!e.target.matches('input,textarea')){const k={ArrowUp:'f',ArrowDown:'b',ArrowLeft:'l',ArrowRight:'r',PageUp:'u',PageDown:'d'}[e.key];if(k){e.preventDefault();nudgeHeld(k)}return}});
+document.addEventListener('keydown',e=>{if(adjusting()&&!e.target.matches('input,textarea')){const k={ArrowUp:'f',ArrowDown:'b',ArrowLeft:'l',ArrowRight:'r',PageUp:'u',PageDown:'d'}[e.key];if(k){e.preventDefault();nudgeHeld(k)}return}});
 document.addEventListener('keydown',e=>{if(S.mode!=='select'||!S.sel.size||e.target.matches('input,textarea'))return;const {fw,right}=camAxes(),k=e.key;
   const map={ArrowUp:()=>moveSel(fw,0),ArrowDown:()=>moveSel(fw.clone().negate(),0),ArrowRight:()=>moveSel(right,0),ArrowLeft:()=>moveSel(right.clone().negate(),0),PageUp:()=>moveSel(new THREE.Vector3(),1),PageDown:()=>moveSel(new THREE.Vector3(),-1),Delete:()=>$('[data-sa="del"]').click()};
   if(map[k]){e.preventDefault();map[k]()}});
@@ -1645,7 +1650,7 @@ if(DBG){const box=document.createElement('div');box.id='dbg';box.dir='ltr';docum
   let lastDraw=0;setInterval(()=>{const now=performance.now(),lt=DBG.lt,lt10=lt.filter(e=>e[0]>now-10000),d=(DBG.t.draw||{n:0}).n,fps=d-lastDraw;lastDraw=d;
     const top=Object.entries(DBG.t).sort((a,b)=>b[1].s-a[1].s).slice(0,9).map(([k,v])=>`${k}: ${(v.s/1000).toFixed(1)}s total, ${v.n}x, max ${Math.round(v.m)}ms`);
     const cv=renderer.domElement,info=renderer.info.render;
-    box.textContent=[`SPEED CHECK  v${'3.6'}  up ${Math.round((now-DBG.t0)/1000)}s`,`draws/sec: ${fps}  triangles: ${info.triangles.toLocaleString()}  parts: ${S.bricks.length}`,
+    box.textContent=[`SPEED CHECK  v${'3.7'}  up ${Math.round((now-DBG.t0)/1000)}s`,`draws/sec: ${fps}  triangles: ${info.triangles.toLocaleString()}  parts: ${S.bricks.length}`,
       `canvas ${cv.width}x${cv.height}  dpr ${devicePixelRatio}  plate ${JSON.stringify(S.plate)}`,`gpu: ${gl||'?'}`,
       `freezes last 10s: ${lt10.length}, longest ${Math.round(Math.max(0,...lt10.map(e=>e[1])))}ms | all: ${lt.length}, longest ${Math.round(Math.max(0,...lt.map(e=>e[1])))}ms`,
       ...top,DBG.err?'errors: '+DBG.err.join(' | '):''].join('\n')},1000)}
