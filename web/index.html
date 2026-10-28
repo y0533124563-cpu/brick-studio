@@ -727,8 +727,12 @@ function needsCheck(s){if(!s||isPinPart(S.part))return false;if(s.kind==='insert
 function collides(...a){return dbgT('collides',()=>_collides(...a))}
 function _collides(pos,q){const {mn,mx}=qBox(S.part,q),b=new THREE.Box3(mn.add(pos),mx.add(pos));b.min.x+=.12;b.min.z+=.12;b.max.x-=.12;b.max.z-=.12;b.min.y+=.06;b.max.y-=.26;
   if(b.max.y<b.min.y)b.max.y=b.min.y+.02;if(b.min.y<-.03)return true; // into the base plate
-  for(const bb of S.bricks){const m=meshes.get(bb.id);if(!m||isPinPart(bb.p))continue;const g=info(bb.p);const w=(g.body||g.geo).boundingBox.clone().applyMatrix4(m.matrixWorld);
-    w.min.x+=.05;w.min.z+=.05;w.max.x-=.05;w.max.z-=.05;w.max.y-=.2;if(b.intersectsBox(w))return true}return false}
+  // the boxes around odd shapes (brackets, beams with holes) touch even when the parts don't: only block a real overlap,
+  // stricter when there is no connection, looser when the part is clicked onto a real connection
+  const lim=sel&&(sel.kind==='snap')?.5:.2,vol=x=>Math.max(0,x.max.x-x.min.x)*Math.max(0,x.max.y-x.min.y)*Math.max(0,x.max.z-x.min.z),vb=vol(b);
+  for(const bb of S.bricks){const m=meshes.get(bb.id);if(!m||isPinPart(bb.p))continue;m.updateMatrixWorld();const g=info(bb.p);const w=(g.body||g.geo).boundingBox.clone().applyMatrix4(m.matrixWorld);
+    w.min.x+=.05;w.min.z+=.05;w.max.x-=.05;w.max.z-=.05;w.max.y-=.2;if(!b.intersectsBox(w))continue;
+    const i=b.clone().intersect(w),r=vol(i)/Math.max(1e-6,Math.min(vb,vol(w)));if(r>lim)return true}return false}
 function collideSel(s){if(!needsCheck(s))return false;if(s.kind==='snap'){const x=snapXf(s);return collides(x.pos,x.q)}return false}
 function showGhost(id,pos,q){const g=info(id).geo;ghost.geometry=g;ghost.position.copy(pos);ghost.quaternion.copy(q);
   const bad=needsCheck(sel)&&collides(pos,q);if(sel)sel.bad=bad;$('#okBtn').disabled=bad;
@@ -1641,7 +1645,7 @@ if(DBG){const box=document.createElement('div');box.id='dbg';box.dir='ltr';docum
   let lastDraw=0;setInterval(()=>{const now=performance.now(),lt=DBG.lt,lt10=lt.filter(e=>e[0]>now-10000),d=(DBG.t.draw||{n:0}).n,fps=d-lastDraw;lastDraw=d;
     const top=Object.entries(DBG.t).sort((a,b)=>b[1].s-a[1].s).slice(0,9).map(([k,v])=>`${k}: ${(v.s/1000).toFixed(1)}s total, ${v.n}x, max ${Math.round(v.m)}ms`);
     const cv=renderer.domElement,info=renderer.info.render;
-    box.textContent=[`SPEED CHECK  v${'3.5'}  up ${Math.round((now-DBG.t0)/1000)}s`,`draws/sec: ${fps}  triangles: ${info.triangles.toLocaleString()}  parts: ${S.bricks.length}`,
+    box.textContent=[`SPEED CHECK  v${'3.6'}  up ${Math.round((now-DBG.t0)/1000)}s`,`draws/sec: ${fps}  triangles: ${info.triangles.toLocaleString()}  parts: ${S.bricks.length}`,
       `canvas ${cv.width}x${cv.height}  dpr ${devicePixelRatio}  plate ${JSON.stringify(S.plate)}`,`gpu: ${gl||'?'}`,
       `freezes last 10s: ${lt10.length}, longest ${Math.round(Math.max(0,...lt10.map(e=>e[1])))}ms | all: ${lt.length}, longest ${Math.round(Math.max(0,...lt.map(e=>e[1])))}ms`,
       ...top,DBG.err?'errors: '+DBG.err.join(' | '):''].join('\n')},1000)}
