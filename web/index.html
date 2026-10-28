@@ -374,7 +374,71 @@ body{background:linear-gradient(180deg,var(--bg) 0%,var(--bg-2) 100%)}
 .simseg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
 @media (max-width:560px){.simfoot{grid-template-columns:1fr 1fr;grid-template-areas:"seg seg" "left right"}.simseg{grid-area:seg;min-width:0}.sf-left{grid-area:left}.sf-right{grid-area:right}
   .simexit{font-size:16px;padding:10px 16px 10px 12px}}
-@keyframes fadeIn{
+/* ---------- landing page (dark, red) ---------- */
+.lp{position:fixed;inset:0;z-index:36;overflow-y:auto;overflow-x:hidden;background:#09090B;color:#F4F4F5;font-family:var(--f-body);scroll-behavior:smooth;
+  --lr:#E3262F;--lr2:#B91C24;--lg:#16A34A;--lline:#232327;--lcard:#111114;--lmut:#A1A1AA}
+.lp *,.lp *::before,.lp *::after{box-sizing:border-box}
+.lp a{color:inherit;text-decoration:none}
+.lp-wrap{width:min(1180px,100%);margin:0 auto;padding-inline:max(20px,env(safe-area-inset-left,0px))}
+.lp-nav{position:sticky;top:0;z-index:3;background:rgba(9,9,11,.82);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-bottom:1px solid var(--lline)}
+.lp-nav-in{display:flex;align-items:center;gap:24px;height:64px}
+.lp-brand{display:inline-flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.02em}
+.lp-mark{width:30px;height:30px;padding:5px;border-radius:7px;background:var(--lr)}.lp-mark.sm{width:28px;height:28px}
+.lp-links{display:flex;gap:26px;margin-inline-start:auto;font-size:14px;color:#D4D4D8}.lp-links a:hover{color:#fff}
+.lp-btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;border:0;border-radius:4px;padding:14px 22px;font:inherit;font-weight:700;font-size:15px;color:#fff;cursor:pointer;transition:transform .15s,background .15s,box-shadow .15s}
+.lp-btn svg{width:18px;height:18px}.lp-btn .ic-fill{fill:currentColor;stroke:none}
+.lp-btn.red{background:var(--lr);box-shadow:0 8px 28px rgba(227,38,47,.28)}.lp-btn.red:hover{background:var(--lr2)}
+.lp-btn.green{background:var(--lg)}.lp-btn.green:hover{background:#15803D}
+.lp-btn.ghost{background:transparent;border:1px solid #3F3F46}.lp-btn.ghost:hover{border-color:#fff}
+.lp-btn.sm{padding:10px 16px;font-size:14px}.lp-btn.wide{width:100%}.lp-btn:disabled{opacity:.55;cursor:default;box-shadow:none}
+@media (hover:hover){.lp-btn:not(:disabled):hover{transform:translateY(-2px)}}
+.lp-eyebrow{display:block;color:var(--lr);font-size:13px;font-weight:700;letter-spacing:.06em;margin-bottom:14px}.lp-eyebrow.green{color:#22C55E}
+.lp-hero{position:relative;overflow:hidden;border-bottom:1px solid var(--lline);background:radial-gradient(ellipse 70% 60% at 25% 45%,rgba(227,38,47,.18),transparent 70%)}
+.lp-hero-in{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);align-items:center;gap:20px;min-height:min(760px,calc(100vh - 64px));padding-block:40px}
+.lp-hero h1{font-size:clamp(56px,9vw,124px);line-height:.95;font-weight:900;letter-spacing:-.03em;margin:0 0 24px}
+.lp-hero h1 em{font-style:normal;color:var(--lr)}
+.lp-hero p{color:#D4D4D8;font-size:17px;line-height:1.7;max-width:460px;margin:0 0 30px}
+.lp-cta{display:flex;gap:12px;flex-wrap:wrap}
+.lp-stats{display:flex;gap:28px;margin-top:40px;flex-wrap:wrap}.lp-stats div{display:flex;flex-direction:column;gap:2px;padding-inline-start:14px;border-inline-start:2px solid var(--lr)}
+.lp-stats b{font-size:22px;font-weight:800}.lp-stats span{font-size:13px;color:var(--lmut)}
+.lp-hero-vis{position:relative;height:min(640px,72vh);min-height:340px}
+.lp-hero-vis canvas{width:100%;height:100%;display:block;cursor:grab}
+.lp-badge{position:absolute;bottom:18px;left:0;display:inline-flex;align-items:center;gap:8px;font-size:13px;color:#D4D4D8;background:rgba(17,17,20,.8);border:1px solid var(--lline);padding:8px 12px;border-radius:6px}
+.lp-badge svg{width:22px;height:22px}
+.lp-sec{padding-block:clamp(56px,8vw,100px);border-bottom:1px solid var(--lline)}
+.lp-sec h2{font-size:clamp(32px,4.2vw,52px);line-height:1.1;font-weight:800;letter-spacing:-.02em;margin:0 0 18px}
+.lp-sec p{color:#D4D4D8;font-size:16.5px;line-height:1.7;margin:0 0 28px;max-width:440px}
+.lp-head{display:flex;justify-content:space-between;align-items:flex-end;gap:30px;margin-bottom:44px;flex-wrap:wrap}.lp-head p{margin:0}
+.lp-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px}
+.lp-card{background:var(--lcard);border:1px solid var(--lline);border-radius:6px;padding:28px 22px;transition:border-color .2s,transform .2s}
+@media (hover:hover){.lp-card:hover{border-color:rgba(227,38,47,.6);transform:translateY(-4px)}}
+.lp-ic{width:64px;height:64px;fill:none;stroke:var(--lr);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;margin-bottom:26px}
+.lp-card h3{font-size:18px;margin:0 0 10px;font-weight:700}.lp-card p{font-size:14px;color:var(--lmut);margin:0;line-height:1.65}
+.lp-split{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.4fr);gap:48px;align-items:center}
+.lp-split.rev{grid-template-columns:minmax(0,1.4fr) minmax(0,.8fr)}
+.lp-window{background:#0E0E11;border:1px solid var(--lline);border-radius:8px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+.lp-win-bar{display:flex;align-items:center;gap:7px;height:38px;padding:0 14px;border-bottom:1px solid var(--lline);direction:ltr}
+.lp-win-bar i{width:11px;height:11px;border-radius:50%;background:#3F3F46}.lp-win-bar i:first-child{background:var(--lr)}
+.lp-win-bar span{margin-inline-start:auto;font-size:12px;color:var(--lmut)}
+.lp-window img,.lp-shot2 img{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;background:#0E0E11}
+.lp-apk{background:linear-gradient(90deg,rgba(37,99,235,.12),transparent 60%)}
+.lp-shot2 img{aspect-ratio:16/10;background:transparent}
+.lp-pro{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,.9fr);gap:40px;align-items:center}
+.lp-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:16px;font-size:15.5px}
+.lp-list li{display:flex;align-items:center;gap:12px}.lp-list svg{width:22px;height:22px;stroke:var(--lr);flex:none}
+.lp-price{background:var(--lcard);border:1px solid var(--lline);border-radius:8px;padding:30px}
+.lp-price>span{color:#D4D4D8;font-size:15px}.lp-amount{display:flex;align-items:baseline;gap:8px;margin:14px 0 6px}.lp-amount b{font-size:48px;font-weight:800}.lp-amount small{color:var(--lmut);font-size:16px}
+.lp-price p{font-size:13px;color:var(--lmut);margin:0 0 22px}
+.lp-foot{padding-block:56px 30px;font-size:14px}
+.lp-foot-grid{display:grid;grid-template-columns:minmax(0,1.6fr) repeat(2,minmax(0,1fr));gap:30px}
+.lp-foot p{color:var(--lmut);line-height:1.7;max-width:320px;margin:14px 0 0}
+.lp-foot h4{margin:4px 0 14px;font-size:13px;letter-spacing:.06em}.lp-foot-grid a:not(.lp-brand){display:block;color:var(--lmut);margin-bottom:10px}.lp-foot-grid a:hover{color:#fff}
+.lp-legal{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-top:44px;padding-top:22px;border-top:1px solid var(--lline);color:#71717A;font-size:12.5px}
+.lp-home{cursor:pointer}
+@media (max-width:1000px){.lp-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.lp-pro{grid-template-columns:1fr}.lp-links{display:none}.lp-nav-in .lp-btn{margin-inline-start:auto}}
+@media (max-width:800px){.lp-hero-in,.lp-split,.lp-split.rev{grid-template-columns:1fr}.lp-hero-vis{order:-1;height:46vh;min-height:280px}.lp-hero-in{padding-block:10px 50px;min-height:0}
+  .lp-split.rev .lp-shot2{order:2}.lp-foot-grid{grid-template-columns:1fr 1fr}.lp-foot-grid>div:first-child{grid-column:1/-1}}
+@media (max-width:480px){.lp-grid{grid-template-columns:1fr}.lp-nav-in .lp-btn{padding:9px 12px;font-size:13px}.lp-brand b{font-size:15px}.lp-stats{gap:18px}}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 .home-body,.bar,#sheet{animation:fadeIn .4s ease both}
 @media (prefers-reduced-motion: reduce){*{transition:none!important}}
@@ -500,6 +564,47 @@ body{background:linear-gradient(180deg,var(--bg) 0%,var(--bg-2) 100%)}
   </section>
 </div>
 
+
+<section class="lp" id="landing" dir="rtl" hidden>
+  <header class="lp-nav"><div class="lp-wrap lp-nav-in">
+    <a class="lp-brand" href="#landing"><svg class="lp-mark sm" viewBox="0 0 26 26" aria-hidden="true"><rect x="2" y="9" width="22" height="13" rx="2.5" fill="#fff"/><rect x="5" y="5" width="6" height="5" rx="1.5" fill="#fff"/><rect x="15" y="5" width="6" height="5" rx="1.5" fill="#fff"/></svg><b>סטודיו לבנים</b></a>
+    <nav class="lp-links"><a href="#lp-features">תכונות</a><a href="#lp-app">אפליקציה</a><a href="#lp-apk">אנדרואיד</a><a href="#lp-pro">פרו</a></nav>
+    <button class="lp-btn red sm" data-launch>פתח את האפליקציה <svg viewBox="0 0 24 24" class="i"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></button></div></header>
+  <div class="lp-hero"><div class="lp-wrap lp-hero-in">
+    <div class="lp-hero-txt">
+      <span class="lp-eyebrow">בונה הלבנים התלת־ממדי</span>
+      <h1>בנה.<br>עצב.<br><em>השראה.</em></h1>
+      <p>סטודיו לבנים הוא בונה לבנים תלת־ממדי עם יותר מ־20,000 חלקים, חיבורים מדויקים, מנועים, גלגלי שיניים ושליטה בשלט. בונים, מפעילים ומשתפים, ישר מהדפדפן או מהטלפון.</p>
+      <div class="lp-cta"><button class="lp-btn red" data-launch>פתח את האפליקציה <svg viewBox="0 0 24 24" class="i"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></button><a class="lp-btn ghost" href="https://github.com/y0533124563-cpu/brick-studio/releases/latest/download/BrickStudio.apk">הורד לאנדרואיד <svg viewBox="0 0 24 24" class="i ic-fill"><path d="M7 9h10v8a1 1 0 0 1-1 1h-1v3h-2v-3h-2v3H9v-3H8a1 1 0 0 1-1-1zM5 9.5a1 1 0 0 1 2 0v5a1 1 0 0 1-2 0zm12 0a1 1 0 0 1 2 0v5a1 1 0 0 1-2 0zM7.2 8a4.8 4.8 0 0 1 9.6 0zM9.5 4.2 8.6 2.8M14.5 4.2l.9-1.4"/></svg></a></div>
+      <div class="lp-stats"><div><b>20,342</b><span>חלקים בספרייה</span></div><div><b>15,895</b><span>עם נקודות חיבור</span></div><div><b>בחינם</b><span>בדפדפן ובטלפון</span></div></div>
+    </div>
+    <div class="lp-hero-vis"><canvas id="lpCanvas" aria-label="דגם תלת־ממדי מסתובב"></canvas><span class="lp-badge"><svg viewBox="0 0 24 24" class="i"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/></svg>תלת־ממד בזמן אמת</span></div>
+  </div></div>
+  <section class="lp-sec" id="lp-features"><div class="lp-wrap">
+    <div class="lp-head"><div><span class="lp-eyebrow">כלים חזקים</span><h2>נבנה ליוצרים<br>ולבונים.</h2></div><p>כל מה שצריך כדי לתכנן דגמים מתקדמים, להפעיל מנגנונים אמיתיים ולשתף אותם עם חברים.</p></div>
+    <div class="lp-grid"><div class="lp-card"><svg class="lp-ic" viewBox="0 0 48 48"><circle cx="24" cy="24" r="6"/><path d="M24 6v8M24 34v8M6 24h8M34 24h8M11 11l6 6M31 31l6 6M37 11l-6 6M17 31l-6 6"/></svg><h3>חיבורים אמיתיים</h3><p>כל חלק מתחבר בדיוק כמו במציאות: בליטות, צירים, פינים וחורים.</p></div><div class="lp-card"><svg class="lp-ic" viewBox="0 0 48 48"><circle cx="24" cy="24" r="9"/><circle cx="24" cy="24" r="3"/><path d="M24 7v6M24 35v6M7 24h6M35 24h6M12 12l4 4M32 32l4 4M36 12l-4 4M16 32l-4 4"/></svg><h3>מנועים וגלגלי שיניים</h3><p>מנועים מסובבים צירים, וגלגלי שיניים מעבירים את התנועה לפי מספר השיניים.</p></div><div class="lp-card"><svg class="lp-ic" viewBox="0 0 48 48"><path d="M14 16h20a8 8 0 0 1 8 8v2a7 7 0 0 1-12 5l-2-2h-8l-2 2a7 7 0 0 1-12-5v-2a8 8 0 0 1 8-8z"/><path d="M15 22v6M12 25h6"/><circle cx="31" cy="23" r="1.6"/><circle cx="35" cy="27" r="1.6"/></svg><h3>שליטה בשלט</h3><p>מחברים כפתורים וג׳ויסטיקים למנועים ולצילינדרים, גם עם שלט משחק אמיתי.</p></div><div class="lp-card"><svg class="lp-ic" viewBox="0 0 48 48"><path d="M24 6v20"/><path d="M17 19l7 7 7-7"/><rect x="12" y="32" width="24" height="9" rx="2"/></svg><h3>פיזיקה</h3><p>כוח משיכה אמיתי: חלקים חופשיים נופלים, נוחתים ומתהפכים.</p></div><div class="lp-card"><svg class="lp-ic" viewBox="0 0 48 48"><path d="M24 6l16 9v18l-16 9-16-9V15z"/><path d="M8 15l16 9 16-9M24 24v18"/></svg><h3>ספרייה ענקית</h3><p>יותר מ־20,000 חלקים, וחיפוש לפי המספר שמודפס בחוברת ההוראות.</p></div></div></div></section>
+  <section class="lp-sec" id="lp-app"><div class="lp-wrap lp-split">
+    <div class="lp-split-txt"><span class="lp-eyebrow">בונים. בודקים. משתפים.</span><h2>אפליקציה<br>בדפדפן</h2><p>בלי התקנה. בונים ישר בדפדפן, עם תלת־ממד מלא, הדמיה, ושיתוף לעריכה עם חברים.</p><button class="lp-btn red" data-launch>פתח את האפליקציה <svg viewBox="0 0 24 24" class="i"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></button></div>
+    <div class="lp-window"><div class="lp-win-bar"><i></i><i></i><i></i><span>סטודיו לבנים</span></div><img id="lpShot1" alt="תצוגה של הדגם באפליקציה"></div>
+  </div></section>
+  <section class="lp-sec lp-apk" id="lp-apk"><div class="lp-wrap lp-split rev">
+    <div class="lp-shot2"><img id="lpShot2" alt="דגם בצבע כחול"></div>
+    <div class="lp-split-txt"><span class="lp-eyebrow green">בדרכים</span><h2>אפליקציה<br>לאנדרואיד</h2><p>לוקחים את סטודיו לבנים לכל מקום. בונים, מפעילים ויוצרים ישר מהטלפון.</p><a class="lp-btn green" href="https://github.com/y0533124563-cpu/brick-studio/releases/latest/download/BrickStudio.apk">הורד את האפליקציה <svg viewBox="0 0 24 24" class="i ic-fill"><path d="M7 9h10v8a1 1 0 0 1-1 1h-1v3h-2v-3h-2v3H9v-3H8a1 1 0 0 1-1-1zM5 9.5a1 1 0 0 1 2 0v5a1 1 0 0 1-2 0zm12 0a1 1 0 0 1 2 0v5a1 1 0 0 1-2 0zM7.2 8a4.8 4.8 0 0 1 9.6 0zM9.5 4.2 8.6 2.8M14.5 4.2l.9-1.4"/></svg></a></div>
+  </div></section>
+  <section class="lp-sec" id="lp-pro"><div class="lp-wrap lp-pro">
+    <div><span class="lp-eyebrow">צעד קדימה</span><h2>סטודיו לבנים פרו</h2><p>כל הכלים המתקדמים, לבונים רציניים, למורים ולמקצוענים.</p></div>
+    <ul class="lp-list"><li><svg viewBox="0 0 24 24" class="i"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.8 2.8L16.5 9.5"/></svg><span>הדמיה עם מנועים, גלגלי שיניים וצילינדרים</span></li><li><svg viewBox="0 0 24 24" class="i"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.8 2.8L16.5 9.5"/></svg><span>שלט עם כפתורים, ג׳ויסטיקים והדקים</span></li><li><svg viewBox="0 0 24 24" class="i"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.8 2.8L16.5 9.5"/></svg><span>שליטה בשלט משחק אמיתי</span></li><li><svg viewBox="0 0 24 24" class="i"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.8 2.8L16.5 9.5"/></svg><span>פיזיקה וכוח משיכה</span></li><li><svg viewBox="0 0 24 24" class="i"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.8 2.8L16.5 9.5"/></svg><span>הוראות בנייה שלב אחרי שלב</span></li></ul>
+    <div class="lp-price"><span>פרו חודשי</span><div class="lp-amount"><b>$10</b><small>לחודש</small></div><p>אפשר לבטל בכל זמן.</p><button class="lp-btn red wide" disabled>בקרוב</button></div>
+  </div></section>
+  <footer class="lp-foot"><div class="lp-wrap">
+    <div class="lp-foot-grid">
+      <div><a class="lp-brand" href="#landing"><svg class="lp-mark sm" viewBox="0 0 26 26" aria-hidden="true"><rect x="2" y="9" width="22" height="13" rx="2.5" fill="#fff"/><rect x="5" y="5" width="6" height="5" rx="1.5" fill="#fff"/><rect x="15" y="5" width="6" height="5" rx="1.5" fill="#fff"/></svg><b>סטודיו לבנים</b></a><p>בונה לבנים תלת־ממדי והדמיה של מנגנונים, ליוצרים, לבונים ולחולמים.</p></div>
+      <div><h4>מוצר</h4><a href="#lp-features">תכונות</a><a href="#lp-app">אפליקציה בדפדפן</a><a href="#lp-apk">אפליקציה לאנדרואיד</a><a href="#lp-pro">פרו</a></div>
+      <div><h4>תודות</h4><a href="https://www.ldraw.org" target="_blank" rel="noopener">ספריית החלקים LDraw</a><a href="https://github.com/RolandMelkert/LDCadShadowLibrary" target="_blank" rel="noopener">נתוני החיבורים LDCad</a><a href="https://github.com/schteppe/cannon.js" target="_blank" rel="noopener">מנוע הפיזיקה cannon.js</a></div>
+    </div>
+    <div class="lp-legal"><span>© 2026 סטודיו לבנים</span><span>החלקים מבוססים על ספריית LDraw (CC BY 2.0), ונתוני החיבורים על LDCad Shadow Library (CC BY-SA 4.0).</span></div>
+  </div></footer>
+</section>
 <section class="home" id="home" dir="rtl">
   <header class="home-top">
     <div class="brand" style="cursor:default">
@@ -1719,6 +1824,42 @@ async function renderHome(){const gen=++homeGen,acct=$('#acct'),grid=$('#projGri
   if(!list.length){grid.innerHTML='<div class="home-empty">עוד אין לך פרויקטים. לחץ על "פרויקט חדש" למטה כדי להתחיל.</div>';return}
   list.forEach(p=>grid.appendChild(card(p)))}
 $('#newProj').onclick=newProject;
+/* ---------- landing page: a real 3D model built from the app's own parts, turning slowly ---------- */
+const LP={r:null,raf:0};
+function lpModel(){const g=new THREE.Group(),add=(p,c,x,y,z,r)=>{const m=new THREE.Mesh(info(p).geo,[mat(c),darkMat,paneMat]);posMesh(m,{p,x,y,z,r:r||0});m.castShadow=m.receiveShadow=true;m.userData.c=c;g.add(m);return m};
+  const R=0,K=9,G=7,D=8,W=17;
+  add('p6x12',K,0,2,0);                                         // chassis
+  add('b1x12',R,0,3,0);add('b1x12',R,0,3,5);add('b2x4',R,0,3,1,1);add('b4x6',D,2,3,1);add('b2x4',D,8,3,1,1);add('b2x4',R,10,3,1,1);
+  add('p6x12',R,0,6,0);                                         // deck
+  add('s33_6x3',R,0,7,0,1);add('s33_6x3',R,9,7,0,3);             // nose and tail
+  add('b1x1',W,3,7,1);add('b1x4',W,3,7,1,1);add('b1x4',W,4,7,1);add('b1x4',W,4,7,4);add('b1x2',K,8,7,1);add('b1x2',K,8,7,4);add('b1x4',K,8,7,1,1); // windows
+  add('p4x6',R,3,10,1);add('t2x4',K,4,11,2);                      // roof
+  for(const [x,z] of [[2,-1],[2,6],[9,-1],[9,6]]){const w=add('wheel',K,x,0,z);w.position.set(x+1,0,z<0?-.25:6.25)}
+  const box=new THREE.Box3().setFromObject(g),c=box.getCenter(new THREE.Vector3());g.children.forEach(m=>{m.position.x-=c.x;m.position.z-=c.z});return g}
+function lpStart(){if(LP.r)return;const cv=$('#lpCanvas');let rr;try{rr=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true,preserveDrawingBuffer:true})}catch(e){return}
+  rr.setPixelRatio(Math.min(devicePixelRatio,2));rr.shadowMap.enabled=true;rr.shadowMap.type=THREE.PCFSoftShadowMap;
+  const sc=new THREE.Scene(),cam=new THREE.PerspectiveCamera(32,1,.1,200);sc.add(new THREE.HemisphereLight(0xffffff,0x221010,.55));
+  const key=new THREE.DirectionalLight(0xffffff,1.1);key.position.set(-10,18,12);key.castShadow=true;key.shadow.mapSize.set(1024,1024);Object.assign(key.shadow.camera,{left:-14,right:14,top:14,bottom:-14});sc.add(key);
+  const rim=new THREE.DirectionalLight(0xff3344,1.4);rim.position.set(12,6,-14);sc.add(rim);
+  const floor=new THREE.Mesh(new THREE.CircleGeometry(16,48),new THREE.ShadowMaterial({opacity:.45}));floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;sc.add(floor);
+  const model=lpModel();sc.add(model);LP.r=rr;LP.model=model;
+  let drag=null,ry=-.6,vy=.0035;cv.onpointerdown=e=>{drag={x:e.clientX,ry};cv.setPointerCapture(e.pointerId)};cv.onpointermove=e=>{if(drag)ry=drag.ry+(e.clientX-drag.x)*.01};cv.onpointerup=cv.onpointercancel=()=>{drag=null};
+  const size=()=>{const w=cv.clientWidth||600,h=cv.clientHeight||400;rr.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix()};
+  const view=(a,el,d)=>{cam.position.set(Math.sin(a)*d,el,Math.cos(a)*d);cam.lookAt(0,1.6,0)};
+  const shot=(a,el,d,recolor)=>{if(recolor){model.children.forEach(m=>{if(m.userData.c===0)m.material=[mat(1),darkMat,paneMat]});rim.color.set(0x88aaff)}model.rotation.y=0;rr.setSize(1280,recolor?800:720,false);cam.aspect=recolor?1.6:16/9;cam.updateProjectionMatrix();view(a,el,d);
+    if(!recolor)rr.setClearColor(0x0E0E11,1);rr.render(sc,cam);const u=rr.domElement.toDataURL(recolor?'image/png':'image/jpeg',.88);rr.setClearColor(0,0);rim.color.set(0xff3344);
+    if(recolor)model.children.forEach(m=>{if(m.userData.c===0)m.material=[mat(0),darkMat,paneMat]});return u};
+  try{$('#lpShot1').src=shot(2.4,9,24);$('#lpShot2').src=shot(-.9,6,19,true)}catch(e){}
+  size();window.addEventListener('resize',size);
+  (function loop(){if(!LP.r)return;if(!drag)ry+=vy;model.rotation.y=ry;view(.55,6.5,25);rr.render(sc,cam);LP.raf=requestAnimationFrame(loop)})()}
+function lpStop(){if(!LP.r)return;cancelAnimationFrame(LP.raf);try{LP.r.dispose();LP.r.forceContextLoss&&LP.r.forceContextLoss()}catch(e){}LP.r=null}
+function showLanding(){$('#landing').hidden=false;$('#landing').scrollTop=0;setTimeout(lpStart,30)}
+function hideLanding(){$('#landing').hidden=true;lpStop();try{sessionStorage.setItem('bs:app','1')}catch(e){}}
+document.querySelectorAll('[data-launch]').forEach(b=>b.onclick=hideLanding);
+document.querySelectorAll('.lp a[href^="#lp-"],.lp a[href="#landing"]').forEach(a=>a.onclick=e=>{e.preventDefault();const t=a.getAttribute('href')==='#landing'?null:$(a.getAttribute('href'));t?t.scrollIntoView({behavior:'smooth'}):$('#landing').scrollTo({top:0,behavior:'smooth'})});
+{const b=document.querySelector('.home-top .brand');if(b){b.classList.add('lp-home');b.title='לדף הבית';b.onclick=showLanding}}
+{let skip=/; wv\)/.test(navigator.userAgent)||location.protocol==='file:';try{skip=skip||!!sessionStorage.getItem('bs:app')||/[?&](edit|debug)=?/.test(location.search)}catch(e){}if(!skip)showLanding()}
+
 function loadScript(src){return new Promise((res,rej)=>{const el=document.createElement('script');el.src=src;el.onload=res;el.onerror=rej;document.head.appendChild(el)})}
 async function initFB(){if(!FB){fbReady=true;return}
   try{for(const x of ['firebase-app-compat.js','firebase-auth-compat.js','firebase-firestore-compat.js'])await loadScript('lib/'+x);
@@ -1741,7 +1882,7 @@ if(DBG){const box=document.createElement('div');box.id='dbg';box.dir='ltr';docum
   let lastDraw=0;setInterval(()=>{const now=performance.now(),lt=DBG.lt,lt10=lt.filter(e=>e[0]>now-10000),d=(DBG.t.draw||{n:0}).n,fps=d-lastDraw;lastDraw=d;
     const top=Object.entries(DBG.t).sort((a,b)=>b[1].s-a[1].s).slice(0,9).map(([k,v])=>`${k}: ${(v.s/1000).toFixed(1)}s total, ${v.n}x, max ${Math.round(v.m)}ms`);
     const cv=renderer.domElement,info=renderer.info.render;
-    box.textContent=[`SPEED CHECK  v${'4.0'}  up ${Math.round((now-DBG.t0)/1000)}s`,`draws/sec: ${fps}  triangles: ${info.triangles.toLocaleString()}  parts: ${S.bricks.length}`,
+    box.textContent=[`SPEED CHECK  v${'4.1'}  up ${Math.round((now-DBG.t0)/1000)}s`,`draws/sec: ${fps}  triangles: ${info.triangles.toLocaleString()}  parts: ${S.bricks.length}`,
       `canvas ${cv.width}x${cv.height}  dpr ${devicePixelRatio}  plate ${JSON.stringify(S.plate)}`,`gpu: ${gl||'?'}`,
       `freezes last 10s: ${lt10.length}, longest ${Math.round(Math.max(0,...lt10.map(e=>e[1])))}ms | all: ${lt.length}, longest ${Math.round(Math.max(0,...lt.map(e=>e[1])))}ms`,
       ...top,DBG.err?'errors: '+DBG.err.join(' | '):''].join('\n')},1000)}
