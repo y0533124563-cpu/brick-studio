@@ -1,0 +1,44 @@
+name: Render a model (debug)
+
+on:
+  workflow_dispatch:
+    inputs:
+      focus:
+        description: part ids to look at, comma separated
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/get-libs.sh
+      - uses: actions/cache@v4
+        with:
+          path: ldraw-complete.zip
+          key: ldraw-complete-v1
+      - run: python3 scripts/get-ldraw.py ldraw-complete.zip
+      - run: git clone --depth 1 https://github.com/RolandMelkert/LDCadShadowLibrary shadow
+      - run: python3 scripts/build-snaps.py web/ldraw shadow > /dev/null
+      - name: Local mode and a test hook
+        run: |
+          echo "window.FIREBASE_CONFIG=null;" > web/config.js
+          sed -i 's/startI18n();/startI18n();window.__bs={openProject,decode,S,meshes,info,brickById,camTo};/' web/index.html
+          grep -c "window.__bs=" web/index.html
+      - run: pip install playwright && python3 -m playwright install --with-deps chromium
+      - name: Render
+        run: |
+          (cd web && python3 -m http.server 8080 > /dev/null 2>&1 &)
+          sleep 2
+          mkdir -p out
+          python3 scripts/render-model.py http://localhost:8080/index.html debug/model.txt out "${{ github.event.inputs.focus }}"
+      - name: Save pictures to the debug-shots branch
+        run: |
+          cd out
+          git init -q && git checkout -q -b debug-shots
+          git config user.email "bot@example.com" && git config user.name "render bot"
+          git add -A && git commit -qm "renders"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" debug-shots
