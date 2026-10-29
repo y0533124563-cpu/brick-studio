@@ -3,7 +3,7 @@
 import sys, json
 from playwright.sync_api import sync_playwright
 URL, CODE, OUT = sys.argv[1], open(sys.argv[2]).read().strip(), sys.argv[3]
-FOCUS = [int(x) for x in sys.argv[4].split(',')] if len(sys.argv) > 4 else []
+FOCUS = [int(x) for x in sys.argv[4].split(',') if x.strip()] if len(sys.argv) > 4 else []
 with sync_playwright() as p:
     b = p.chromium.launch(args=['--use-gl=swiftshader', '--enable-unsafe-swiftshader'])
     pg = b.new_page(viewport={'width': 1400, 'height': 900}); pg.set_default_timeout(120000)
