@@ -15,7 +15,9 @@ with sync_playwright() as p:
     info = pg.evaluate("""f=>{const B=window.__bs,out=[];const bb=id=>{const m=B.meshes.get(id),g=B.info(B.brickById(id).p);m.updateMatrixWorld(true);return (g.body||g.geo).boundingBox.clone().applyMatrix4(m.matrixWorld)};
       for(const b of B.S.bricks){const x=bb(b.id);out.push({i:b.id,p:b.p,c:b.c,min:x.min.toArray().map(v=>+v.toFixed(3)),max:x.max.toArray().map(v=>+v.toFixed(3)),h:B.info(b.p).h,snaps:(B.info(b.p).snaps||[]).length})}
       return out}""", FOCUS)
-    json.dump({'parts': info, 'errors': errs}, open(OUT + '/parts.json', 'w'), indent=1)
+    import os
+    extra = pg.evaluate(open('debug/check.js').read()) if os.path.exists('debug/check.js') else None
+    json.dump({'parts': info, 'errors': errs, 'check': extra}, open(OUT + '/parts.json', 'w'), indent=1)
     shots = [('all', None)] + [(f'part{i}', i) for i in FOCUS]
     for name, i in shots:
         for k, (a, el, d) in enumerate([(0.6, 0.55, 1.0), (2.2, 0.25, 0.7), (-1.0, 0.12, 0.55), (3.6, 0.1, 0.5)]):
