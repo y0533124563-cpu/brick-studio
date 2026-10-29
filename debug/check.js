@@ -1,1 +1,0 @@
-()=>{const B=window.__bs,out={};for(const b of B.S.bricks){const g=B.info(b.p);out[b.p]={h:g.h,bb:[g.geo.boundingBox.min.y,g.geo.boundingBox.max.y].map(v=>+v.toFixed(3)),low:(g.snaps||[]).filter(s=>s.S.y<.5).map(s=>[s.g,s.caps,s.secs.map(q=>q.join(':')).join('|'),+s.S.y.toFixed(3),+s.D.y.toFixed(2),s.L.toFixed(2)]).slice(0,12)}}return out}
