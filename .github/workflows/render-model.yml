@@ -26,7 +26,7 @@ jobs:
       - name: Local mode and a test hook
         run: |
           echo "window.FIREBASE_CONFIG=null;" > web/config.js
-          sed -i 's/startI18n();/startI18n();window.__bs={openProject,decode,S,meshes,info,brickById,camTo,collides,selectPart,tapBuild,get sel(){return sel},snapXf};/' web/index.html
+          sed -i 's/startI18n();/startI18n();window.__bs={openProject,decode,S,meshes,info,brickById,camTo,collides,selectPart,tapBuild,get sel(){return sel},snapXf,pickUp,isPinPart,needsCheck,qBox,matedIds,get MOVE(){return MOVE}};/' web/index.html
           grep -c "window.__bs=" web/index.html
       - run: pip install playwright && python3 -m playwright install --with-deps chromium
       - name: Render
