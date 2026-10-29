@@ -1,7 +1,7 @@
 async()=>{const B=window.__bs,out={};
  try{B.pickUp(130);await new Promise(r=>setTimeout(r,1500));const s=B.sel,M=B.MOVE;
   out.sel=s?{kind:s.kind,bad:s.bad,bid:s.bid}:null;out.move=M?{id:M.b&&M.b.id,copy:M.copy}:null;out.part=B.S.part;out.isPin=B.isPinPart(B.S.part);out.needs=B.needsCheck(s);
-  const T=THREE,b0=B.brickById(130),m=B.meshes.get(130);m.updateMatrixWorld(true);const pos=m.position.clone(),q=m.quaternion.clone();
+  const T=THREE;out.keys=Object.keys(s);const pos=s.pos.clone(),q=(s.q||new T.Quaternion()).clone();
   out.pos=pos.toArray();out.collides=B.collides(pos,q);
   const {mn,mx}=B.qBox(B.S.part,q);const hb=new T.Box3(mn.clone().add(pos),mx.clone().add(pos));out.hb=[hb.min.toArray(),hb.max.toArray()];
   out.mated=[...B.matedIds(pos,q)];
