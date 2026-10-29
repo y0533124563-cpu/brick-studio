@@ -912,7 +912,7 @@ let ghostLines=null,ghostLinesFor=null;
 /* a part may not go inside another part (pins and axles into holes are fine) */
 const isPinPart=id=>{if(/^(pin|con|ax)\d/.test(id))return true;const e=/^ld:/.test(id)&&LDXM&&LDXM.get(id.slice(3));return !!e&&/Technic (Axle )?Pin\b|Technic Axle\b|Technic Bush/i.test(e.d)};
 function needsCheck(s){if(!s||isPinPart(S.part))return false;if(s.kind==='insert'||s.kind==='mount')return false;
-  if(s.kind==='snap'){const h=snapsFor(S.part)[s.C[s.ci]],t=s.t;return h.caps==='one'&&t.caps==='one'&&shp(h.secs[0][0])!=='A'&&shp(t.secs[0][0])!=='A'&&Math.abs(h.secs[0][1]-6)<.4}return true}
+  return true}
 function collides(...a){return dbgT('collides',()=>_collides(...a))}
 /* parts the held part is really plugged into (stud in tube, pin in hole...) are not "inside" it, whatever their outline box says */
 function matedIds(pos,q){const W=new THREE.Matrix4().compose(pos,q,new THREE.Vector3(1,1,1)),held=snapsFor(S.part).map(x=>({...x,S:x.S.clone().applyMatrix4(W),D:x.D.clone().applyQuaternion(q)})),out=new Set();if(!held.length)return out;
@@ -924,7 +924,7 @@ function _collides(pos,q){const mated=matedIds(pos,q),{mn,mx}=qBox(S.part,q),b=n
   if(b.max.y<b.min.y)b.max.y=b.min.y+.02;if(b.min.y<-.03)return true; // into the base plate
   // the boxes around odd shapes (brackets, beams with holes) touch even when the parts don't: only block a real overlap,
   // stricter when there is no connection, looser when the part is clicked onto a real connection
-  const lim=sel&&(sel.kind==='snap'||sel.kind==='nudge')?.5:.2,vol=x=>Math.max(0,x.max.x-x.min.x)*Math.max(0,x.max.y-x.min.y)*Math.max(0,x.max.z-x.min.z),vb=vol(b);
+  const stud=sel&&sel.kind==='snap'&&(()=>{const h=snapsFor(S.part)[sel.C[sel.ci]],t=sel.t;return h.caps==='one'&&t.caps==='one'&&shp(h.secs[0][0])!=='A'&&shp(t.secs[0][0])!=='A'&&Math.abs(h.secs[0][1]-6)<.4})(),lim=sel&&(sel.kind==='snap'||sel.kind==='nudge')?(stud?.5:.3):.2,vol=x=>Math.max(0,x.max.x-x.min.x)*Math.max(0,x.max.y-x.min.y)*Math.max(0,x.max.z-x.min.z),vb=vol(b);
   // parts threaded on the same pin or axle line may not overlap along that line (a beam half way into the next beam)
   let ax=null;if(sel&&sel.kind==='snap'){const x=snapXf(sel);if(Math.abs(x.Dt.y)<.9){const {mn:a0,mx:a1}=qBox(S.part,q);ax={P:x.anchor.clone(),A:x.Dt.clone().normalize(),hb:new THREE.Box3(a0.clone().add(pos),a1.clone().add(pos))}}}
   const span=(bx,A)=>{let lo=1e9,hi=-1e9;for(const X of [bx.min.x,bx.max.x])for(const Y of [bx.min.y,bx.max.y])for(const Z of [bx.min.z,bx.max.z]){const d=X*A.x+Y*A.y+Z*A.z;lo=Math.min(lo,d);hi=Math.max(hi,d)}return [lo,hi]};
@@ -2061,7 +2061,7 @@ if(DBG){const box=document.createElement('div');box.id='dbg';box.dir='ltr';docum
   let lastDraw=0;setInterval(()=>{const now=performance.now(),lt=DBG.lt,lt10=lt.filter(e=>e[0]>now-10000),d=(DBG.t.draw||{n:0}).n,fps=d-lastDraw;lastDraw=d;
     const top=Object.entries(DBG.t).sort((a,b)=>b[1].s-a[1].s).slice(0,9).map(([k,v])=>`${k}: ${(v.s/1000).toFixed(1)}s total, ${v.n}x, max ${Math.round(v.m)}ms`);
     const cv=renderer.domElement,info=renderer.info.render;
-    box.textContent=[`SPEED CHECK  v${'5.3'}  up ${Math.round((now-DBG.t0)/1000)}s`,`draws/sec: ${fps}  triangles: ${info.triangles.toLocaleString()}  parts: ${S.bricks.length}`,
+    box.textContent=[`SPEED CHECK  v${'5.4'}  up ${Math.round((now-DBG.t0)/1000)}s`,`draws/sec: ${fps}  triangles: ${info.triangles.toLocaleString()}  parts: ${S.bricks.length}`,
       `canvas ${cv.width}x${cv.height}  dpr ${devicePixelRatio}  plate ${JSON.stringify(S.plate)}`,`gpu: ${gl||'?'}`,
       `freezes last 10s: ${lt10.length}, longest ${Math.round(Math.max(0,...lt10.map(e=>e[1])))}ms | all: ${lt.length}, longest ${Math.round(Math.max(0,...lt.map(e=>e[1])))}ms`,
       ...top,DBG.err?'errors: '+DBG.err.join(' | '):''].join('\n')},1000)}
