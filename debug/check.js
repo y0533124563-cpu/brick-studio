@@ -1,6 +1,6 @@
 async()=>{const B=window.__bs,out={};
- try{const bx=x=>x?[x.min,x.max].map(v=>v.toArray().map(n=>+n.toFixed(3))):null;
-  for(const p of ['ld:32013','ld:3706','ld:32526']){const g=B.info(p);out[p]={conns:g.conns,h:g.h,geo:bx(g.geo.boundingBox),body:g.body?bx(g.body.boundingBox):null,nsnaps:(g.snaps||[]).length}}
-  for(const id of [130,129,128]){const b=B.brickById(id),m=B.meshes.get(id);out['b'+id]={p:b.p,pos:m.position.toArray(),q:m.quaternion.toArray()}}
+ try{const before=B.S.bricks.find(b=>b.id===130);out.before=[before.px,before.py,before.pz];
+  B.pickUp(130);await new Promise(r=>setTimeout(r,1500));B.place();await new Promise(r=>setTimeout(r,800));
+  const a=B.S.bricks.find(b=>b.id===130);out.after=a?[a.px,a.py,a.pz]:null;out.n=B.S.bricks.length;out.bad=B.sel&&B.sel.bad;
  }catch(e){out.err=String(e)}
  return out}

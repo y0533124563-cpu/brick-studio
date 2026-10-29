@@ -983,12 +983,19 @@ function pick(e){const r=renderer.domElement.getBoundingClientRect();ndc.set(((e
 function levelY(pos,q,pid){const up=new THREE.Vector3(0,1,0).applyQuaternion(q);if(up.y<.999)return pos;
   const e=/^ld:/.test(pid)&&LDXM&&LDXM.get(pid.slice(3)),d=e?e.d:'';if(!/^(Technic )?(Brick|Plate|Tile|Slope)\b/i.test(d)&&/^ld:/.test(pid))return pos;
   const g=Math.round(pos.y/PH)*PH,dy=g-pos.y;if(Math.abs(dy)>1e-3&&Math.abs(dy)<=.13)pos.y=g;return pos}
+/* a part that ends up a hair (up to 3 mm) inside a neighbour is pushed back out along its sliding direction, so beams, connectors and axles meet face to face */
+function pushOut(pos,q,axes,hostId){pos=pos.clone();for(let it=0;it<4;it++){const {mn,mx}=qBox(S.part,q),hb=new THREE.Box3(mn.clone().add(pos),mx.clone().add(pos));let best=null;
+  for(const bb of S.bricks){if(bb.id===hostId)continue;const m=meshes.get(bb.id);if(!m||isPinPart(bb.p))continue;m.updateMatrixWorld();const g=info(bb.p),w=(g.body||g.geo).boundingBox.clone().applyMatrix4(m.matrixWorld);
+    const o={x:Math.min(hb.max.x,w.max.x)-Math.max(hb.min.x,w.min.x),y:Math.min(hb.max.y,w.max.y)-Math.max(hb.min.y,w.min.y),z:Math.min(hb.max.z,w.max.z)-Math.max(hb.min.z,w.min.z)};if(o.x<=.02||o.y<=.02||o.z<=.02)continue;
+    for(const a of axes)if(o[a]<=.15&&(!best||o[a]<best.d))best={a,d:o[a],s:(hb.min[a]+hb.max[a])<(w.min[a]+w.max[a])?-1:1}}
+  if(!best)break;pos[best.a]+=best.s*(best.d+.005)}return pos}
+const slideAxes=x=>{const A=x&&x.A;if(A)for(const a of ['x','y','z'])if(Math.abs(A[a])>.99)return a==='y'?[]:[a];return ['x','z']};
 function place(){if(!sel)return;if(sel.bad){toast('אי אפשר להניח חלק בתוך חלק אחר');return}const mv=MOVE,prev=mv?mv.prev:snap(),r4=v=>Math.round(v*1e4)/1e4;if(mv)S.nextId=Math.max(S.nextId,mv.b.id+1);
   const nid=mv?mv.b.id:null;
   if(sel.kind==='grid'&&tilted()){const t=tiltPlacement(sel.cell);S.bricks.push({id:S.nextId++,p:S.part,c:S.color,f:1,px:r4(t.pos.x),py:r4(t.pos.y),pz:r4(t.pos.z),q:[t.q.x,t.q.y,t.q.z,t.q.w].map(r4)})}
   else if(sel.kind==='grid'){const p=placement(sel.cell.x,sel.cell.z,S.part,S.rot);S.bricks.push({id:S.nextId++,p:S.part,c:S.color,r:S.rot,...p})}
-  else if(sel.kind==='nudge'){const x={pos:levelY(sel.pos.clone(),sel.q,S.part),q:sel.q};S.bricks.push({id:S.nextId++,p:S.part,c:S.color,f:1,px:r4(x.pos.x),py:r4(x.pos.y),pz:r4(x.pos.z),q:[x.q.x,x.q.y,x.q.z,x.q.w].map(r4)})}
-  else{const x0=sel.kind==='snap'?snapXf(sel):freeXf(sel),x={...x0,pos:levelY(x0.pos.clone(),x0.q,S.part)};S.bricks.push({id:S.nextId++,p:S.part,c:S.color,f:1,px:r4(x.pos.x),py:r4(x.pos.y),pz:r4(x.pos.z),q:[x.q.x,x.q.y,x.q.z,x.q.w].map(r4)})}
+  else if(sel.kind==='nudge'){const x={pos:pushOut(levelY(sel.pos.clone(),sel.q,S.part),sel.q,['x','z'],null),q:sel.q};S.bricks.push({id:S.nextId++,p:S.part,c:S.color,f:1,px:r4(x.pos.x),py:r4(x.pos.y),pz:r4(x.pos.z),q:[x.q.x,x.q.y,x.q.z,x.q.w].map(r4)})}
+  else{const x0=sel.kind==='snap'?snapXf(sel):freeXf(sel),x={...x0,pos:(sel.kind==='insert'||sel.kind==='mount')?pushOut(levelY(x0.pos.clone(),x0.q,S.part),x0.q,slideAxes(x0),sel.bid):levelY(x0.pos.clone(),x0.q,S.part)};S.bricks.push({id:S.nextId++,p:S.part,c:S.color,f:1,px:r4(x.pos.x),py:r4(x.pos.y),pz:r4(x.pos.z),q:[x.q.x,x.q.y,x.q.z,x.q.w].map(r4)})}
   if(mv&&!mv.copy){const nb=S.bricks[S.bricks.length-1];nb.id=nid;S.bricks.pop();S.bricks.splice(Math.min(mv.idx,S.bricks.length),0,nb);S.nextId--;S.nextId=Math.max(S.nextId,S.bricks.reduce((a,b)=>Math.max(a,b.id),0)+1)}
   const nm=PMAP[S.part].name;if(mv)endMove();hideSel();commit(prev);toast((mv?(mv.copy?'שוכפל: ':'הועבר: '):'חובר: ')+nm)}
 /* select mode: tap a part to pick it up, then tap a place, brick, axle or hole to move it there (like adding a new part) */
@@ -2061,7 +2068,7 @@ if(DBG){const box=document.createElement('div');box.id='dbg';box.dir='ltr';docum
   let lastDraw=0;setInterval(()=>{const now=performance.now(),lt=DBG.lt,lt10=lt.filter(e=>e[0]>now-10000),d=(DBG.t.draw||{n:0}).n,fps=d-lastDraw;lastDraw=d;
     const top=Object.entries(DBG.t).sort((a,b)=>b[1].s-a[1].s).slice(0,9).map(([k,v])=>`${k}: ${(v.s/1000).toFixed(1)}s total, ${v.n}x, max ${Math.round(v.m)}ms`);
     const cv=renderer.domElement,info=renderer.info.render;
-    box.textContent=[`SPEED CHECK  v${'5.6'}  up ${Math.round((now-DBG.t0)/1000)}s`,`draws/sec: ${fps}  triangles: ${info.triangles.toLocaleString()}  parts: ${S.bricks.length}`,
+    box.textContent=[`SPEED CHECK  v${'5.7'}  up ${Math.round((now-DBG.t0)/1000)}s`,`draws/sec: ${fps}  triangles: ${info.triangles.toLocaleString()}  parts: ${S.bricks.length}`,
       `canvas ${cv.width}x${cv.height}  dpr ${devicePixelRatio}  plate ${JSON.stringify(S.plate)}`,`gpu: ${gl||'?'}`,
       `freezes last 10s: ${lt10.length}, longest ${Math.round(Math.max(0,...lt10.map(e=>e[1])))}ms | all: ${lt.length}, longest ${Math.round(Math.max(0,...lt.map(e=>e[1])))}ms`,
       ...top,DBG.err?'errors: '+DBG.err.join(' | '):''].join('\n')},1000)}
