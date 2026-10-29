@@ -11,12 +11,14 @@ with sync_playwright() as p:
     pg.add_init_script("sessionStorage.setItem('bs:app','1')")
     pg.goto(URL); pg.wait_for_timeout(4000)
     pg.evaluate("c=>{const B=window.__bs;B.openProject({id:'dbg',name:'dbg',data:JSON.stringify(B.decode(c)),plate:{w:48,d:48}})}", CODE)
-    pg.wait_for_function("()=>window.__bs.S.bricks.every(b=>window.__bs.meshes.get(b.id))", timeout=180000); pg.wait_for_timeout(3000)
+    try: pg.wait_for_function("()=>window.__bs.S.bricks.every(b=>window.__bs.meshes.get(b.id))", timeout=180000)
+    except Exception as e: errs.append('wait: '+str(e)[:300]); pg.wait_for_timeout(3000)
     info = pg.evaluate("""f=>{const B=window.__bs,out=[];const bb=id=>{const m=B.meshes.get(id),g=B.info(B.brickById(id).p);m.updateMatrixWorld(true);return (g.body||g.geo).boundingBox.clone().applyMatrix4(m.matrixWorld)};
       for(const b of B.S.bricks){const x=bb(b.id);out.push({i:b.id,p:b.p,c:b.c,min:x.min.toArray().map(v=>+v.toFixed(3)),max:x.max.toArray().map(v=>+v.toFixed(3)),h:B.info(b.p).h,snaps:(B.info(b.p).snaps||[]).length})}
       return out}""", FOCUS)
     import os
-    extra = pg.evaluate(open('debug/check.js').read()) if os.path.exists('debug/check.js') else None
+    try: extra = pg.evaluate(open('debug/check.js').read()) if os.path.exists('debug/check.js') else None
+    except Exception as e: extra = {'check_error': str(e)[:2000]}
     json.dump({'parts': info, 'errors': errs, 'check': extra}, open(OUT + '/parts.json', 'w'), indent=1)
     shots = [('all', None)] + [(f'part{i}', i) for i in FOCUS]
     for name, i in shots:

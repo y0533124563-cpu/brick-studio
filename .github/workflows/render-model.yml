@@ -34,8 +34,9 @@ jobs:
           (cd web && python3 -m http.server 8080 > /dev/null 2>&1 &)
           sleep 2
           mkdir -p out
-          python3 scripts/render-model.py http://localhost:8080/index.html debug/model.txt out "${{ github.event.inputs.focus }}"
+          python3 scripts/render-model.py http://localhost:8080/index.html debug/model.txt out "${{ github.event.inputs.focus }}" 2>&1 | tail -40 > out/log.txt || true
       - name: Save pictures to the debug-shots branch
+        if: always()
         run: |
           cd out
           git init -q && git checkout -q -b debug-shots
