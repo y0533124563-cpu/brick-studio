@@ -918,7 +918,7 @@ function _collides(pos,q){const {mn,mx}=qBox(S.part,q),b=new THREE.Box3(mn.add(p
   if(b.max.y<b.min.y)b.max.y=b.min.y+.02;if(b.min.y<-.03)return true; // into the base plate
   // the boxes around odd shapes (brackets, beams with holes) touch even when the parts don't: only block a real overlap,
   // stricter when there is no connection, looser when the part is clicked onto a real connection
-  const lim=sel&&(sel.kind==='snap')?.5:.2,vol=x=>Math.max(0,x.max.x-x.min.x)*Math.max(0,x.max.y-x.min.y)*Math.max(0,x.max.z-x.min.z),vb=vol(b);
+  const lim=sel&&(sel.kind==='snap'||sel.kind==='nudge')?.5:.2,vol=x=>Math.max(0,x.max.x-x.min.x)*Math.max(0,x.max.y-x.min.y)*Math.max(0,x.max.z-x.min.z),vb=vol(b);
   for(const bb of S.bricks){const m=meshes.get(bb.id);if(!m||isPinPart(bb.p))continue;m.updateMatrixWorld();const g=info(bb.p);const w=(g.body||g.geo).boundingBox.clone().applyMatrix4(m.matrixWorld);
     w.min.x+=.05;w.min.z+=.05;w.max.x-=.05;w.max.z-=.05;w.max.y-=.2;if(!b.intersectsBox(w))continue;
     const i=b.clone().intersect(w),r=vol(i)/Math.max(1e-6,Math.min(vb,vol(w)));if(r>lim)return true}return false}
@@ -966,12 +966,17 @@ function pick(e){const r=renderer.domElement.getBoundingClientRect();ndc.set(((e
   const n=h.face.normal.clone().transformDirection(h.object.matrixWorld);let x,z;
   if(h.point.y>=top-.02||n.y>.5){x=Math.floor(h.point.x);z=Math.floor(h.point.z)}else{x=Math.floor(h.point.x+n.x*.5);z=Math.floor(h.point.z+n.z*.5)}
   return {cell:{x,z},bid:b.id,mesh:h.object,point:h.point}}
+/* keep bricks, plates and tiles that stand upright on the plate grid: a tiny height error (from slightly different
+   hole heights in the parts library) would otherwise leave a step or slit next to their neighbours */
+function levelY(pos,q,pid){const up=new THREE.Vector3(0,1,0).applyQuaternion(q);if(up.y<.999)return pos;
+  const e=/^ld:/.test(pid)&&LDXM&&LDXM.get(pid.slice(3)),d=e?e.d:'';if(!/^(Technic )?(Brick|Plate|Tile|Slope)\b/i.test(d)&&/^ld:/.test(pid))return pos;
+  const g=Math.round(pos.y/PH)*PH,dy=g-pos.y;if(Math.abs(dy)>1e-3&&Math.abs(dy)<=.13)pos.y=g;return pos}
 function place(){if(!sel)return;if(sel.bad){toast('אי אפשר להניח חלק בתוך חלק אחר');return}const mv=MOVE,prev=mv?mv.prev:snap(),r4=v=>Math.round(v*1e4)/1e4;if(mv)S.nextId=Math.max(S.nextId,mv.b.id+1);
   const nid=mv?mv.b.id:null;
   if(sel.kind==='grid'&&tilted()){const t=tiltPlacement(sel.cell);S.bricks.push({id:S.nextId++,p:S.part,c:S.color,f:1,px:r4(t.pos.x),py:r4(t.pos.y),pz:r4(t.pos.z),q:[t.q.x,t.q.y,t.q.z,t.q.w].map(r4)})}
   else if(sel.kind==='grid'){const p=placement(sel.cell.x,sel.cell.z,S.part,S.rot);S.bricks.push({id:S.nextId++,p:S.part,c:S.color,r:S.rot,...p})}
-  else if(sel.kind==='nudge'){const x=sel;S.bricks.push({id:S.nextId++,p:S.part,c:S.color,f:1,px:r4(x.pos.x),py:r4(x.pos.y),pz:r4(x.pos.z),q:[x.q.x,x.q.y,x.q.z,x.q.w].map(r4)})}
-  else{const x=sel.kind==='snap'?snapXf(sel):freeXf(sel);S.bricks.push({id:S.nextId++,p:S.part,c:S.color,f:1,px:r4(x.pos.x),py:r4(x.pos.y),pz:r4(x.pos.z),q:[x.q.x,x.q.y,x.q.z,x.q.w].map(r4)})}
+  else if(sel.kind==='nudge'){const x={pos:levelY(sel.pos.clone(),sel.q,S.part),q:sel.q};S.bricks.push({id:S.nextId++,p:S.part,c:S.color,f:1,px:r4(x.pos.x),py:r4(x.pos.y),pz:r4(x.pos.z),q:[x.q.x,x.q.y,x.q.z,x.q.w].map(r4)})}
+  else{const x0=sel.kind==='snap'?snapXf(sel):freeXf(sel),x={...x0,pos:levelY(x0.pos.clone(),x0.q,S.part)};S.bricks.push({id:S.nextId++,p:S.part,c:S.color,f:1,px:r4(x.pos.x),py:r4(x.pos.y),pz:r4(x.pos.z),q:[x.q.x,x.q.y,x.q.z,x.q.w].map(r4)})}
   if(mv&&!mv.copy){const nb=S.bricks[S.bricks.length-1];nb.id=nid;S.bricks.pop();S.bricks.splice(Math.min(mv.idx,S.bricks.length),0,nb);S.nextId--;S.nextId=Math.max(S.nextId,S.bricks.reduce((a,b)=>Math.max(a,b.id),0)+1)}
   const nm=PMAP[S.part].name;if(mv)endMove();hideSel();commit(prev);toast((mv?(mv.copy?'שוכפל: ':'הועבר: '):'חובר: ')+nm)}
 /* select mode: tap a part to pick it up, then tap a place, brick, axle or hole to move it there (like adding a new part) */
@@ -2036,7 +2041,7 @@ if(DBG){const box=document.createElement('div');box.id='dbg';box.dir='ltr';docum
   let lastDraw=0;setInterval(()=>{const now=performance.now(),lt=DBG.lt,lt10=lt.filter(e=>e[0]>now-10000),d=(DBG.t.draw||{n:0}).n,fps=d-lastDraw;lastDraw=d;
     const top=Object.entries(DBG.t).sort((a,b)=>b[1].s-a[1].s).slice(0,9).map(([k,v])=>`${k}: ${(v.s/1000).toFixed(1)}s total, ${v.n}x, max ${Math.round(v.m)}ms`);
     const cv=renderer.domElement,info=renderer.info.render;
-    box.textContent=[`SPEED CHECK  v${'4.7'}  up ${Math.round((now-DBG.t0)/1000)}s`,`draws/sec: ${fps}  triangles: ${info.triangles.toLocaleString()}  parts: ${S.bricks.length}`,
+    box.textContent=[`SPEED CHECK  v${'4.8'}  up ${Math.round((now-DBG.t0)/1000)}s`,`draws/sec: ${fps}  triangles: ${info.triangles.toLocaleString()}  parts: ${S.bricks.length}`,
       `canvas ${cv.width}x${cv.height}  dpr ${devicePixelRatio}  plate ${JSON.stringify(S.plate)}`,`gpu: ${gl||'?'}`,
       `freezes last 10s: ${lt10.length}, longest ${Math.round(Math.max(0,...lt10.map(e=>e[1])))}ms | all: ${lt.length}, longest ${Math.round(Math.max(0,...lt.map(e=>e[1])))}ms`,
       ...top,DBG.err?'errors: '+DBG.err.join(' | '):''].join('\n')},1000)}
