@@ -1594,21 +1594,30 @@ async function physOn(){if(!SIM||PHYS)return;try{await loadCannon()}catch(e){$('
   const plate=new C.Body({mass:0});if(PLATE_INF){plate.addShape(new C.Plane());plate.quaternion.setFromAxisAngle(new C.Vec3(1,0,0),-Math.PI/2)}
   else{plate.addShape(new C.Box(new C.Vec3((X1-X0)/2,.5,(Z1-Z0)/2)));plate.position.set((X0+X1)/2,-.5,(Z0+Z1)/2)}world.addBody(plate);
   const movers=new Set(SIM.rest.keys()),bodies=[],byPart=new Map(),M4c=()=>new THREE.Matrix4();
-  for(const g of SIM.groups||[]){const ids=g.ids.filter(id=>meshes.get(id));if(!ids.length)continue;
-    const kin=ids.some(id=>movers.has(id)),stat=!kin&&g.ground,type=kin?'k':stat?'s':'d';
+  // groups for physics: parts that touch each other or are joined count as ONE piece (connected = never falls apart).
+  // Each moving part of a mechanism is its own piece that follows the motor; anything touching the plate, a grid brick or a mechanism stays put.
+  const ids0=S.bricks.filter(b=>meshes.get(b.id)&&ready(b.p)).map(b=>b.id),box=new Map(),PU=new Map(),fnd=x=>{while(PU.get(x)!==x){PU.set(x,PU.get(PU.get(x)));x=PU.get(x)}return x},uni=(a,b)=>PU.set(fnd(a),fnd(b));
+  for(const id of ids0){PU.set(id,id);const m=meshes.get(id),gi=info(brickById(id).p);m.updateMatrixWorld(true);box.set(id,(gi.body||gi.geo).boundingBox.clone().applyMatrix4(m.matrixWorld).expandByScalar(.06))}
+  const still=ids0.filter(id=>!movers.has(id));
+  for(let i=0;i<still.length;i++)for(let j=i+1;j<still.length;j++)if(box.get(still[i]).intersectsBox(box.get(still[j])))uni(still[i],still[j]);
+  for(const j of SIM.joints||[])if(PU.has(j.a)&&PU.has(j.b)&&!movers.has(j.a)&&!movers.has(j.b))uni(j.a,j.b);
+  const G=new Map();for(const id of still){const r=fnd(id);if(!G.has(r))G.set(r,[]);G.get(r).push(id)}
+  const pieces=[...G.values()].map(ids=>{const anchored=ids.some(id=>{const b=brickById(id);return !b.f||box.get(id).min.y<.1||[...movers].some(mv=>box.has(mv)&&box.get(mv).intersectsBox(box.get(id)))});return {ids,type:anchored?'s':'d'}});
+  for(const id of movers)if(box.has(id))pieces.push({ids:[id],type:'k'});
+  for(const pc of pieces){const ids=pc.ids,type=pc.type;
     const m0=meshes.get(ids[0]);m0.updateMatrixWorld(true);const B0=m0.matrixWorld.clone(),iB0=B0.clone().invert(),p=new THREE.Vector3(),q=new THREE.Quaternion(),sc=new THREE.Vector3();B0.decompose(p,q,sc);
     const body=new C.Body({mass:type==='d'?1:0,type:type==='k'?C.Body.KINEMATIC:type==='s'?C.Body.STATIC:C.Body.DYNAMIC,allowSleep:true,linearDamping:.05,angularDamping:.1});
     body.position.set(p.x,p.y,p.z);body.quaternion.set(q.x,q.y,q.z,q.w);let mass=0;const parts=[];
     for(const id of ids){const m=meshes.get(id),gi=info(brickById(id).p),bb=(gi.body||gi.geo).boundingBox;m.updateMatrixWorld(true);
       const rel=iB0.clone().multiply(m.matrixWorld),rp=new THREE.Vector3(),rq=new THREE.Quaternion();rel.decompose(rp,rq,sc);
       const size=bb.getSize(new THREE.Vector3()),c=bb.getCenter(new THREE.Vector3()).applyMatrix4(rel);
-      const h=new C.Vec3(Math.max(.06,size.x/2-.08),Math.max(.06,size.y/2-.05),Math.max(.06,size.z/2-.08));
+      const h=new C.Vec3(Math.max(.06,size.x/2-.08),Math.max(.06,size.y/2-.01),Math.max(.06,size.z/2-.08));
       body.addShape(new C.Box(h),new C.Vec3(c.x,c.y,c.z),new C.Quaternion(rq.x,rq.y,rq.z,rq.w));mass+=Math.max(.05,size.x*size.y*size.z);
       parts.push({id,m,rest:m.matrix.clone(),auto:m.matrixAutoUpdate,rel:iB0.clone().multiply(m.matrixWorld)});byPart.set(id,null)}
     if(type==='d'){body.mass=mass;body.updateMassProperties()}
     world.addBody(body);const rec={body,type,parts,B0,iB0,m0,last:p.clone()};bodies.push(rec);for(const pt of parts)byPart.set(pt.id,rec)}
   // hinges: parts joined by a pin or a round hole keep turning on that axle instead of falling apart
-  for(const j of SIM.joints||[]){if(j.rigid)continue;const A=byPart.get(j.a),Bq=byPart.get(j.b);if(!A||!Bq||A===Bq||(A.type!=='d'&&Bq.type!=='d'))continue;
+  for(const j of []){if(j.rigid)continue;const A=byPart.get(j.a),Bq=byPart.get(j.b);if(!A||!Bq||A===Bq||(A.type!=='d'&&Bq.type!=='d'))continue;
     const loc=(r,v)=>{const w=v.clone();r.m0.updateMatrixWorld(true);return w.applyMatrix4(r.iB0)},ax=(r,d)=>d.clone().transformDirection(r.iB0);
     const pa=loc(A,j.c),pb=loc(Bq,j.c),da=ax(A,j.f.D),db=ax(Bq,j.f.D);
     world.addConstraint(new C.HingeConstraint(A.body,Bq.body,{pivotA:new C.Vec3(pa.x,pa.y,pa.z),axisA:new C.Vec3(da.x,da.y,da.z),pivotB:new C.Vec3(pb.x,pb.y,pb.z),axisB:new C.Vec3(db.x,db.y,db.z),collideConnected:false}))}
@@ -2013,7 +2022,7 @@ if(DBG){const box=document.createElement('div');box.id='dbg';box.dir='ltr';docum
   let lastDraw=0;setInterval(()=>{const now=performance.now(),lt=DBG.lt,lt10=lt.filter(e=>e[0]>now-10000),d=(DBG.t.draw||{n:0}).n,fps=d-lastDraw;lastDraw=d;
     const top=Object.entries(DBG.t).sort((a,b)=>b[1].s-a[1].s).slice(0,9).map(([k,v])=>`${k}: ${(v.s/1000).toFixed(1)}s total, ${v.n}x, max ${Math.round(v.m)}ms`);
     const cv=renderer.domElement,info=renderer.info.render;
-    box.textContent=[`SPEED CHECK  v${'4.5'}  up ${Math.round((now-DBG.t0)/1000)}s`,`draws/sec: ${fps}  triangles: ${info.triangles.toLocaleString()}  parts: ${S.bricks.length}`,
+    box.textContent=[`SPEED CHECK  v${'4.6'}  up ${Math.round((now-DBG.t0)/1000)}s`,`draws/sec: ${fps}  triangles: ${info.triangles.toLocaleString()}  parts: ${S.bricks.length}`,
       `canvas ${cv.width}x${cv.height}  dpr ${devicePixelRatio}  plate ${JSON.stringify(S.plate)}`,`gpu: ${gl||'?'}`,
       `freezes last 10s: ${lt10.length}, longest ${Math.round(Math.max(0,...lt10.map(e=>e[1])))}ms | all: ${lt.length}, longest ${Math.round(Math.max(0,...lt.map(e=>e[1])))}ms`,
       ...top,DBG.err?'errors: '+DBG.err.join(' | '):''].join('\n')},1000)}
