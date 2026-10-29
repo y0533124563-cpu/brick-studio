@@ -937,7 +937,7 @@ function _showSel(s){sel=s;clearHL();$('#tiltA').hidden=$('#tiltB').hidden=true;
   if(s.kind==='snap'){const x=snapXf(s);showGhost(S.part,x.pos,x.q);
     for(const t of engaged(s,x)){const r=Math.max(...t.secs.map(q=>q[1]))*.05,L=Math.max(t.L,.2),mid=t.S.clone().addScaledVector(t.D,L/2);
       addHL(new THREE.CylinderGeometry(r+.04,r+.04,L,20),hlMat,mid,t.D,AXV.y,20);addHL(new THREE.RingGeometry(r+.02,r+.14,28),hlRing,t.S,t.D,AXV.z,21)}
-    rl.textContent='סובב';nh.hidden=s.C.length<2;$('#tiltA').hidden=$('#tiltB').hidden=!s.t.base;const [lo,hi]=slideRange(s);$('#slideBtn').hidden=lo===hi;$('#flipBtn').hidden=!(x.t.caps==='none'||x.h.caps==='none');
+    rl.textContent='סובב';nh.hidden=s.C.length<2&&!(s.Tl&&s.Tl.length>1);$('#tiltA').hidden=$('#tiltB').hidden=!s.t.base;const [lo,hi]=slideRange(s);$('#slideBtn').hidden=lo===hi;$('#flipBtn').hidden=!(x.t.caps==='none'||x.h.caps==='none');
     $('#confirm').hidden=false;return}
   if(s.kind==='insert'||s.kind==='mount'){const x=freeXf(s),Z=AXV.z;showGhost(S.part,x.pos,x.q);
     addHL(new THREE.CircleGeometry(s.kind==='mount'?.5:.34,28),hlMat,x.hc,x.A,Z,20);
@@ -1058,7 +1058,8 @@ $('#rotBtn').onclick=$('#rotSel').onclick=()=>{
   S.rot=(S.rot+1)%4;if(sel)showSel(sel);toast('סיבוב '+S.rot*90+'°')};
 $('#slideBtn').onclick=()=>{if(!sel||sel.kind!=='snap')return;const [lo,hi]=slideRange(sel);sel.off+=.5;if(sel.off>hi+1e-6)sel.off=lo;showSel(sel);toast('הוזז לאורך החיבור')};
 $('#flipBtn').onclick=()=>{if(!sel||sel.kind!=='snap')return;sel.flip=!sel.flip;sel.off=defOff(sel);showSel(sel);toast('הוכנס מהצד השני')};
-$('#nextHole').onclick=()=>{if(sel&&sel.kind==='snap'){sel.ci=(sel.ci+1)%sel.C.length;sel.off=defOff(sel);showSel(sel);toast('חיבור '+(sel.ci+1)+' מתוך '+sel.C.length);return}if(sel&&sel.kind==='mount'){sel.hi=sel.ok[(sel.ok.indexOf(sel.hi)+1)%sel.ok.length];showSel(sel);toast('חור '+(sel.ok.indexOf(sel.hi)+1)+' מתוך '+sel.ok.length)}};
+$('#nextHole').onclick=()=>{if(sel&&sel.kind==='snap'&&sel.Tl&&sel.Tl.length>1&&sel.Tl.length>=sel.C.length){const i=sel.Tl.indexOf(sel.t),n=(i+1)%sel.Tl.length;sel.t=sel.Tl[n];sel.off=defOff(sel);showSel(sel);toast('חור '+(n+1)+' מתוך '+sel.Tl.length);return}
+  if(sel&&sel.kind==='snap'){sel.ci=(sel.ci+1)%sel.C.length;sel.off=defOff(sel);showSel(sel);toast('חיבור '+(sel.ci+1)+' מתוך '+sel.C.length);return}if(sel&&sel.kind==='mount'){sel.hi=sel.ok[(sel.ok.indexOf(sel.hi)+1)%sel.ok.length];showSel(sel);toast('חור '+(sel.ok.indexOf(sel.hi)+1)+' מתוך '+sel.ok.length)}};
 $('#okBtn').onclick=place;$('#cancelSel').onclick=()=>{if(MOVE)cancelMove();else hideSel()};
 $('#moveCancel').onclick=cancelMove;$('#moveFine').onclick=()=>{FINE=!FINE;$('#moveFine').setAttribute('aria-pressed',FINE);toast(FINE?'צעדים קטנים':'צעדים רגילים')};$('#moveCopy').onclick=copyHeld;
 document.querySelectorAll('[data-mv]').forEach(b=>b.onclick=()=>nudgeHeld(b.dataset.mv));
@@ -1342,6 +1343,9 @@ function snapXf(s){const h=snapsFor(S.part)[s.C[s.ci]],t=s.t,V=THREE.Vector3;
 function slideRange(s){const h=snapsFor(S.part)[s.C[s.ci]];if(!(h.slide&&s.t.slide))return [0,0];let lo=-h.L+.5,hi=s.t.L-.5;if(lo>hi)lo=hi=0;return [lo,hi]}
 function defOff(s,hit){const [lo,hi]=slideRange(s);if(lo===hi)return lo;const x=snapXf({...s,off:0}),h=x.h;
   const proj=hit?hit.clone().sub(x.anchor).dot(x.Dt):(s.t.L-h.L)/2;return Math.max(lo,Math.min(hi,Math.round((proj-h.L/2)*2)/2))}
+function alongTargets(bid,T,t0,h0){const L=T.filter(t=>compat(h0,t)&&Math.abs(t.D.dot(t0.D))>.95&&shp(t.secs[0][0])===shp(t0.secs[0][0]));if(L.length<2)return null;
+  const m=meshes.get(bid),gi=info(brickById(bid).p),sz=(gi.body||gi.geo).boundingBox.getSize(new THREE.Vector3()),loc=sz.x>=sz.z?new THREE.Vector3(1,0,0):new THREE.Vector3(0,0,1);
+  m.updateMatrixWorld();const A=loc.transformDirection(m.matrixWorld);return L.slice().sort((a,b)=>a.S.dot(A)-b.S.dot(A))}
 function snapTap(...a){return dbgT('snapTap',()=>_snapTap(...a))}
 function _snapTap(h){const H=snapsFor(S.part);if(!H.length)return false;let T;
   if(h.bid){const b=brickById(h.bid);if(!ready(b.p))return false;T=wSnaps(b)}else T=[baseSnap(h.cell.x,h.cell.z)];
@@ -1351,8 +1355,9 @@ function _snapTap(h){const H=snapsFor(S.part);if(!H.length)return false;let T;
   let first=null;const choose=(sl,o,hs)=>{showSel(sl);if(sl.bad)return;const word=x=>({R:'○',A:'×',S:'□'}[shp(x.secs[0][0])]);
     toast(o.t.base||hs.secs[0][1]===6&&o.t.caps==='one'?'חיבור לבליטות':`חיבור ${hs.g==='M'?'זכר':'חור'} ${word(hs)} אל ${o.t.g==='M'?'זכר':'חור'} ${word(o.t)}`)};
   for(const o of cand){const C=H.map((x,k)=>k).filter(k=>compat(H[k],o.t));if(!C.length)continue;
-    C.sort((a,b)=>H[a].S.distanceTo(ctr)-H[b].S.distanceTo(ctr));
-    for(let ci=0;ci<Math.min(C.length,64);ci++){const sl={kind:'snap',bid:h.bid||null,t:o.t,T,C,ci,rot:0,flip:false,off:0};sl.off=defOff(sl,h.point);
+    {const sz=g.geo.boundingBox.getSize(new THREE.Vector3()),ax=sz.x>=sz.z?'x':'z',o2=ax==='x'?'z':'x';C.sort((a,b)=>(H[a].S[ax]-H[b].S[ax])||(H[a].S.y-H[b].S.y)||(H[a].S[o2]-H[b].S[o2]))}
+    const Tl=h.bid?alongTargets(h.bid,T,o.t,H[C[0]]):null;
+    for(let ci=0;ci<Math.min(C.length,64);ci++){const sl={kind:'snap',bid:h.bid||null,t:o.t,T,C,ci,rot:0,flip:false,off:0,Tl};sl.off=defOff(sl,h.point);
       if(!first)first={sl,o,hs:H[C[ci]]};if(!collideSel(sl)){choose(sl,o,H[C[ci]]);return true}}}
   if(first){choose(first.sl,first.o,first.hs);return true}
   return false}
@@ -2041,7 +2046,7 @@ if(DBG){const box=document.createElement('div');box.id='dbg';box.dir='ltr';docum
   let lastDraw=0;setInterval(()=>{const now=performance.now(),lt=DBG.lt,lt10=lt.filter(e=>e[0]>now-10000),d=(DBG.t.draw||{n:0}).n,fps=d-lastDraw;lastDraw=d;
     const top=Object.entries(DBG.t).sort((a,b)=>b[1].s-a[1].s).slice(0,9).map(([k,v])=>`${k}: ${(v.s/1000).toFixed(1)}s total, ${v.n}x, max ${Math.round(v.m)}ms`);
     const cv=renderer.domElement,info=renderer.info.render;
-    box.textContent=[`SPEED CHECK  v${'4.8'}  up ${Math.round((now-DBG.t0)/1000)}s`,`draws/sec: ${fps}  triangles: ${info.triangles.toLocaleString()}  parts: ${S.bricks.length}`,
+    box.textContent=[`SPEED CHECK  v${'4.9'}  up ${Math.round((now-DBG.t0)/1000)}s`,`draws/sec: ${fps}  triangles: ${info.triangles.toLocaleString()}  parts: ${S.bricks.length}`,
       `canvas ${cv.width}x${cv.height}  dpr ${devicePixelRatio}  plate ${JSON.stringify(S.plate)}`,`gpu: ${gl||'?'}`,
       `freezes last 10s: ${lt10.length}, longest ${Math.round(Math.max(0,...lt10.map(e=>e[1])))}ms | all: ${lt.length}, longest ${Math.round(Math.max(0,...lt.map(e=>e[1])))}ms`,
       ...top,DBG.err?'errors: '+DBG.err.join(' | '):''].join('\n')},1000)}
