@@ -42,6 +42,13 @@
           }
         ]
       }
+    ],
+    "redirects": [
+      {
+        "source": "/",
+        "destination": "/index.html",
+        "type": 302
+      }
     ]
   }
 }
