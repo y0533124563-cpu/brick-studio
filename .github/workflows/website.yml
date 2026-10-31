@@ -42,17 +42,17 @@ jobs:
           echo "::notice title=Library::$(du -sh web/ldraw | cut -f1) total, $(find web/ldraw/parts -maxdepth 1 -name '*.dat' | wc -l) part files, $(python3 -c "import json;print(len(json.load(open('web/ldraw/index.json'))))") in catalogue, $(ls web/ldraw/snap | wc -l) with connection data"
       - name: Connection report for key parts
         run: python3 scripts/snap-report.py web/ldraw 58120 99499 58121 99498 22169 22172 54675 74569 71427 3647 3648 3649 32270 32269 6589 3650c 4716 2851 2852 2853a 2853b 2854 2850a 3705 3706 32062 3713 32054 2780 6558 32524 3700 64179
-      - name: Publish to Firebase Hosting (brick-studio-6064a.web.app)
+      - name: Publish to Firebase Hosting (brick-studio-ymd3.web.app)
         env:
           SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: |
           if [ -z "$SA" ]; then echo "::notice title=Firebase Hosting::Not published - the GitHub secret FIREBASE_SERVICE_ACCOUNT is missing"; exit 0; fi
           printf '%s' "$SA" > "$RUNNER_TEMP/sa.json"
           export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json"
-          npx --yes firebase-tools@13.11.2 hosting:sites:create brick-studio-6064a --project brick-studio-6064a --non-interactive || true
+          npx --yes firebase-tools@13.11.2 hosting:sites:create brick-studio-ymd3 --project brick-studio-6064a --non-interactive || true
           npx --yes firebase-tools@13.11.2 deploy --only hosting --project brick-studio-6064a --non-interactive
           rm -f "$RUNNER_TEMP/sa.json"
-          echo "::notice title=Firebase Hosting::Published at https://brick-studio-6064a.web.app"
+          echo "::notice title=Firebase Hosting::Published at https://brick-studio-ymd3.web.app"
       - uses: actions/configure-pages@v5
         continue-on-error: true
       - uses: actions/upload-pages-artifact@v3

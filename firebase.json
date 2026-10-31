@@ -7,7 +7,7 @@
     "rules": "firestore.rules"
   },
   "hosting": {
-    "site": "brick-studio-6064a",
+    "site": "brick-studio-ymd3",
     "public": "web",
     "ignore": [
       "firebase.json",
